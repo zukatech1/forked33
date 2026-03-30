@@ -1,4 +1,6 @@
 --[[Made By Zuka]]
+
+
 if getgenv().ZukaTech_Loaded then
     return
 end
@@ -34231,7 +34233,7 @@ RegisterCommand({Name = "touchfling", Aliases = {}, Description = "Loads the tou
 RegisterCommand({Name = "umpff", Aliases = {}, Description = "For Backrooms." }, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/UMPteamkiller.lua", "Loaded") end)
 --RegisterCommand({Name = "lunaaimbot", Aliases = {}, Description = "Work In Progress" }, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/GamingChair.lua", "Loaded") end)
 RegisterCommand({Name = "ibtools", Aliases = {"btools"}, Description = "Upgraded Gui For Btools"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/buildtools.lua", "Loading Revamped Btools Gui") end)
---RegisterCommand({Name = "Zex", Aliases = {"Dex"}, Description = "Updated Dex+"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/LuaDecompiler/refs/heads/main/Zex.lua", "Loading Zex..") end)
+RegisterCommand({Name = "Zex", Aliases = {"Dex"}, Description = "Updated Dex+"}, function() loadstringCmd("https://raw.githubusercontent.com/idioticanisgae-pixel/fourfortyfivepmsundaymarch29build/refs/heads/main/BetterDex.lua", "Loading Zex..") end)
 RegisterCommand({Name = "walkvoid", Aliases = {"wv"}, Description = "Stops you from falling into the void."}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/WalkVoid.lua", "You are now safe from falling into the void.") end)
 --RegisterCommand({Name = "zspy", Aliases = {"adonisrspy"}, Description = "in beta"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/executor_scripts/SimpleSpyRework.lua", "in beta...") end)
 RegisterCommand({Name = "csgo", Aliases = {"bhop"}, Description = "Bhop movement"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/phoon.lua", "Loading") end)
@@ -35619,7 +35621,7 @@ RegisterCommand({
 }, function()
     Modules.AntiAttach:Toggle()
 end)
-Modules.AutoLoadDex = {
+--[[Modules.AutoLoadDex = {
     State = {
         IsLoaded = false,
     },
@@ -35645,7 +35647,7 @@ function Modules.AutoLoadDex:Initialize()
     }, function()
         module:Execute()
     end)
-end
+end]]
 RegisterCommand({
     Name        = "lights",
     Aliases     = {"lig"},
