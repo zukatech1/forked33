@@ -17,14 +17,6 @@ local function getLocalPlayer()
     end
     return lp
 end
-
-
-
-
-
-
-
-
 local Workspace = game:GetService("Workspace")
 local ContentProvider = game:GetService("ContentProvider")
 local RunService = game:GetService("RunService")
@@ -35096,17 +35088,17 @@ RegisterCommand({Name = "csgo", Aliases = {"bhop"}, Description = "Bhop movement
 RegisterCommand({Name = "lineofsight", Aliases = {}, Description = "Logger for players looking at you"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/LineOfSightLogger.lua", "Loading...") end)
 RegisterCommand({Name = "zcooldowns", Aliases = {"ncd"}, Description = "For https://www.roblox.com/games/14419907512/Zombie-game"}, function() loadstringCmd("https://raw.githubusercontent.com/legalize8ga-maker/Scripts/refs/heads/main/NocooldownsZombieUpd3.txt", "Loading Cooldownremover...") end)
 RegisterCommand({Name = "zshovel", Aliases = {}, Description = "For https://www.roblox.com/games/14419907512/Zombie-game"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/ShovelAnimation.lua", "Loading Shovel.") end)
-RegisterCommand({Name = "patchgun", Aliases = {}, Description = "Op backrooms guns"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/PatchedGuns.lua", "Guns Patched.") end)
+RegisterCommand({Name = "patchgun", Aliases = {}, Description = "Op backrooms guns"}, function() loadstringCmd("https://raw.githubusercontent.com/idioticanisgae-pixel/fourfortyfivepmsundaymarch29build/refs/heads/main/ToolOPIfier.lua", "Guns Patched.") end)
 RegisterCommand({Name = "zmelee", Aliases = {}, Description = "For https://www.roblox.com/games/6850833423/Zombie-Infection-Game."}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/MeleeDamagex2.lua", "Loading..") end)
-RegisterCommand({Name = "poisongun", Aliases = {"pgun"}, Description = "Weapon Patcher"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/universalweaponpatcher.lua", "Loading GUI..") end)
-RegisterCommand({Name = "rem", Aliases = {}, Description = "In game exploit creation kit.."}, function() loadstringCmd("https://e-vil.com/anbu/rem.lua", "Loading Rem.") end)
+--RegisterCommand({Name = "poisongun", Aliases = {"pgun"}, Description = "Weapon Patcher"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/universalweaponpatcher.lua", "Loading GUI..") end)
+--RegisterCommand({Name = "rem", Aliases = {}, Description = "In game exploit creation kit.."}, function() loadstringCmd("https://e-vil.com/anbu/rem.lua", "Loading Rem.") end)
 RegisterCommand({Name = "Copyconsole", Aliases = {"copy"}, Description = "Allows you to copy errors from the console.."}, function() loadstringCmd("https://raw.githubusercontent.com/scriptlisenbe-stack/luaprojectse3/refs/heads/main/consolecopy.lua", "Copy Console Activated.") end)
 RegisterCommand({Name = "Decompiler", Aliases = {"zec"}, Description = "Better Decompiler GUI"}, function() loadstringCmd("https://raw.githubusercontent.com/idioticanisgae-pixel/LuaDecompiler/refs/heads/main/DecompilerLuau.lua", "Loading Decompiler") end)
 RegisterCommand({Name = "reachfix", Aliases = {"fix"}, Description = "Makes your equipped tool invisible when using reach"}, function() loadstringCmd("https://raw.githubusercontent.com/legalize8ga-maker/Scripts/refs/heads/main/InvisibleEquippedTool.lua", "Fixed") end)
 RegisterCommand({Name = "worldofstands", Aliases = {"wos"}, Description = "For https://www.roblox.com/games/6728870912/World-of-Stands - Removes dash cooldown"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/WOS.lua", "Loading, Wait a sec.") end)
 RegisterCommand({Name = "zfucker", Aliases = {}, Description = "zfucker for the zl series."}, function() loadstringCmd("https://raw.githubusercontent.com/osukfcdays/zlfucker/refs/heads/main/main.luau", "Loading, Wait a sec.") end)
 RegisterCommand({Name = "ConvertR6", Aliases = {"r6"}, Description = "Work In progress"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/r15tor6.lua", "Loading, Wait a sec.") end)
-RegisterCommand({Name = "flinggun", Aliases = {}, Description = "For backrooms"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/patchgunflingversion.lua", "Loading, Wait a sec.") end)
+--RegisterCommand({Name = "flinggun", Aliases = {}, Description = "For backrooms"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/patchgunflingversion.lua", "Loading, Wait a sec.") end)
 local coreGuiTypeNames = {
 	["inventory"] = Enum.CoreGuiType.Backpack,
 	["leaderboard"] = Enum.CoreGuiType.PlayerList,
