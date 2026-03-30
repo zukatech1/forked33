@@ -19155,7 +19155,1740 @@ RegisterCommand({
     Modules.NetworkFling.Config.SearchRadius = v
     DoNotif("Search radius set to " .. v, 2)
 end)
-
+RegisterCommand({
+    Name        = "partflingerv2",
+    Aliases     = {"pfv2"},
+    Description = "better part flinger",
+    ArgsDesc    = {},
+    Permissions = {},
+}, function(args, speaker)
+    if getgenv().PartFlingerV2_Loaded then
+        pcall(function()
+            if getgenv().PartFlingerV2_Module then
+                getgenv().PartFlingerV2_Module:Disable()
+            end
+        end)
+    end
+    getgenv().PartFlingerV2_Loaded = true
+    local TweenService     = game:GetService("TweenService")
+    local RunService       = game:GetService("RunService")
+    local Players          = game:GetService("Players")
+    local UserInputService = game:GetService("UserInputService")
+    local Workspace        = game:GetService("Workspace")
+    local LocalPlayer      = Players.LocalPlayer
+    local CoreGui          = game:GetService("CoreGui")
+    LocalPlayer.ReplicationFocus = Workspace
+    pcall(function()
+        CoreGui.RobloxGui["CoreScripts/NetworkPause"]:Destroy()
+    end)
+    if not getgenv().Network then
+        getgenv().Network = { BaseParts = {} }
+        RunService.Heartbeat:Connect(function()
+            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+        end)
+    end
+    local _bhFolder     = Instance.new("Folder", Workspace)
+    local _bhAnchorPart = Instance.new("Part", _bhFolder)
+    local _bhAttachment = Instance.new("Attachment", _bhAnchorPart)
+    _bhAnchorPart.Anchored   = false
+    _bhAnchorPart.CanCollide = true
+    _bhAnchorPart.Transparency = 1
+    local CHAR_PART_NAMES = {
+        HumanoidRootPart=true, Torso=true, Head=true,
+        UpperTorso=true, LowerTorso=true,
+        LeftArm=true, RightArm=true, LeftLeg=true, RightLeg=true,
+        ["Left Arm"]=true, ["Right Arm"]=true,
+        ["Left Leg"]=true, ["Right Leg"]=true,
+        AntiVoidPlatform=true, VoidSpawn=true,
+        Handle=true,
+    }
+    local function isCharacterPart(part)
+        local ancestor = part.Parent
+        while ancestor and ancestor ~= Workspace do
+            if ancestor:IsA("Model") and ancestor:FindFirstChildOfClass("Humanoid") then
+                return true
+            end
+            ancestor = ancestor.Parent
+        end
+        local char = LocalPlayer.Character
+        if char and (part == char or part:IsDescendantOf(char)) then return true end
+        return false
+    end
+    local function scanUnanchored()
+        local found = {}
+        local function recurse(parent)
+            for _, obj in ipairs(parent:GetChildren()) do
+                if obj:IsA("BasePart")
+                    and not obj.Anchored
+                    and not CHAR_PART_NAMES[obj.Name]
+                    and not isCharacterPart(obj)
+                    and (obj.Size.X * obj.Size.Y * obj.Size.Z) >= 0.1
+                then
+                    table.insert(found, obj)
+                end
+                local isPlrChar = false
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p.Character == obj then isPlrChar = true break end
+                end
+                if not isPlrChar then recurse(obj) end
+            end
+        end
+        recurse(Workspace)
+        return found
+    end
+    local function touchPart(part)
+        local char = LocalPlayer.Character
+        local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp or not hrp.Parent then return end
+        if not part or not part.Parent then return end
+        local origin = hrp.CFrame
+        hrp.CFrame = CFrame.new(part.Position + Vector3.new(0, 4, 0))
+        RunService.Heartbeat:Wait()
+        hrp.CFrame = origin
+    end
+    local function touchAllParts()
+        local parts = scanUnanchored()
+        for _, part in ipairs(parts) do
+            task.spawn(touchPart, part)
+            task.wait(0.02)
+        end
+    end
+    local noCollidePlayer     = false
+    local noCollideParts      = false
+    local playerNoCollideConn = nil
+    local partsNoCollideConn  = nil
+    local MASS_CLAIMED_REF    = nil
+    local BH_TARGET_REF       = nil
+    local function startPlayerNoCollide()
+        if playerNoCollideConn then return end
+        playerNoCollideConn = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if not char then return end
+            for _, p in ipairs(char:GetDescendants()) do
+                if p:IsA("BasePart") and p.CanCollide then
+                    pcall(function() p.CanCollide = false end)
+                end
+            end
+        end)
+    end
+    local function stopPlayerNoCollide()
+        if playerNoCollideConn then
+            playerNoCollideConn:Disconnect()
+            playerNoCollideConn = nil
+        end
+        local char = LocalPlayer.Character
+        if char then
+            for _, p in ipairs(char:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    pcall(function() p.CanCollide = true end)
+                end
+            end
+        end
+    end
+    local function startPartsNoCollide()
+        if partsNoCollideConn then return end
+        partsNoCollideConn = RunService.Heartbeat:Connect(function()
+            local parts = scanUnanchored()
+            for _, part in ipairs(parts) do
+                if part.CanCollide then
+                    pcall(function() part.CanCollide = false end)
+                end
+            end
+            if MASS_CLAIMED_REF then
+                for part in pairs(MASS_CLAIMED_REF) do
+                    if part.Parent and part.CanCollide then
+                        pcall(function() part.CanCollide = false end)
+                    end
+                end
+            end
+            if BH_TARGET_REF then
+                for part in pairs(BH_TARGET_REF) do
+                    if part.Parent and part.CanCollide then
+                        pcall(function() part.CanCollide = false end)
+                    end
+                end
+            end
+        end)
+    end
+    local function stopPartsNoCollide()
+        if partsNoCollideConn then
+            partsNoCollideConn:Disconnect()
+            partsNoCollideConn = nil
+        end
+        if MASS_CLAIMED_REF then
+            for part in pairs(MASS_CLAIMED_REF) do
+                pcall(function() part.CanCollide = true end)
+            end
+        end
+        if BH_TARGET_REF then
+            for part in pairs(BH_TARGET_REF) do
+                pcall(function() part.CanCollide = true end)
+            end
+        end
+    end
+    local BH = {
+        TARGET_PARTS        = {},
+        CONNECTIONS         = {},
+        sendTarget          = nil,
+        blackHoleActive     = false,
+        spectateActive      = false,
+        targetMode          = "Players",
+        cycleIndex          = 1,
+        cycleLastSwap       = 0,
+        cycleConnection     = nil,
+        spectateMonitorConn = nil,
+        DescendantAddedConn = nil,
+        originalCameraType    = nil,
+        originalCameraSubject = nil,
+        lastUpdate          = 0,
+        CONFIG = {
+            UPDATE_INTERVAL = 0.01,
+            MAX_PARTS       = 800,
+            VELOCITY        = 500,
+            MIN_SIZE        = 0,
+            SWEEP_RADIUS    = 0,
+            OWNER_RETRY_DUR = 0.6,
+        },
+        ORBIT = {
+            Active      = false,
+            Parts       = {},
+            Connections = {},
+            Radius      = 8,
+            Speed       = 10,
+            Rings       = 1,
+            MaxParts    = 60,
+        },
+        MISSILE = {
+            Active       = false,
+            Part         = nil,
+            bv           = nil,
+            Conn         = nil,
+            Force        = 9e5,
+            SelectionBox = nil,
+        },
+    }
+    BH_TARGET_REF = BH.TARGET_PARTS
+    local function bhReleasePart(part)
+        local data = BH.TARGET_PARTS[part]
+        if not data then return end
+        if data.conn           then data.conn:Disconnect()           end
+        if data.ownerRetryConn then data.ownerRetryConn:Disconnect() end
+        pcall(function()
+            if data.bv and data.bv.Parent then data.bv:Destroy() end
+            part:SetNetworkOwnershipAuto()
+        end)
+        BH.TARGET_PARTS[part] = nil
+    end
+    local function bhPartPassesFilters(part)
+        if not part:IsA("BasePart")   then return false end
+        if part.Anchored              then return false end
+        if CHAR_PART_NAMES[part.Name] then return false end
+        if isCharacterPart(part)      then return false end
+        if BH.CONFIG.MIN_SIZE > 0 then
+            local s = part.Size
+            if s.X < BH.CONFIG.MIN_SIZE
+            and s.Y < BH.CONFIG.MIN_SIZE
+            and s.Z < BH.CONFIG.MIN_SIZE then return false end
+        end
+        local count = 0
+        for _ in pairs(BH.TARGET_PARTS) do count += 1 end
+        if count >= BH.CONFIG.MAX_PARTS then return false end
+        if BH.CONFIG.SWEEP_RADIUS > 0 and BH.sendTarget then
+            local tc    = BH.sendTarget.Character
+            local tRoot = tc and tc:FindFirstChild("HumanoidRootPart")
+            if tRoot and (part.Position - tRoot.Position).Magnitude > BH.CONFIG.SWEEP_RADIUS then
+                return false
+            end
+        end
+        return true
+    end
+    local function bhForcePart(part)
+        if BH.TARGET_PARTS[part]          then return end
+        if not bhPartPassesFilters(part)  then return end
+        pcall(function()
+            for _, c in ipairs(part:GetChildren()) do
+                if c:IsA("BodyMover") or c:IsA("RocketPropulsion")
+                or c:IsA("LinearVelocity") or c:IsA("VectorForce")
+                or c:IsA("BodyVelocity")   or c:IsA("BodyForce") then
+                    c:Destroy()
+                end
+            end
+        end)
+        part.CanCollide = true
+        part.Massless   = false
+        task.spawn(touchPart, part)
+        pcall(function() part:SetNetworkOwner(LocalPlayer) end)
+        local bv = Instance.new("BodyVelocity")
+        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        bv.Velocity = Vector3.zero
+        bv.Parent   = part
+        local startTime = tick()
+        local ownerRetryConn
+        ownerRetryConn = RunService.Heartbeat:Connect(function()
+            if tick() - startTime > BH.CONFIG.OWNER_RETRY_DUR then
+                ownerRetryConn:Disconnect()
+                if BH.TARGET_PARTS[part] then
+                    BH.TARGET_PARTS[part].ownerRetryConn = nil
+                end
+                return
+            end
+            pcall(function() part:SetNetworkOwner(LocalPlayer) end)
+        end)
+        local conn
+        conn = RunService.Heartbeat:Connect(function()
+            if not part.Parent then bhReleasePart(part); return end
+            if not BH.blackHoleActive then bhReleasePart(part); return end
+            if not BH.sendTarget then return end
+            local tc    = BH.sendTarget.Character
+            local tRoot = tc and tc:FindFirstChild("HumanoidRootPart")
+            if not tRoot then return end
+            local dir = tRoot.Position - part.Position
+            bv.Velocity = dir.Magnitude > 0.1
+                and dir.Unit * BH.CONFIG.VELOCITY
+                or  Vector3.new(0, BH.CONFIG.VELOCITY, 0)
+        end)
+        BH.TARGET_PARTS[part] = {
+            conn           = conn,
+            bv             = bv,
+            ownerRetryConn = ownerRetryConn,
+        }
+    end
+    local function bhCleanupStale()
+        for part in pairs(BH.TARGET_PARTS) do
+            if not part.Parent then bhReleasePart(part) end
+        end
+    end
+    RunService.Heartbeat:Connect(function()
+        local now = tick()
+        if now - BH.lastUpdate < BH.CONFIG.UPDATE_INTERVAL then return end
+        BH.lastUpdate = now
+        bhCleanupStale()
+    end)
+    local function bhGetPlayer(name)
+        local q = name:lower()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then
+                if p.Name:lower():find(q,1,true)
+                or p.DisplayName:lower():find(q,1,true) then
+                    return p
+                end
+            end
+        end
+    end
+    local function bhGetValidPlayers()
+        local valid = {}
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer
+            and p.Character
+            and p.Character:FindFirstChild("HumanoidRootPart") then
+                table.insert(valid, p)
+            end
+        end
+        return valid
+    end
+    local function bhIsTargetValid(t)
+        return t
+            and t.Character
+            and t.Character:FindFirstChildOfClass("Humanoid")
+            and t.Character.Humanoid.Health > 0
+    end
+    local function bhStartSpectating()
+        if not bhIsTargetValid(BH.sendTarget) then return end
+        local hum = BH.sendTarget.Character:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        local cam = Workspace.CurrentCamera
+        if not BH.originalCameraType then
+            BH.originalCameraType    = cam.CameraType
+            BH.originalCameraSubject = cam.CameraSubject
+        end
+        cam.CameraType    = Enum.CameraType.Custom
+        cam.CameraSubject = hum
+    end
+    local function bhStopSpectating()
+        local cam = Workspace.CurrentCamera
+        if BH.originalCameraType and BH.originalCameraSubject then
+            cam.CameraType    = BH.originalCameraType
+            cam.CameraSubject = BH.originalCameraSubject
+        else
+            cam.CameraType    = Enum.CameraType.Custom
+            cam.CameraSubject = LocalPlayer.Character
+                and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        end
+        BH.originalCameraType    = nil
+        BH.originalCameraSubject = nil
+    end
+    local function orbitReleasePart(entry)
+        if not entry then return end
+        pcall(function()
+            if entry.conn then entry.conn:Disconnect() end
+            if entry.bv and entry.bv.Parent then entry.bv:Destroy() end
+            if entry.part and entry.part.Parent then
+                entry.part.CanCollide = true
+                entry.part.Massless   = false
+                entry.part:SetNetworkOwnershipAuto()
+            end
+        end)
+    end
+    local function orbitStop()
+        BH.ORBIT.Active = false
+        for _, entry in ipairs(BH.ORBIT.Parts) do orbitReleasePart(entry) end
+        BH.ORBIT.Parts = {}
+        if BH.ORBIT.Connections.loop then
+            BH.ORBIT.Connections.loop:Disconnect()
+            BH.ORBIT.Connections.loop = nil
+        end
+        if BH.ORBIT.Connections.added then
+            BH.ORBIT.Connections.added:Disconnect()
+            BH.ORBIT.Connections.added = nil
+        end
+    end
+    local function orbitAddPart(part)
+        if not part:IsA("BasePart")      then return end
+        if part.Anchored                 then return end
+        if CHAR_PART_NAMES[part.Name]    then return end
+        if isCharacterPart(part)         then return end
+        if #BH.ORBIT.Parts >= BH.ORBIT.MaxParts then return end
+        for _, e in ipairs(BH.ORBIT.Parts) do if e.part == part then return end end
+        pcall(function()
+            for _, c in ipairs(part:GetChildren()) do
+                if c:IsA("BodyMover") or c:IsA("BodyVelocity") or c:IsA("LinearVelocity")
+                or c:IsA("BodyForce") or c:IsA("VectorForce")  or c:IsA("RocketPropulsion") then
+                    c:Destroy()
+                end
+            end
+        end)
+        task.spawn(touchPart, part)
+        pcall(function() part:SetNetworkOwner(LocalPlayer) end)
+        part.CanCollide = false
+        part.Massless   = true
+        local bv = Instance.new("BodyVelocity")
+        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        bv.Velocity = Vector3.zero
+        bv.Parent   = part
+        local idx        = #BH.ORBIT.Parts
+        local ringIdx    = idx % BH.ORBIT.Rings
+        local ringOffset = (ringIdx / BH.ORBIT.Rings) * math.pi
+        local angle      = (idx / math.max(1, BH.ORBIT.MaxParts)) * (math.pi * 2)
+        table.insert(BH.ORBIT.Parts, {
+            part       = part,
+            bv         = bv,
+            angle      = angle,
+            ringOffset = ringOffset,
+        })
+    end
+    local function orbitStart()
+        BH.ORBIT.Active = true
+        task.spawn(function()
+            for _, v in ipairs(Workspace:GetDescendants()) do
+                if BH.ORBIT.Active then orbitAddPart(v) end
+            end
+        end)
+        BH.ORBIT.Connections.added = Workspace.DescendantAdded:Connect(function(v)
+            if BH.ORBIT.Active then task.spawn(orbitAddPart, v) end
+        end)
+        local clock = 0
+        BH.ORBIT.Connections.loop = RunService.Heartbeat:Connect(function(dt)
+            if not BH.ORBIT.Active then return end
+            local hrp = LocalPlayer.Character
+                and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            clock = clock + dt * BH.ORBIT.Speed
+            local center = hrp.Position
+            local r      = BH.ORBIT.Radius
+            local total  = #BH.ORBIT.Parts
+            for i = #BH.ORBIT.Parts, 1, -1 do
+                local e = BH.ORBIT.Parts[i]
+                if not e.part or not e.part.Parent then
+                    orbitReleasePart(e)
+                    table.remove(BH.ORBIT.Parts, i)
+                end
+            end
+            for i, e in ipairs(BH.ORBIT.Parts) do
+                local baseAngle = ((i-1) / math.max(1,total)) * (math.pi*2)
+                local a   = clock + baseAngle
+                local yOff = math.sin(a + e.ringOffset) * (r * 0.35)
+                local target = center + Vector3.new(
+                    math.cos(a) * r, yOff, math.sin(a) * r
+                )
+                local diff = target - e.part.Position
+                if e.bv and e.bv.Parent then
+                    local speed = math.clamp(diff.Magnitude * 14, 0, 280)
+                    e.bv.Velocity = diff.Magnitude > 0.05
+                        and (diff.Unit * speed)
+                        or  Vector3.zero
+                end
+            end
+        end)
+    end
+    local function missileStop()
+        BH.MISSILE.Active = false
+        if BH.MISSILE.Conn then BH.MISSILE.Conn:Disconnect(); BH.MISSILE.Conn = nil end
+        pcall(function()
+            if BH.MISSILE.SelectionBox and BH.MISSILE.SelectionBox.Parent then
+                BH.MISSILE.SelectionBox:Destroy()
+            end
+        end)
+        BH.MISSILE.SelectionBox = nil
+        pcall(function()
+            if BH.MISSILE.bv and BH.MISSILE.bv.Parent then BH.MISSILE.bv:Destroy() end
+        end)
+        BH.MISSILE.bv = nil
+        if BH.MISSILE.Part and BH.MISSILE.Part.Parent then
+            pcall(function()
+                BH.MISSILE.Part.CanCollide = true
+                BH.MISSILE.Part.Massless   = false
+                BH.MISSILE.Part:SetNetworkOwnershipAuto()
+            end)
+        end
+    end
+    local function missileSetPart(part)
+        if BH.MISSILE.SelectionBox then
+            pcall(function() BH.MISSILE.SelectionBox:Destroy() end)
+            BH.MISSILE.SelectionBox = nil
+        end
+        if BH.MISSILE.Active then missileStop() end
+        if not part or not part:IsA("BasePart") then
+            BH.MISSILE.Part = nil
+            return
+        end
+        BH.MISSILE.Part = part
+        local box = Instance.new("SelectionBox")
+        box.Name                = "Missile_Selection"
+        box.Adornee             = part
+        box.LineThickness       = 0.07
+        box.Color3              = Color3.fromRGB(255, 60, 60)
+        box.SurfaceColor3       = Color3.fromRGB(255, 60, 60)
+        box.SurfaceTransparency = 0.7
+        box.Parent              = CoreGui
+        BH.MISSILE.SelectionBox = box
+    end
+    local function missileStart()
+        local part = BH.MISSILE.Part
+        if not part or not part.Parent  then return end
+        if not BH.sendTarget            then return end
+        if not BH.sendTarget.Character  then return end
+        pcall(function()
+            for _, c in ipairs(part:GetChildren()) do
+                if c:IsA("BodyMover") or c:IsA("BodyVelocity")
+                or c:IsA("LinearVelocity") or c:IsA("BodyForce")
+                or c:IsA("VectorForce")    or c:IsA("AngularVelocity")
+                or c:IsA("BodyAngularVelocity") or c:IsA("RocketPropulsion") then
+                    c:Destroy()
+                end
+            end
+        end)
+        task.spawn(touchPart, part)
+        task.wait(0.05)
+        pcall(function() part:SetNetworkOwner(LocalPlayer) end)
+        part.CanCollide  = true
+        part.Massless    = false
+        part.CustomPhysicalProperties = PhysicalProperties.new(100, 0.3, 0.5, 100, 100)
+        local bv = Instance.new("BodyVelocity")
+        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        bv.Velocity = Vector3.zero
+        bv.Parent   = part
+        BH.MISSILE.bv     = bv
+        BH.MISSILE.Active = true
+        local phase      = "approach"
+        local phaseTimer = 0
+        local spawnOffset = Vector3.zero
+        local missileOwnerStart = tick()
+        local missileOwnerConn
+        missileOwnerConn = RunService.Heartbeat:Connect(function()
+            if tick() - missileOwnerStart > BH.CONFIG.OWNER_RETRY_DUR then
+                missileOwnerConn:Disconnect()
+                return
+            end
+            pcall(function() part:SetNetworkOwner(LocalPlayer) end)
+        end)
+        BH.MISSILE.Conn = RunService.Heartbeat:Connect(function(dt)
+            if not BH.MISSILE.Active       then return end
+            if not part or not part.Parent then missileStop(); return end
+            local tc    = BH.sendTarget and BH.sendTarget.Character
+            local tRoot = tc and tc:FindFirstChild("HumanoidRootPart")
+            if not tRoot then return end
+            local tPos = tRoot.Position
+            local pPos = part.Position
+            local dist = (tPos - pPos).Magnitude
+            phaseTimer = phaseTimer + dt
+            if phase == "approach" then
+                local dir = tPos - pPos
+                if dir.Magnitude > 0.01 then
+                    bv.Velocity = dir.Unit * BH.MISSILE.Force
+                end
+                if dist < 6 or phaseTimer > 1.5 then
+                    phase = "teleport"; phaseTimer = 0
+                end
+            elseif phase == "teleport" then
+                local t  = tick()
+                local offset = Vector3.new(
+                    math.sin(t*17)*0.8, math.cos(t*11)*0.8, math.sin(t*23)*0.8
+                )
+                pcall(function()
+                    part.CFrame = CFrame.new(tPos + offset) * CFrame.Angles(t*5, t*7, t*3)
+                end)
+                local outDir = pPos - tPos
+                bv.Velocity = outDir.Magnitude > 0.01
+                    and outDir.Unit * BH.MISSILE.Force * 2
+                    or  Vector3.new(0, BH.MISSILE.Force, 0)
+                if phaseTimer > 0.4 then
+                    phase = "retreat"; phaseTimer = 0
+                    spawnOffset = Vector3.new(
+                        math.random(-20,20), math.random(2,8), math.random(-20,20)
+                    )
+                end
+            elseif phase == "retreat" then
+                local retreatTarget = tPos + spawnOffset
+                local dir = retreatTarget - pPos
+                if dir.Magnitude > 0.01 then
+                    bv.Velocity = dir.Unit * BH.MISSILE.Force * 1.5
+                end
+                if phaseTimer > 0.3 then
+                    phase = "approach"; phaseTimer = 0
+                end
+            end
+        end)
+    end
+    local NetworkClaim = {
+        State = {
+            IsEnabled      = false,
+            ClaimedObjects = {},
+            SelectedObject = nil,
+            UI             = nil,
+            Connections    = {},
+            AutoClaim      = false,
+            _massAddedConn = nil,
+        },
+        Config = {
+            HighlightColor = Color3.fromRGB(255, 100, 0),
+            ClaimMethod    = "ownership",
+            UpdateRate     = 0.03,
+            ShowVisuals    = true,
+        },
+    }
+    local MASS_CLAIMED    = {}
+    local massClaimActive = false
+    MASS_CLAIMED_REF = MASS_CLAIMED
+    local function tripleReleasePart(part)
+        local data = MASS_CLAIMED[part]
+        if not data then return end
+        if data.ownerConn then data.ownerConn:Disconnect() end
+        if data.velConn   then data.velConn:Disconnect()   end
+        if data.cfConn    then data.cfConn:Disconnect()    end
+        pcall(function()
+            part.CanCollide = true
+            part:SetNetworkOwnershipAuto()
+        end)
+        MASS_CLAIMED[part] = nil
+    end
+    local function tripleClaimPart(part)
+        if not part:IsA("BasePart")   then return end
+        if part.Anchored              then return end
+        if isCharacterPart(part)      then return end
+        if MASS_CLAIMED[part]         then return end
+        pcall(function()
+            for _, c in ipairs(part:GetChildren()) do
+                if c:IsA("BodyMover") or c:IsA("BodyVelocity") or c:IsA("LinearVelocity")
+                or c:IsA("BodyForce") or c:IsA("VectorForce")  or c:IsA("RocketPropulsion") then
+                    c:Destroy()
+                end
+            end
+        end)
+        task.spawn(touchPart, part)
+        local startCF = part.CFrame
+        local startT  = tick()
+        local RETRY   = BH.CONFIG.OWNER_RETRY_DUR
+        pcall(function() part:SetNetworkOwner(LocalPlayer) end)
+        local ownerConn = RunService.Heartbeat:Connect(function()
+            if not part.Parent     then tripleReleasePart(part); return end
+            if not massClaimActive then tripleReleasePart(part); return end
+            local age = tick() - startT
+            if age < RETRY or age % 0.5 < 0.02 then
+                pcall(function() part:SetNetworkOwner(LocalPlayer) end)
+            end
+        end)
+        local velConn = RunService.Heartbeat:Connect(function()
+            if not part.Parent     then return end
+            if not massClaimActive then return end
+            pcall(function()
+                part.Velocity    = Vector3.new(0, 0.001, 0)
+                part.RotVelocity = Vector3.zero
+            end)
+        end)
+        local cfConn = RunService.Heartbeat:Connect(function()
+            if not part.Parent     then return end
+            if not massClaimActive then return end
+            pcall(function() part.CFrame = startCF end)
+        end)
+        MASS_CLAIMED[part] = {
+            ownerConn = ownerConn,
+            velConn   = velConn,
+            cfConn    = cfConn,
+        }
+    end
+    function NetworkClaim:GetAllParts(obj)
+        local parts = {}
+        if obj:IsA("BasePart") then
+            table.insert(parts, obj)
+        elseif obj:IsA("Model") then
+            for _, p in pairs(obj:GetDescendants()) do
+                if p:IsA("BasePart") then table.insert(parts, p) end
+            end
+        end
+        return parts
+    end
+    function NetworkClaim:ClaimPart(part)
+        if not part:IsA("BasePart") then return nil end
+        local method     = self.Config.ClaimMethod
+        local connection = nil
+        if method == "ownership" then
+            pcall(function() part:SetNetworkOwner(LocalPlayer) end)
+            local startT = tick()
+            connection = RunService.Heartbeat:Connect(function()
+                if not part or not part.Parent then return end
+                if tick() - startT < BH.CONFIG.OWNER_RETRY_DUR then
+                    pcall(function() part:SetNetworkOwner(LocalPlayer) end)
+                else
+                    part.Velocity = Vector3.new(0, 0.01, 0)
+                end
+            end)
+        elseif method == "velocity" then
+            connection = RunService.Heartbeat:Connect(function()
+                if part and part.Parent then
+                    part.Velocity    = Vector3.new(0, 0.01, 0)
+                    part.RotVelocity = Vector3.zero
+                end
+            end)
+        elseif method == "cframe" then
+            local cf = part.CFrame
+            connection = RunService.Heartbeat:Connect(function()
+                if part and part.Parent then part.CFrame = cf end
+            end)
+        end
+        return connection
+    end
+    function NetworkClaim:ClaimAllWorkspace()
+        if massClaimActive then
+            massClaimActive = false
+            if self.State._massAddedConn then
+                self.State._massAddedConn:Disconnect()
+                self.State._massAddedConn = nil
+            end
+            local n = 0
+            for part in pairs(MASS_CLAIMED) do tripleReleasePart(part); n += 1 end
+            print(string.format("✓ Released %d workspace parts", n))
+            return
+        end
+        massClaimActive = true
+        task.spawn(function()
+            touchAllParts()
+            local scanned = 0
+            for _, v in ipairs(Workspace:GetDescendants()) do
+                if not massClaimActive then break end
+                tripleClaimPart(v)
+                scanned += 1
+                if scanned % 200 == 0 then task.wait() end
+            end
+            local held = 0
+            for _ in pairs(MASS_CLAIMED) do held += 1 end
+            print(string.format("✓ Triple-claimed %d workspace parts", held))
+        end)
+        if self.State._massAddedConn then self.State._massAddedConn:Disconnect() end
+        self.State._massAddedConn = Workspace.DescendantAdded:Connect(function(v)
+            if massClaimActive then
+                task.spawn(touchPart, v)
+                task.spawn(tripleClaimPart, v)
+            end
+        end)
+    end
+    function NetworkClaim:ClaimSelected()
+        local obj = self.State.SelectedObject
+        if not obj then print("⚠ No object selected"); return end
+        local parts = self:GetAllParts(obj)
+        if #parts == 0 then print("✗ No valid parts found"); return end
+        for _, data in pairs(self.State.ClaimedObjects) do
+            if data.Object == obj then print("⚠ Already claimed"); return end
+        end
+        local connections = {}
+        for _, part in ipairs(parts) do
+            task.spawn(touchPart, part)
+            local conn = self:ClaimPart(part)
+            if conn then table.insert(connections, conn) end
+        end
+        local hl = Instance.new("Highlight")
+        hl.Name                = "NetworkClaim_Highlight"
+        hl.FillColor           = self.Config.HighlightColor
+        hl.OutlineColor        = self.Config.HighlightColor
+        hl.FillTransparency    = 0.5
+        hl.OutlineTransparency = 0
+        hl.Adornee             = obj
+        hl.Parent              = obj
+        table.insert(self.State.ClaimedObjects, {
+            Object      = obj,
+            Connections = connections,
+            Highlight   = hl,
+            Name        = obj.Name,
+            PartCount   = #parts,
+        })
+        print(string.format("✓ Claimed: %s (%d parts)", obj.Name, #parts))
+        self:UpdateDisplay()
+    end
+    function NetworkClaim:ClaimEntireModel()
+        local obj = self.State.SelectedObject
+        if not obj then print("⚠ No object selected"); return end
+        local model = obj:IsA("Model") and obj or obj:FindFirstAncestorOfClass("Model")
+        if not model then print("⚠ Not in a model"); return end
+        self.State.SelectedObject = model
+        self:ClaimSelected()
+    end
+    function NetworkClaim:ClaimAllDescendants()
+        local obj = self.State.SelectedObject
+        if not obj then print("⚠ No object selected"); return end
+        local n = 0
+        for _, d in ipairs(obj:GetDescendants()) do
+            if d:IsA("BasePart") then
+                task.spawn(touchPart, d)
+                self:ClaimPart(d)
+                n += 1
+            end
+        end
+        print(string.format("✓ Claimed %d descendants", n))
+    end
+    function NetworkClaim:ReleaseSelected()
+        local obj = self.State.SelectedObject
+        if not obj then print("⚠ No object selected"); return end
+        for i, data in ipairs(self.State.ClaimedObjects) do
+            if data.Object == obj then
+                for _, c in ipairs(data.Connections) do if c then c:Disconnect() end end
+                if data.Highlight and data.Highlight.Parent then data.Highlight:Destroy() end
+                for _, part in ipairs(self:GetAllParts(data.Object)) do
+                    pcall(function() part:SetNetworkOwnershipAuto() end)
+                end
+                table.remove(self.State.ClaimedObjects, i)
+                print(string.format("✓ Released: %s", data.Name))
+                self:UpdateDisplay()
+                return
+            end
+        end
+        print("⚠ Object not claimed")
+    end
+    function NetworkClaim:ReleaseAll()
+        if #self.State.ClaimedObjects == 0 then print("⚠ Nothing to release"); return end
+        local n = #self.State.ClaimedObjects
+        for _, data in ipairs(self.State.ClaimedObjects) do
+            for _, c in ipairs(data.Connections) do if c then c:Disconnect() end end
+            if data.Highlight and data.Highlight.Parent then data.Highlight:Destroy() end
+            for _, part in ipairs(self:GetAllParts(data.Object)) do
+                pcall(function() part:SetNetworkOwnershipAuto() end)
+            end
+        end
+        self.State.ClaimedObjects = {}
+        print(string.format("✓ Released %d objects", n))
+        self:UpdateDisplay()
+    end
+    function NetworkClaim:SelectObject(obj)
+        if not obj or (not obj:IsA("Model") and not obj:IsA("BasePart")) then
+            print("⚠ Invalid selection"); return
+        end
+        if self.State.SelectedObject then
+            local old = self.State.SelectedObject:FindFirstChild("NetworkClaim_Selection")
+            if old then old:Destroy() end
+        end
+        self.State.SelectedObject = obj
+        local box = Instance.new("SelectionBox")
+        box.Name          = "NetworkClaim_Selection"
+        box.Adornee       = obj
+        box.LineThickness  = 0.05
+        box.Color3        = Color3.fromRGB(255, 255, 0)
+        box.Parent        = obj
+        print(string.format("✓ Selected: %s", obj.Name))
+        self:UpdateDisplay()
+    end
+    function NetworkClaim:UpdateDisplay()
+        if not self.State.UI then return end
+        local mf   = self.State.UI.MainFrame
+        local sel  = mf.Content.SelectionLabel
+        local si   = mf.TitleBar.StatusIndicator
+        local list = mf.Content.ClaimedList
+        if self.State.SelectedObject then
+            local t = self.State.SelectedObject:IsA("Model") and "Model" or "Part"
+            sel.Text       = string.format("Selected: %s (%s)", self.State.SelectedObject.Name, t)
+            sel.TextColor3 = Color3.fromRGB(100, 255, 100)
+        else
+            sel.Text       = "Click an object in-world to select"
+            sel.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
+        local count = #self.State.ClaimedObjects
+        si.Text             = count .. " CLAIMED"
+        si.BackgroundColor3 = count > 0 and Color3.fromRGB(255,100,0) or Color3.fromRGB(50,50,50)
+        si.TextColor3       = count > 0 and Color3.new(1,1,1) or Color3.fromRGB(200,200,200)
+        for _, c in pairs(list:GetChildren()) do
+            if not c:IsA("UIListLayout") then c:Destroy() end
+        end
+        for i, data in ipairs(self.State.ClaimedObjects) do
+            local entry = Instance.new("TextButton", list)
+            entry.LayoutOrder      = i
+            entry.Size             = UDim2.new(1,-5,0,28)
+            entry.BackgroundColor3 = Color3.fromRGB(40,40,50)
+            entry.BorderSizePixel  = 0
+            entry.Font             = Enum.Font.Code
+            entry.Text             = string.format("[%d] %s (%d pts)", i, data.Name, data.PartCount)
+            entry.TextColor3       = Color3.fromRGB(255,150,0)
+            entry.TextSize         = 10
+            entry.TextXAlignment   = Enum.TextXAlignment.Left
+            entry.AutoButtonColor  = false
+            Instance.new("UICorner", entry).CornerRadius = UDim.new(0,4)
+            local ep = Instance.new("UIPadding", entry)
+            ep.PaddingLeft = UDim.new(0,8)
+            entry.MouseButton1Click:Connect(function() self:SelectObject(data.Object) end)
+            entry.MouseEnter:Connect(function() entry.BackgroundColor3 = Color3.fromRGB(50,50,60) end)
+            entry.MouseLeave:Connect(function() entry.BackgroundColor3 = Color3.fromRGB(40,40,50) end)
+        end
+    end
+    function NetworkClaim:_createUI()
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name           = "PartFlingerV2_Zuka"
+        screenGui.ResetOnSpawn   = false
+        screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+        self.State.UI = screenGui
+        local mainFrame = Instance.new("Frame", screenGui)
+        mainFrame.Name             = "MainFrame"
+        mainFrame.Size             = UDim2.fromOffset(400, 780)
+        mainFrame.Position         = UDim2.new(1,-412, 0.5,-390)
+        mainFrame.BackgroundColor3 = Color3.fromRGB(25,25,35)
+        mainFrame.BorderSizePixel  = 0
+        Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0,8)
+        local stroke = Instance.new("UIStroke", mainFrame)
+        stroke.Color     = Color3.fromRGB(255,100,0)
+        stroke.Thickness = 2
+        TweenService:Create(stroke,
+            TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+            {Thickness=3}):Play()
+        local titleBar = Instance.new("Frame", mainFrame)
+        titleBar.Name             = "TitleBar"
+        titleBar.Size             = UDim2.new(1,0,0,35)
+        titleBar.BackgroundColor3 = Color3.fromRGB(20,20,30)
+        titleBar.BorderSizePixel  = 0
+        Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0,8)
+        local title = Instance.new("TextLabel", titleBar)
+        title.Size               = UDim2.new(1,-120,1,0)
+        title.Position           = UDim2.fromOffset(10,0)
+        title.BackgroundTransparency = 1
+        title.Font               = Enum.Font.Code
+        title.Text               = "partflingerv2  //  zuka"
+        title.TextColor3         = Color3.fromRGB(255,100,0)
+        title.TextSize           = 13
+        title.TextXAlignment     = Enum.TextXAlignment.Left
+        local si = Instance.new("TextLabel", titleBar)
+        si.Name             = "StatusIndicator"
+        si.Size             = UDim2.fromOffset(90,20)
+        si.Position         = UDim2.new(1,-160,0.5,-10)
+        si.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        si.BorderSizePixel  = 0
+        si.Font             = Enum.Font.GothamBold
+        si.Text             = "0 CLAIMED"
+        si.TextColor3       = Color3.fromRGB(200,200,200)
+        si.TextSize         = 10
+        Instance.new("UICorner", si).CornerRadius = UDim.new(0,4)
+        local closeBtn = Instance.new("TextButton", titleBar)
+        closeBtn.Size             = UDim2.fromOffset(30,30)
+        closeBtn.Position         = UDim2.new(1,-32,0,2)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(255,50,100)
+        closeBtn.BorderSizePixel  = 0
+        closeBtn.Text             = "×"
+        closeBtn.TextColor3       = Color3.new(1,1,1)
+        closeBtn.Font             = Enum.Font.GothamBold
+        closeBtn.TextSize         = 20
+        Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,6)
+        closeBtn.MouseButton1Click:Connect(function() self:Disable() end)
+        do
+            local dragStart, startPos
+            titleBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragStart = input.Position; startPos = mainFrame.Position
+                    local mc, ec
+                    mc = UserInputService.InputChanged:Connect(function(mi)
+                        if mi.UserInputType == Enum.UserInputType.MouseMovement then
+                            local d = mi.Position - dragStart
+                            mainFrame.Position = UDim2.new(
+                                startPos.X.Scale, startPos.X.Offset + d.X,
+                                startPos.Y.Scale, startPos.Y.Offset + d.Y)
+                        end
+                    end)
+                    ec = UserInputService.InputEnded:Connect(function(ei)
+                        if ei.UserInputType == Enum.UserInputType.MouseButton1 then
+                            mc:Disconnect(); ec:Disconnect()
+                        end
+                    end)
+                end
+            end)
+        end
+        local scroll = Instance.new("ScrollingFrame", mainFrame)
+        scroll.Name                = "Content"
+        scroll.Size                = UDim2.new(1,-10,1,-45)
+        scroll.Position            = UDim2.fromOffset(5,40)
+        scroll.BackgroundTransparency = 1
+        scroll.BorderSizePixel     = 0
+        scroll.ScrollBarThickness  = 4
+        scroll.ScrollBarImageColor3 = Color3.fromRGB(255,100,0)
+        scroll.CanvasSize          = UDim2.fromOffset(0,0)
+        scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        local layout = Instance.new("UIListLayout", scroll)
+        layout.Padding   = UDim.new(0,8)
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        local pad = Instance.new("UIPadding", scroll)
+        pad.PaddingLeft=UDim.new(0,6); pad.PaddingRight=UDim.new(0,6)
+        pad.PaddingTop=UDim.new(0,6);  pad.PaddingBottom=UDim.new(0,10)
+        local function sectionHeader(text, order)
+            local lbl = Instance.new("TextLabel", scroll)
+            lbl.LayoutOrder      = order
+            lbl.Size             = UDim2.new(1,0,0,22)
+            lbl.BackgroundColor3 = Color3.fromRGB(35,35,48)
+            lbl.BorderSizePixel  = 0
+            lbl.Font             = Enum.Font.GothamBold
+            lbl.Text             = "  "..text
+            lbl.TextColor3       = Color3.fromRGB(255,100,0)
+            lbl.TextSize         = 11
+            lbl.TextXAlignment   = Enum.TextXAlignment.Left
+            Instance.new("UICorner", lbl).CornerRadius = UDim.new(0,4)
+            return lbl
+        end
+        local function mkBtn(text, bg, order)
+            local btn = Instance.new("TextButton", scroll)
+            btn.LayoutOrder      = order or 0
+            btn.Size             = UDim2.new(1,0,0,34)
+            btn.BackgroundColor3 = bg or Color3.fromRGB(50,50,65)
+            btn.BorderSizePixel  = 0
+            btn.Font             = Enum.Font.GothamBold
+            btn.Text             = text
+            btn.TextColor3       = Color3.new(1,1,1)
+            btn.TextSize         = 12
+            btn.AutoButtonColor  = false
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+            return btn
+        end
+        local function mkHalfRow(order)
+            local row = Instance.new("Frame", scroll)
+            row.LayoutOrder            = order
+            row.Size                   = UDim2.new(1,0,0,34)
+            row.BackgroundTransparency = 1
+            local rl = Instance.new("UIListLayout", row)
+            rl.FillDirection = Enum.FillDirection.Horizontal
+            rl.Padding       = UDim.new(0,6)
+            return row
+        end
+        local function mkSliderBtn(parent, symbol)
+            local b = Instance.new("TextButton", parent)
+            b.Size             = UDim2.new(0,28,1,0)
+            b.BackgroundColor3 = Color3.fromRGB(50,50,70)
+            b.BorderSizePixel  = 0
+            b.Font             = Enum.Font.GothamBold
+            b.Text             = symbol
+            b.TextColor3       = Color3.new(1,1,1)
+            b.TextSize         = 14
+            b.AutoButtonColor  = false
+            Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+            return b
+        end
+        local function mkSliderRow(order, label, getValue, getMax, onDelta, fillColor)
+            local lbl = Instance.new("TextLabel", scroll)
+            lbl.LayoutOrder            = order
+            lbl.Size                   = UDim2.new(1,0,0,16)
+            lbl.BackgroundTransparency = 1
+            lbl.Font                   = Enum.Font.GothamBold
+            lbl.Text                   = label()
+            lbl.TextColor3             = Color3.new(1,1,1)
+            lbl.TextSize               = 11
+            lbl.TextXAlignment         = Enum.TextXAlignment.Left
+            local row = Instance.new("Frame", scroll)
+            row.LayoutOrder            = order + 0.5
+            row.Size                   = UDim2.new(1,0,0,28)
+            row.BackgroundTransparency = 1
+            local rl = Instance.new("UIListLayout", row)
+            rl.FillDirection=Enum.FillDirection.Horizontal
+            rl.Padding=UDim.new(0,6)
+            rl.VerticalAlignment=Enum.VerticalAlignment.Center
+            local down = mkSliderBtn(row, "−")
+            local bar  = Instance.new("Frame", row)
+            bar.Size             = UDim2.new(1,-2*(28+6),1,0)
+            bar.BackgroundColor3 = Color3.fromRGB(30,30,45)
+            bar.BorderSizePixel  = 0
+            Instance.new("UICorner", bar).CornerRadius = UDim.new(0,6)
+            local fill = Instance.new("Frame", bar)
+            fill.Size             = UDim2.new(getValue()/getMax(),0,1,0)
+            fill.BackgroundColor3 = fillColor
+            fill.BorderSizePixel  = 0
+            Instance.new("UICorner", fill).CornerRadius = UDim.new(0,6)
+            local up = mkSliderBtn(row, "+")
+            local function refresh()
+                lbl.Text  = label()
+                fill.Size = UDim2.new(math.clamp(getValue()/getMax(),0,1),0,1,0)
+            end
+            down.MouseButton1Click:Connect(function() onDelta(-1); refresh() end)
+            up.MouseButton1Click:Connect(function()   onDelta(1);  refresh() end)
+            return refresh
+        end
+        sectionHeader("TOUCH SCANNER", 0)
+        local touchStatusLbl = Instance.new("TextLabel", scroll)
+        touchStatusLbl.LayoutOrder            = 1
+        touchStatusLbl.Size                   = UDim2.new(1,0,0,20)
+        touchStatusLbl.BackgroundTransparency = 1
+        touchStatusLbl.Font                   = Enum.Font.Code
+        touchStatusLbl.Text                   = "idle"
+        touchStatusLbl.TextColor3             = Color3.fromRGB(80,80,100)
+        touchStatusLbl.TextSize               = 10
+        touchStatusLbl.TextXAlignment         = Enum.TextXAlignment.Left
+        local touchRow = mkHalfRow(2)
+        local touchOnceBtn = Instance.new("TextButton", touchRow)
+        touchOnceBtn.Size             = UDim2.new(0.5,-3,1,0)
+        touchOnceBtn.BackgroundColor3 = Color3.fromRGB(50,80,120)
+        touchOnceBtn.BorderSizePixel  = 0
+        touchOnceBtn.Font             = Enum.Font.GothamBold
+        touchOnceBtn.Text             = "Touch Once"
+        touchOnceBtn.TextColor3       = Color3.new(1,1,1)
+        touchOnceBtn.TextSize         = 12
+        touchOnceBtn.AutoButtonColor  = false
+        Instance.new("UICorner", touchOnceBtn).CornerRadius = UDim.new(0,6)
+        local autoTouchActive = false
+        local autoTouchConn
+        local autoTouchedParts = {}
+        local autoTouchBtn = Instance.new("TextButton", touchRow)
+        autoTouchBtn.Size             = UDim2.new(0.5,-3,1,0)
+        autoTouchBtn.BackgroundColor3 = Color3.fromRGB(40,40,60)
+        autoTouchBtn.BorderSizePixel  = 0
+        autoTouchBtn.Font             = Enum.Font.GothamBold
+        autoTouchBtn.Text             = "Auto Touch: Off"
+        autoTouchBtn.TextColor3       = Color3.new(1,1,1)
+        autoTouchBtn.TextSize         = 12
+        autoTouchBtn.AutoButtonColor  = false
+        Instance.new("UICorner", autoTouchBtn).CornerRadius = UDim.new(0,6)
+        touchOnceBtn.MouseButton1Click:Connect(function()
+            touchStatusLbl.Text       = "touching all parts..."
+            touchStatusLbl.TextColor3 = Color3.fromRGB(100,200,100)
+            task.spawn(function()
+                touchAllParts()
+                touchStatusLbl.Text       = "done"
+                touchStatusLbl.TextColor3 = Color3.fromRGB(80,80,100)
+            end)
+        end)
+        autoTouchBtn.MouseButton1Click:Connect(function()
+            autoTouchActive = not autoTouchActive
+            autoTouchBtn.Text             = "Auto Touch: "..(autoTouchActive and "On" or "Off")
+            autoTouchBtn.BackgroundColor3 = autoTouchActive
+                and Color3.fromRGB(40,120,40) or Color3.fromRGB(40,40,60)
+            if autoTouchActive then
+                autoTouchConn = RunService.Heartbeat:Connect(function()
+                    local parts = scanUnanchored()
+                    for _, part in ipairs(parts) do
+                        if not autoTouchedParts[part] then
+                            autoTouchedParts[part] = true
+                            task.spawn(touchPart, part)
+                        end
+                    end
+                end)
+            else
+                if autoTouchConn then autoTouchConn:Disconnect(); autoTouchConn = nil end
+                autoTouchedParts = {}
+            end
+        end)
+        sectionHeader("NO COLLISION", 5)
+        local ncRow = mkHalfRow(6)
+        local ncPlayerBtn = Instance.new("TextButton", ncRow)
+        ncPlayerBtn.Size             = UDim2.new(0.5,-3,1,0)
+        ncPlayerBtn.BackgroundColor3 = Color3.fromRGB(40,40,60)
+        ncPlayerBtn.BorderSizePixel  = 0
+        ncPlayerBtn.Font             = Enum.Font.GothamBold
+        ncPlayerBtn.Text             = "Player: Off"
+        ncPlayerBtn.TextColor3       = Color3.new(1,1,1)
+        ncPlayerBtn.TextSize         = 12
+        ncPlayerBtn.AutoButtonColor  = false
+        Instance.new("UICorner", ncPlayerBtn).CornerRadius = UDim.new(0,6)
+        local ncPartsBtn = Instance.new("TextButton", ncRow)
+        ncPartsBtn.Size             = UDim2.new(0.5,-3,1,0)
+        ncPartsBtn.BackgroundColor3 = Color3.fromRGB(40,40,60)
+        ncPartsBtn.BorderSizePixel  = 0
+        ncPartsBtn.Font             = Enum.Font.GothamBold
+        ncPartsBtn.Text             = "Parts: Off"
+        ncPartsBtn.TextColor3       = Color3.new(1,1,1)
+        ncPartsBtn.TextSize         = 12
+        ncPartsBtn.AutoButtonColor  = false
+        Instance.new("UICorner", ncPartsBtn).CornerRadius = UDim.new(0,6)
+        ncPlayerBtn.MouseButton1Click:Connect(function()
+            noCollidePlayer = not noCollidePlayer
+            ncPlayerBtn.Text             = "Player: "..(noCollidePlayer and "On" or "Off")
+            ncPlayerBtn.BackgroundColor3 = noCollidePlayer
+                and Color3.fromRGB(60,20,120) or Color3.fromRGB(40,40,60)
+            if noCollidePlayer then startPlayerNoCollide() else stopPlayerNoCollide() end
+        end)
+        ncPartsBtn.MouseButton1Click:Connect(function()
+            noCollideParts = not noCollideParts
+            ncPartsBtn.Text             = "Parts: "..(noCollideParts and "On" or "Off")
+            ncPartsBtn.BackgroundColor3 = noCollideParts
+                and Color3.fromRGB(60,20,120) or Color3.fromRGB(40,40,60)
+            if noCollideParts then startPartsNoCollide() else stopPartsNoCollide() end
+        end)
+        sectionHeader("NETWORK CLAIM", 10)
+        local selLabel = Instance.new("TextLabel", scroll)
+        selLabel.LayoutOrder      = 11
+        selLabel.Name             = "SelectionLabel"
+        selLabel.Size             = UDim2.new(1,0,0,34)
+        selLabel.BackgroundColor3 = Color3.fromRGB(35,35,45)
+        selLabel.BorderSizePixel  = 0
+        selLabel.Font             = Enum.Font.GothamMedium
+        selLabel.Text             = "Click an object in-world to select"
+        selLabel.TextColor3       = Color3.fromRGB(200,200,200)
+        selLabel.TextSize         = 12
+        Instance.new("UICorner", selLabel).CornerRadius = UDim.new(0,6)
+        local methodRow = Instance.new("Frame", scroll)
+        methodRow.LayoutOrder           = 12
+        methodRow.Size                  = UDim2.new(1,0,0,46)
+        methodRow.BackgroundTransparency = 1
+        Instance.new("UIListLayout", methodRow).FillDirection = Enum.FillDirection.Horizontal
+        local methodBtns = {}
+        for _, m in ipairs({
+            {id="ownership", name="OWNERSHIP"},
+            {id="velocity",  name="VELOCITY"},
+            {id="cframe",    name="CFRAME"},
+        }) do
+            local col = Instance.new("Frame", methodRow)
+            col.Size               = UDim2.new(0.333,-4,1,0)
+            col.BackgroundTransparency = 1
+            local btn = Instance.new("TextButton", col)
+            btn.Size             = UDim2.new(1,0,0,30)
+            btn.BackgroundColor3 = m.id=="ownership"
+                and Color3.fromRGB(255,100,0) or Color3.fromRGB(50,50,65)
+            btn.BorderSizePixel  = 0
+            btn.Font             = Enum.Font.GothamSemibold
+            btn.Text             = m.name
+            btn.TextColor3       = Color3.new(1,1,1)
+            btn.TextSize         = 10
+            btn.AutoButtonColor  = false
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+            methodBtns[m.id] = btn
+            btn.MouseButton1Click:Connect(function()
+                NetworkClaim.Config.ClaimMethod = m.id
+                for id, b in pairs(methodBtns) do
+                    b.BackgroundColor3 = id==m.id
+                        and Color3.fromRGB(255,100,0) or Color3.fromRGB(50,50,65)
+                end
+            end)
+        end
+        local autoClaimBtn = mkBtn("AUTO-CLAIM: OFF", Color3.fromRGB(50,50,65), 13)
+        autoClaimBtn.MouseButton1Click:Connect(function()
+            NetworkClaim.State.AutoClaim = not NetworkClaim.State.AutoClaim
+            autoClaimBtn.Text             = "AUTO-CLAIM: "..(NetworkClaim.State.AutoClaim and "ON" or "OFF")
+            autoClaimBtn.BackgroundColor3 = NetworkClaim.State.AutoClaim
+                and Color3.fromRGB(0,200,100) or Color3.fromRGB(50,50,65)
+        end)
+        local claimBtn = mkBtn("CLAIM SELECTED", Color3.fromRGB(255,150,0), 14)
+        claimBtn.MouseButton1Click:Connect(function() NetworkClaim:ClaimSelected() end)
+        local hrRow = mkHalfRow(15)
+        local function mkHalfBtn(parent, text, bg)
+            local b = Instance.new("TextButton", parent)
+            b.Size             = UDim2.new(0.5,-3,1,0)
+            b.BackgroundColor3 = bg
+            b.BorderSizePixel  = 0
+            b.Font             = Enum.Font.GothamBold
+            b.Text             = text
+            b.TextColor3       = Color3.new(1,1,1)
+            b.TextSize         = 12
+            b.AutoButtonColor  = false
+            Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+            return b
+        end
+        local relBtn    = mkHalfBtn(hrRow, "RELEASE",     Color3.fromRGB(200,100,50))
+        local relAllBtn = mkHalfBtn(hrRow, "RELEASE ALL", Color3.fromRGB(255,50,100))
+        relBtn.MouseButton1Click:Connect(function()    NetworkClaim:ReleaseSelected() end)
+        relAllBtn.MouseButton1Click:Connect(function() NetworkClaim:ReleaseAll()      end)
+        local claimModelBtn = mkBtn("CLAIM ENTIRE MODEL",    Color3.fromRGB(150,80,200), 16)
+        local claimDescBtn  = mkBtn("CLAIM ALL DESCENDANTS", Color3.fromRGB(100,150,200),17)
+        claimModelBtn.MouseButton1Click:Connect(function() NetworkClaim:ClaimEntireModel()    end)
+        claimDescBtn.MouseButton1Click:Connect(function()  NetworkClaim:ClaimAllDescendants() end)
+        local claimAllBtn = mkBtn("⚡ CLAIM ALL WORKSPACE: OFF", Color3.fromRGB(30,60,30), 18)
+        do
+            local s2 = Instance.new("UIStroke", claimAllBtn)
+            s2.Color=Color3.fromRGB(0,220,80); s2.Thickness=1.5
+        end
+        local massCounter = Instance.new("TextLabel", scroll)
+        massCounter.LayoutOrder            = 19
+        massCounter.Size                   = UDim2.new(1,0,0,18)
+        massCounter.BackgroundTransparency = 1
+        massCounter.Font                   = Enum.Font.Code
+        massCounter.Text                   = ""
+        massCounter.TextColor3             = Color3.fromRGB(0,200,80)
+        massCounter.TextSize               = 10
+        massCounter.TextXAlignment         = Enum.TextXAlignment.Left
+        RunService.Heartbeat:Connect(function()
+            if massClaimActive then
+                local n = 0; for _ in pairs(MASS_CLAIMED) do n+=1 end
+                massCounter.Text = "holding: "..n.." workspace parts (triple-locked)"
+            else
+                massCounter.Text = ""
+            end
+        end)
+        claimAllBtn.MouseButton1Click:Connect(function()
+            NetworkClaim:ClaimAllWorkspace()
+            claimAllBtn.Text             = massClaimActive
+                and "⚡ CLAIM ALL WORKSPACE: ON" or "⚡ CLAIM ALL WORKSPACE: OFF"
+            claimAllBtn.BackgroundColor3 = massClaimActive
+                and Color3.fromRGB(0,100,30) or Color3.fromRGB(30,60,30)
+        end)
+        local claimedListLbl = Instance.new("TextLabel", scroll)
+        claimedListLbl.LayoutOrder          = 20
+        claimedListLbl.Size                 = UDim2.new(1,0,0,18)
+        claimedListLbl.BackgroundTransparency = 1
+        claimedListLbl.Font                 = Enum.Font.GothamBold
+        claimedListLbl.Text                 = "Claimed Objects:"
+        claimedListLbl.TextColor3           = Color3.new(1,1,1)
+        claimedListLbl.TextSize             = 12
+        claimedListLbl.TextXAlignment       = Enum.TextXAlignment.Left
+        local claimedList = Instance.new("ScrollingFrame", scroll)
+        claimedList.Name                = "ClaimedList"
+        claimedList.LayoutOrder         = 21
+        claimedList.Size                = UDim2.new(1,0,0,100)
+        claimedList.BackgroundColor3    = Color3.fromRGB(30,30,40)
+        claimedList.BorderSizePixel     = 0
+        claimedList.ScrollBarThickness  = 4
+        claimedList.ScrollBarImageColor3 = Color3.fromRGB(255,100,0)
+        claimedList.CanvasSize          = UDim2.fromOffset(0,0)
+        claimedList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        Instance.new("UICorner", claimedList).CornerRadius = UDim.new(0,6)
+        Instance.new("UIListLayout", claimedList).Padding = UDim.new(0,3)
+        sectionHeader("PART FLINGER", 30)
+        local flingerInputRow = Instance.new("Frame", scroll)
+        flingerInputRow.LayoutOrder           = 31
+        flingerInputRow.Size                  = UDim2.new(1,0,0,32)
+        flingerInputRow.BackgroundTransparency = 1
+        local filRL = Instance.new("UIListLayout", flingerInputRow)
+        filRL.FillDirection=Enum.FillDirection.Horizontal; filRL.Padding=UDim.new(0,6)
+        local inputBox = Instance.new("TextBox", flingerInputRow)
+        inputBox.Size              = UDim2.new(1,-80,1,0)
+        inputBox.BackgroundColor3  = Color3.fromRGB(24,24,35)
+        inputBox.BorderSizePixel   = 0
+        inputBox.PlaceholderText   = "player name..."
+        inputBox.PlaceholderColor3 = Color3.fromRGB(65,65,80)
+        inputBox.Text              = ""
+        inputBox.TextColor3        = Color3.fromRGB(210,210,210)
+        inputBox.TextSize          = 13
+        inputBox.Font              = Enum.Font.Code
+        inputBox.ClearTextOnFocus  = false
+        Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0,6)
+        local iStroke = Instance.new("UIStroke", inputBox)
+        iStroke.Color=Color3.fromRGB(60,60,80); iStroke.Thickness=1
+        local modeBtn = Instance.new("TextButton", flingerInputRow)
+        modeBtn.Size             = UDim2.new(0,74,1,0)
+        modeBtn.BackgroundColor3 = Color3.fromRGB(50,50,70)
+        modeBtn.BorderSizePixel  = 0
+        modeBtn.Font             = Enum.Font.GothamBold
+        modeBtn.Text             = "Players"
+        modeBtn.TextColor3       = Color3.fromRGB(200,200,200)
+        modeBtn.TextSize         = 12
+        modeBtn.AutoButtonColor  = false
+        Instance.new("UICorner", modeBtn).CornerRadius = UDim.new(0,6)
+        local bsRow = mkHalfRow(32)
+        local bringBtn = mkHalfBtn(bsRow, "Bring: Off", Color3.fromRGB(50,50,70))
+        local spectateBtn = mkHalfBtn(bsRow, "Spectate: Off", Color3.fromRGB(50,50,70))
+        local flingerStatus = Instance.new("TextLabel", scroll)
+        flingerStatus.LayoutOrder            = 33
+        flingerStatus.Size                   = UDim2.new(1,0,0,26)
+        flingerStatus.BackgroundColor3       = Color3.fromRGB(20,20,30)
+        flingerStatus.BackgroundTransparency = 0.1
+        flingerStatus.BorderSizePixel        = 0
+        flingerStatus.Font                   = Enum.Font.Code
+        flingerStatus.Text                   = "idle"
+        flingerStatus.TextColor3             = Color3.fromRGB(80,80,100)
+        flingerStatus.TextSize               = 11
+        flingerStatus.TextXAlignment         = Enum.TextXAlignment.Left
+        Instance.new("UICorner", flingerStatus).CornerRadius = UDim.new(0,6)
+        local fsPad = Instance.new("UIPadding", flingerStatus)
+        fsPad.PaddingLeft = UDim.new(0,8)
+        local partsCounter = Instance.new("TextLabel", scroll)
+        partsCounter.LayoutOrder           = 34
+        partsCounter.Size                  = UDim2.new(1,0,0,18)
+        partsCounter.BackgroundTransparency = 1
+        partsCounter.Font                  = Enum.Font.Code
+        partsCounter.Text                  = ""
+        partsCounter.TextColor3            = Color3.fromRGB(80,80,100)
+        partsCounter.TextSize              = 10
+        partsCounter.TextXAlignment        = Enum.TextXAlignment.Left
+        RunService.Heartbeat:Connect(function()
+            if BH.blackHoleActive then
+                local n=0; for _ in pairs(BH.TARGET_PARTS) do n+=1 end
+                partsCounter.Text = "parts claimed: "..n
+            else partsCounter.Text = "" end
+        end)
+        local velLabel = Instance.new("TextLabel", scroll)
+        velLabel.LayoutOrder=35; velLabel.Size=UDim2.new(1,0,0,16)
+        velLabel.BackgroundTransparency=1; velLabel.Font=Enum.Font.GothamBold
+        velLabel.Text="Velocity: "..BH.CONFIG.VELOCITY; velLabel.TextColor3=Color3.new(1,1,1)
+        velLabel.TextSize=11; velLabel.TextXAlignment=Enum.TextXAlignment.Left
+        local velRow=Instance.new("Frame",scroll)
+        velRow.LayoutOrder=36; velRow.Size=UDim2.new(1,0,0,28); velRow.BackgroundTransparency=1
+        local vRL=Instance.new("UIListLayout",velRow)
+        vRL.FillDirection=Enum.FillDirection.Horizontal; vRL.Padding=UDim.new(0,6)
+        vRL.VerticalAlignment=Enum.VerticalAlignment.Center
+        local vD1=mkSliderBtn(velRow,"−"); local vD10=mkSliderBtn(velRow,"−−")
+        local vBar=Instance.new("Frame",velRow)
+        vBar.Size=UDim2.new(1,-4*(28+6),1,0); vBar.BackgroundColor3=Color3.fromRGB(30,30,45)
+        vBar.BorderSizePixel=0; Instance.new("UICorner",vBar).CornerRadius=UDim.new(0,6)
+        local vFill=Instance.new("Frame",vBar)
+        vFill.Size=UDim2.new(BH.CONFIG.VELOCITY/5000,0,1,0)
+        vFill.BackgroundColor3=Color3.fromRGB(255,100,0); vFill.BorderSizePixel=0
+        Instance.new("UICorner",vFill).CornerRadius=UDim.new(0,6)
+        local vU10=mkSliderBtn(velRow,"++"); local vU1=mkSliderBtn(velRow,"+")
+        local function updateVel(d)
+            BH.CONFIG.VELOCITY=math.clamp(BH.CONFIG.VELOCITY+d,50,5000)
+            velLabel.Text="Velocity: "..BH.CONFIG.VELOCITY
+            vFill.Size=UDim2.new(BH.CONFIG.VELOCITY/5000,0,1,0)
+        end
+        vD1.MouseButton1Click:Connect(function()  updateVel(-100) end)
+        vD10.MouseButton1Click:Connect(function() updateVel(-500) end)
+        vU1.MouseButton1Click:Connect(function()  updateVel(100)  end)
+        vU10.MouseButton1Click:Connect(function() updateVel(500)  end)
+        local function setFlingerStatus(msg, color)
+            flingerStatus.Text       = msg
+            flingerStatus.TextColor3 = color or Color3.fromRGB(80,80,100)
+        end
+        local function setBHTarget(plr)
+            BH.sendTarget = plr
+            if plr then
+                setFlingerStatus("→ "..plr.Name.." ("..plr.DisplayName..")", Color3.fromRGB(200,80,80))
+            else setFlingerStatus("idle") end
+        end
+        local function stopBlackhole()
+            BH.blackHoleActive = false
+            bringBtn.Text             = "Bring: Off"
+            bringBtn.BackgroundColor3 = Color3.fromRGB(50,50,70)
+            if BH.DescendantAddedConn then BH.DescendantAddedConn:Disconnect(); BH.DescendantAddedConn=nil end
+            if BH.cycleConnection     then BH.cycleConnection:Disconnect();     BH.cycleConnection=nil     end
+            for part in pairs(BH.TARGET_PARTS) do bhReleasePart(part) end
+        end
+        local function startBlackhole()
+            if not BH.sendTarget then return end
+            task.spawn(function()
+                touchAllParts()
+                BH.blackHoleActive = true
+                bringBtn.Text             = "Bring: On"
+                bringBtn.BackgroundColor3 = Color3.fromRGB(160,35,35)
+                local tc    = BH.sendTarget.Character
+                local tRoot = tc and tc:FindFirstChild("HumanoidRootPart")
+                if tRoot then _bhAttachment.WorldCFrame = tRoot.CFrame end
+                for _, v in ipairs(Workspace:GetDescendants()) do bhForcePart(v) end
+                BH.DescendantAddedConn = Workspace.DescendantAdded:Connect(function(v)
+                    if BH.blackHoleActive then
+                        task.spawn(touchPart, v)
+                        task.spawn(bhForcePart, v)
+                    end
+                end)
+                if BH.targetMode == "All" then
+                    BH.cycleConnection = RunService.Heartbeat:Connect(function()
+                        local now = tick()
+                        if now - BH.cycleLastSwap >= 3 then
+                            BH.cycleLastSwap = now
+                            local players = bhGetValidPlayers()
+                            if #players > 0 then
+                                BH.cycleIndex = (BH.cycleIndex % #players) + 1
+                                setBHTarget(players[BH.cycleIndex])
+                            end
+                        end
+                    end)
+                end
+            end)
+        end
+        local function toggleSpectate()
+            if not BH.sendTarget then return end
+            BH.spectateActive = not BH.spectateActive
+            spectateBtn.Text             = BH.spectateActive and "Spectate: On" or "Spectate: Off"
+            spectateBtn.BackgroundColor3 = BH.spectateActive
+                and Color3.fromRGB(40,80,140) or Color3.fromRGB(50,50,70)
+            if BH.spectateActive then
+                bhStartSpectating()
+                if BH.spectateMonitorConn then BH.spectateMonitorConn:Disconnect() end
+                BH.spectateMonitorConn = RunService.Heartbeat:Connect(function()
+                    if not BH.spectateActive then BH.spectateMonitorConn:Disconnect(); return end
+                    if not bhIsTargetValid(BH.sendTarget) then
+                        bhStopSpectating(); BH.spectateActive=false
+                        spectateBtn.Text="Spectate: Off"
+                        spectateBtn.BackgroundColor3=Color3.fromRGB(50,50,70)
+                    elseif Workspace.CurrentCamera.CameraSubject
+                        ~= BH.sendTarget.Character:FindFirstChildOfClass("Humanoid") then
+                        bhStartSpectating()
+                    end
+                end)
+            else
+                bhStopSpectating()
+                if BH.spectateMonitorConn then BH.spectateMonitorConn:Disconnect(); BH.spectateMonitorConn=nil end
+            end
+        end
+        bringBtn.MouseButton1Click:Connect(function()
+            if BH.blackHoleActive then stopBlackhole(); return end
+            if BH.targetMode == "Players" then
+                local p = bhGetPlayer(inputBox.Text)
+                if not p then setFlingerStatus("not found: "..inputBox.Text, Color3.fromRGB(200,80,80)); return end
+                setBHTarget(p)
+            else
+                local players = bhGetValidPlayers()
+                if #players == 0 then setFlingerStatus("no valid players", Color3.fromRGB(200,80,80)); return end
+                setBHTarget(players[1])
+            end
+            startBlackhole()
+        end)
+        spectateBtn.MouseButton1Click:Connect(toggleSpectate)
+        modeBtn.MouseButton1Click:Connect(function()
+            BH.targetMode = BH.targetMode=="Players" and "All" or "Players"
+            modeBtn.Text     = BH.targetMode
+            inputBox.Visible = BH.targetMode=="Players"
+            if BH.blackHoleActive then
+                stopBlackhole()
+                if BH.targetMode=="All" then
+                    local players = bhGetValidPlayers()
+                    if #players>0 then setBHTarget(players[1]); startBlackhole() end
+                end
+            end
+        end)
+        inputBox.FocusLost:Connect(function(enter)
+            if not enter then return end
+            local p = bhGetPlayer(inputBox.Text)
+            if p then
+                inputBox.Text = p.Name
+                if not BH.blackHoleActive then setBHTarget(p) end
+            else
+                setFlingerStatus("not found: "..inputBox.Text, Color3.fromRGB(200,80,80))
+            end
+        end)
+        Players.PlayerRemoving:Connect(function(p)
+            if p ~= BH.sendTarget then return end
+            if BH.spectateActive then
+                bhStopSpectating(); BH.spectateActive=false
+                spectateBtn.Text="Spectate: Off"
+                spectateBtn.BackgroundColor3=Color3.fromRGB(50,50,70)
+            end
+            if BH.blackHoleActive and BH.targetMode=="All" then
+                local players=bhGetValidPlayers()
+                if #players>0 then setBHTarget(players[1])
+                else stopBlackhole(); setFlingerStatus("no players left") end
+            elseif BH.blackHoleActive then
+                stopBlackhole(); setFlingerStatus("target left")
+            else setBHTarget(nil) end
+        end)
+        sectionHeader("ORBIT SHIELD", 50)
+        local orbitBtn = mkBtn("ORBIT SHIELD: OFF", Color3.fromRGB(50,50,70), 51)
+        mkSliderRow(52,
+            function() return "Radius: "..BH.ORBIT.Radius.." st" end,
+            function() return BH.ORBIT.Radius end,
+            function() return 50 end,
+            function(d) BH.ORBIT.Radius=math.clamp(BH.ORBIT.Radius+d,2,50) end,
+            Color3.fromRGB(180,80,255))
+        mkSliderRow(54,
+            function() return "Speed: "..BH.ORBIT.Speed.."x" end,
+            function() return BH.ORBIT.Speed end,
+            function() return 20 end,
+            function(d) BH.ORBIT.Speed=math.clamp(BH.ORBIT.Speed+d*0.5,0.5,20) end,
+            Color3.fromRGB(255,200,0))
+        local orbitCountLbl = Instance.new("TextLabel", scroll)
+        orbitCountLbl.LayoutOrder=56; orbitCountLbl.Size=UDim2.new(1,0,0,16)
+        orbitCountLbl.BackgroundTransparency=1; orbitCountLbl.Font=Enum.Font.Code
+        orbitCountLbl.Text=""; orbitCountLbl.TextColor3=Color3.fromRGB(80,80,100)
+        orbitCountLbl.TextSize=10; orbitCountLbl.TextXAlignment=Enum.TextXAlignment.Left
+        RunService.Heartbeat:Connect(function()
+            orbitCountLbl.Text = BH.ORBIT.Active
+                and ("orbiting: "..#BH.ORBIT.Parts.." parts") or ""
+        end)
+        orbitBtn.MouseButton1Click:Connect(function()
+            if BH.ORBIT.Active then
+                orbitStop()
+                orbitBtn.Text="ORBIT SHIELD: OFF"; orbitBtn.BackgroundColor3=Color3.fromRGB(50,50,70)
+            else
+                orbitStart()
+                orbitBtn.Text="ORBIT SHIELD: ON"; orbitBtn.BackgroundColor3=Color3.fromRGB(120,40,200)
+            end
+        end)
+        sectionHeader("MISSILE PART", 60)
+        local missilePartLbl = Instance.new("TextLabel", scroll)
+        missilePartLbl.LayoutOrder      = 61
+        missilePartLbl.Name             = "MissilePartLabel"
+        missilePartLbl.Size             = UDim2.new(1,0,0,30)
+        missilePartLbl.BackgroundColor3 = Color3.fromRGB(35,20,20)
+        missilePartLbl.BorderSizePixel  = 0
+        missilePartLbl.Font             = Enum.Font.Code
+        missilePartLbl.Text             = "no part selected"
+        missilePartLbl.TextColor3       = Color3.fromRGB(150,150,150)
+        missilePartLbl.TextSize         = 11
+        missilePartLbl.TextXAlignment   = Enum.TextXAlignment.Left
+        Instance.new("UICorner", missilePartLbl).CornerRadius = UDim.new(0,6)
+        local mlPad=Instance.new("UIPadding",missilePartLbl); mlPad.PaddingLeft=UDim.new(0,8)
+        local missileLaunchBtn
+        local setMissileBtn = mkBtn("SET AS MISSILE PART", Color3.fromRGB(160,40,40), 62)
+        setMissileBtn.MouseButton1Click:Connect(function()
+            local sel  = NetworkClaim.State.SelectedObject
+            local part = nil
+            if sel then
+                if sel:IsA("BasePart") then part = sel
+                elseif sel:IsA("Model") then
+                    part = sel:FindFirstChildOfClass("BasePart") or sel.PrimaryPart
+                end
+            end
+            if not part then
+                missilePartLbl.Text="select a BasePart first"
+                missilePartLbl.TextColor3=Color3.fromRGB(255,80,80); return
+            end
+            if BH.MISSILE.Active then
+                missileStop()
+                missileLaunchBtn.Text="LAUNCH: OFF"
+                missileLaunchBtn.BackgroundColor3=Color3.fromRGB(120,30,30)
+            end
+            missileSetPart(part)
+            missilePartLbl.Text="missile: "..part.Name
+            missilePartLbl.TextColor3=Color3.fromRGB(255,100,60)
+        end)
+        local missileClearBtn = mkBtn("CLEAR MISSILE PART", Color3.fromRGB(60,30,30), 63)
+        missileClearBtn.MouseButton1Click:Connect(function()
+            if BH.MISSILE.Active then
+                missileStop()
+                missileLaunchBtn.Text="LAUNCH: OFF"
+                missileLaunchBtn.BackgroundColor3=Color3.fromRGB(120,30,30)
+            end
+            missileSetPart(nil)
+            missilePartLbl.Text="no part selected"
+            missilePartLbl.TextColor3=Color3.fromRGB(150,150,150)
+        end)
+        local mfLbl=Instance.new("TextLabel",scroll)
+        mfLbl.LayoutOrder=64; mfLbl.Size=UDim2.new(1,0,0,16)
+        mfLbl.BackgroundTransparency=1; mfLbl.Font=Enum.Font.GothamBold
+        mfLbl.Text="Force: "..BH.MISSILE.Force; mfLbl.TextColor3=Color3.new(1,1,1)
+        mfLbl.TextSize=11; mfLbl.TextXAlignment=Enum.TextXAlignment.Left
+        local mfRow=Instance.new("Frame",scroll)
+        mfRow.LayoutOrder=65; mfRow.Size=UDim2.new(1,0,0,28); mfRow.BackgroundTransparency=1
+        local mfRL=Instance.new("UIListLayout",mfRow)
+        mfRL.FillDirection=Enum.FillDirection.Horizontal; mfRL.Padding=UDim.new(0,6)
+        mfRL.VerticalAlignment=Enum.VerticalAlignment.Center
+        local mfD1=mkSliderBtn(mfRow,"−"); local mfD10=mkSliderBtn(mfRow,"−−")
+        local mfBar=Instance.new("Frame",mfRow)
+        mfBar.Size=UDim2.new(1,-4*(28+6),1,0); mfBar.BackgroundColor3=Color3.fromRGB(30,30,45)
+        mfBar.BorderSizePixel=0; Instance.new("UICorner",mfBar).CornerRadius=UDim.new(0,6)
+        local MAX_MF=5e6
+        local mfFill=Instance.new("Frame",mfBar)
+        mfFill.Size=UDim2.new(BH.MISSILE.Force/MAX_MF,0,1,0)
+        mfFill.BackgroundColor3=Color3.fromRGB(255,80,40); mfFill.BorderSizePixel=0
+        Instance.new("UICorner",mfFill).CornerRadius=UDim.new(0,6)
+        local mfU10=mkSliderBtn(mfRow,"++"); local mfU1=mkSliderBtn(mfRow,"+")
+        local function updateMF(d)
+            BH.MISSILE.Force=math.clamp(BH.MISSILE.Force+d,1e4,MAX_MF)
+            mfLbl.Text="Force: "..string.format("%.0f",BH.MISSILE.Force)
+            mfFill.Size=UDim2.new(BH.MISSILE.Force/MAX_MF,0,1,0)
+        end
+        mfD1.MouseButton1Click:Connect(function()  updateMF(-1e5) end)
+        mfD10.MouseButton1Click:Connect(function() updateMF(-5e5) end)
+        mfU1.MouseButton1Click:Connect(function()  updateMF(1e5)  end)
+        mfU10.MouseButton1Click:Connect(function() updateMF(5e5)  end)
+        missileLaunchBtn = mkBtn("LAUNCH: OFF", Color3.fromRGB(120,30,30), 66)
+        missileLaunchBtn.MouseButton1Click:Connect(function()
+            if BH.MISSILE.Active then
+                missileStop()
+                missileLaunchBtn.Text="LAUNCH: OFF"
+                missileLaunchBtn.BackgroundColor3=Color3.fromRGB(120,30,30)
+            else
+                if not BH.MISSILE.Part or not BH.MISSILE.Part.Parent then
+                    missilePartLbl.Text="set a missile part first"
+                    missilePartLbl.TextColor3=Color3.fromRGB(255,80,80); return
+                end
+                if not BH.sendTarget then
+                    missilePartLbl.Text="set a target in PART FLINGER first"
+                    missilePartLbl.TextColor3=Color3.fromRGB(255,80,80); return
+                end
+                missileStart()
+                missileLaunchBtn.Text="LAUNCH: ON  🔴"
+                missileLaunchBtn.BackgroundColor3=Color3.fromRGB(220,40,40)
+                task.spawn(function()
+                    while BH.MISSILE.Active do task.wait(0.5) end
+                    missileLaunchBtn.Text="LAUNCH: OFF"
+                    missileLaunchBtn.BackgroundColor3=Color3.fromRGB(120,30,30)
+                end)
+            end
+        end)
+        local guiVisible = true
+        UserInputService.InputBegan:Connect(function(input, gpe)
+            if gpe then return end
+            if input.KeyCode == Enum.KeyCode.RightControl then
+                guiVisible = not guiVisible
+                TweenService:Create(mainFrame, TweenInfo.new(0.25),
+                    {BackgroundTransparency = guiVisible and 0 or 1}):Play()
+                for _, child in ipairs(mainFrame:GetDescendants()) do
+                    if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+                        TweenService:Create(child, TweenInfo.new(0.25), {
+                            TextTransparency       = guiVisible and 0 or 1,
+                            BackgroundTransparency = guiVisible and 0 or 1,
+                        }):Play()
+                    end
+                end
+                mainFrame.Active = guiVisible
+            end
+        end)
+        screenGui.Parent = CoreGui
+        self.State.Connections.MouseClick = UserInputService.InputBegan:Connect(function(input, gp)
+            if gp then return end
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                local target = LocalPlayer:GetMouse().Target
+                if target then
+                    local obj = target:IsA("Model") and target or target.Parent
+                    if obj and (obj:IsA("Model") or obj:IsA("BasePart")) then
+                        self:SelectObject(obj)
+                        if self.State.AutoClaim then
+                            task.wait(0.1)
+                            self:ClaimSelected()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+    function NetworkClaim:Enable()
+        if self.State.IsEnabled then return end
+        self.State.IsEnabled = true
+        self:_createUI()
+        print("✓ PartFlingerV2 enabled — RightControl to hide/show")
+    end
+    function NetworkClaim:Disable()
+        if not self.State.IsEnabled then return end
+        self:ReleaseAll()
+        self.State.IsEnabled = false
+        if self.State.SelectedObject then
+            local sel = self.State.SelectedObject:FindFirstChild("NetworkClaim_Selection")
+            if sel then sel:Destroy() end
+        end
+        for _, conn in pairs(self.State.Connections) do
+            if conn then conn:Disconnect() end
+        end
+        table.clear(self.State.Connections)
+        if BH.blackHoleActive then
+            BH.blackHoleActive = false
+            for part in pairs(BH.TARGET_PARTS) do bhReleasePart(part) end
+        end
+        if BH.ORBIT.Active   then orbitStop()   end
+        if BH.MISSILE.Active then missileStop() end
+        if massClaimActive then
+            massClaimActive = false
+            for part in pairs(MASS_CLAIMED) do tripleReleasePart(part) end
+        end
+        if self.State._massAddedConn then
+            self.State._massAddedConn:Disconnect()
+            self.State._massAddedConn = nil
+        end
+        stopPlayerNoCollide()
+        stopPartsNoCollide()
+        if self.State.UI then
+            self.State.UI:Destroy()
+            self.State.UI = nil
+        end
+        self.State.SelectedObject = nil
+        print("✓ PartFlingerV2 disabled")
+    end
+    function NetworkClaim:Toggle()
+        if self.State.IsEnabled then self:Disable() else self:Enable() end
+    end
+    getgenv().PartFlingerV2_Module = NetworkClaim
+    NetworkClaim:Enable()
+end)
 Modules.AdonisPanel = {
     State = {
         Visible         = false,
@@ -19207,7 +20940,7 @@ Modules.AdonisPanel = {
         Size        = Vector2.new(510, 283),
         Position    = UDim2.new(0.5, -732, 0.5, 97),
         ToggleKey   = Enum.KeyCode.Semicolon,
-        FontSize    = 12,
+        FontSize    = 13,
         Opacity     = 0,
         MinSize     = Vector2.new(510, 280),
     }
@@ -19492,7 +21225,7 @@ function Modules.AdonisPanel:_build()
     corner(6, win)
     stroke(1, T.Border, win)
     local titleBar = make("Frame", {
-        Size=UDim2.new(1,0,0,26), BackgroundColor3=T.TitleBar, BorderSizePixel=0, ZIndex=3,
+        Size=UDim2.new(1,0,0,26), BackgroundColor3=T.TitleBar, BorderSizePixel=1, ZIndex=3,
     }, win)
     corner(6, titleBar)
     make("Frame", {
@@ -19511,13 +21244,13 @@ function Modules.AdonisPanel:_build()
         Text="X", TextColor3=Color3.fromRGB(220,220,220),
         Font=Enum.Font.Cartoon, TextSize=18, ZIndex=5,
     }, titleBar)
-    corner(4, closeBtn)
+    corner(0, closeBtn)
     local minBtn = make("TextButton", {
         Size=UDim2.fromOffset(30,20), Position=UDim2.new(1,-70,0,3),
         BackgroundColor3=Color3.fromRGB(0,0,0), BackgroundTransparency=0.5, BorderSizePixel=0,
         Text="-", TextColor3=T.Text, Font=Enum.Font.ArialBold, TextSize=14, ZIndex=5,
     }, titleBar)
-    corner(4, minBtn)
+    corner(0, minBtn)
     local tabRow = make("Frame", {
         Size=UDim2.new(1,0,0,26), Position=UDim2.new(0,0,0,26),
         BackgroundColor3=Color3.fromRGB(20,20,20), BorderSizePixel=0, ZIndex=3,
@@ -19555,7 +21288,7 @@ function Modules.AdonisPanel:_build()
         Size=UDim2.new(1,-10,0,28), Position=UDim2.new(0,5,1,-38),
         BackgroundColor3=T.InputBg, BorderSizePixel=0, ZIndex=3,
     }, termPage)
-    corner(4, inputBar)
+    corner(0, inputBar)
     stroke(1, Color3.fromRGB(50,50,50), inputBar)
     make("TextLabel", {
         Size=UDim2.fromOffset(20,28), BackgroundTransparency=1,
@@ -19581,7 +21314,7 @@ function Modules.AdonisPanel:_build()
         TextColor3=T.Text, Font=Enum.Font.SourceSans,
         TextSize=14, ClearTextOnFocus=false, ZIndex=3,
     }, cmdPage)
-    corner(4, searchBox)
+    corner(0, searchBox)
     make("UIPadding", {PaddingLeft=UDim.new(0,6)}, searchBox)
     local cmdScroll = scrollFrame({
         Size=UDim2.new(1,-10,1,-38), Position=UDim2.new(0,5,0,33), Corner=4,
@@ -19601,20 +21334,20 @@ function Modules.AdonisPanel:_build()
         PlaceholderText="Search logs...", PlaceholderColor3=T.SubText,
         TextColor3=T.Text, Font=Enum.Font.SourceSans, TextSize=14, ClearTextOnFocus=false, ZIndex=3,
     }, logsPage)
-    corner(4, logSearch)
+    corner(0, logSearch)
     make("UIPadding", {PaddingLeft=UDim.new(0,6)}, logSearch)
     local logClearBtn = make("TextButton", {
         Size=UDim2.fromOffset(55,24), Position=UDim2.new(1,-60,0,5),
         BackgroundColor3=T.Red, BackgroundTransparency=0.4, BorderSizePixel=0,
         Text="Clear", TextColor3=T.Text, Font=Enum.Font.SourceSansBold, TextSize=12, ZIndex=3,
     }, logsPage)
-    corner(4, logClearBtn)
+    corner(0, logClearBtn)
     local tsBtn = make("TextButton", {
         Size=UDim2.fromOffset(52,24), Position=UDim2.new(1,-118,0,5),
         BackgroundColor3=Color3.fromRGB(50,50,50), BackgroundTransparency=0.4, BorderSizePixel=0,
         Text="[ts off]", TextColor3=T.SubText, Font=Enum.Font.SourceSans, TextSize=11, ZIndex=3,
     }, logsPage)
-    corner(4, tsBtn)
+    corner(0, tsBtn)
     tsBtn.MouseButton1Click:Connect(function()
         self.State.ShowTimestamps = not self.State.ShowTimestamps
         tsBtn.Text = self.State.ShowTimestamps and "[ts on]" or "[ts off]"
@@ -19634,7 +21367,7 @@ function Modules.AdonisPanel:_build()
         Size=UDim2.new(1,-10,0,32), Position=UDim2.new(0,5,1,-37),
         BackgroundColor3=T.InputBg, BorderSizePixel=0, ZIndex=3,
     }, macroPage)
-    corner(4, macroAddBar)
+    corner(0, macroAddBar)
     stroke(1, Color3.fromRGB(50,50,50), macroAddBar)
     local aliasInput = make("TextBox", {
         Size=UDim2.new(0.25,0,1,0), BackgroundTransparency=1,
@@ -19658,7 +21391,7 @@ function Modules.AdonisPanel:_build()
         BackgroundColor3=T.Green, BackgroundTransparency=0.3, BorderSizePixel=0,
         Text="+", TextColor3=T.Text, Font=Enum.Font.SourceSansBold, TextSize=18, ZIndex=4,
     }, macroAddBar)
-    corner(4, macroAddBtn)
+    corner(0, macroAddBtn)
     local scriptPage = make("Frame", {
         Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, BorderSizePixel=0, Visible=false, ZIndex=2,
     }, content)
@@ -19671,25 +21404,25 @@ function Modules.AdonisPanel:_build()
         Text="New", TextColor3=T.Text,
         Font=Enum.Font.SourceSans, TextSize=13, ZIndex=4,
     }, scriptBar)
-    corner(4, snippetDropLabel)
+    corner(0, snippetDropLabel)
     local saveBtn = make("TextButton", {
         Size=UDim2.fromOffset(52,24), Position=UDim2.fromOffset(130,3),
         BackgroundColor3=T.Blue, BackgroundTransparency=0.3, BorderSizePixel=0,
         Text="Save", TextColor3=T.Text, Font=Enum.Font.SourceSansBold, TextSize=13, ZIndex=4,
     }, scriptBar)
-    corner(4, saveBtn)
+    corner(0, saveBtn)
     local runBtn = make("TextButton", {
         Size=UDim2.fromOffset(52,24), Position=UDim2.fromOffset(186,3),
         BackgroundColor3=T.Green, BackgroundTransparency=0.3, BorderSizePixel=0,
         Text="Run", TextColor3=T.Text, Font=Enum.Font.SourceSansBold, TextSize=13, ZIndex=4,
     }, scriptBar)
-    corner(4, runBtn)
+    corner(0, runBtn)
     local clearScriptBtn = make("TextButton", {
         Size=UDim2.fromOffset(44,24), Position=UDim2.fromOffset(242,3),
         BackgroundColor3=T.Red, BackgroundTransparency=0.4, BorderSizePixel=0,
         Text="Clear", TextColor3=T.Text, Font=Enum.Font.SourceSans, TextSize=12, ZIndex=4,
     }, scriptBar)
-    corner(4, clearScriptBtn)
+    corner(0, clearScriptBtn)
     local snippetPanel = make("ScrollingFrame", {
         Size=UDim2.new(0,110,1,-30), Position=UDim2.fromOffset(0,30),
         BackgroundColor3=Color3.fromRGB(20,20,20), BorderSizePixel=0,
@@ -19861,7 +21594,7 @@ function Modules.AdonisPanel:_build()
             BackgroundColor3=Color3.fromRGB(28,28,28), BackgroundTransparency=0.25,
             BorderSizePixel=0, ZIndex=3,
         }, settingsScroll)
-        corner(4, row)
+        corner(0, row)
         make("TextLabel", {
             Size=UDim2.new(0.5,0,1,0), Position=UDim2.fromOffset(8,0),
             BackgroundTransparency=1, Text=label, TextColor3=T.Text,
@@ -19905,7 +21638,7 @@ function Modules.AdonisPanel:_build()
         TextColor3=T.Accent, Font=Enum.Font.SourceSansBold,
         TextSize=13, ClearTextOnFocus=false, ZIndex=5,
     }, keyRow)
-    corner(4, keyBox)
+    corner(0, keyBox)
     keyBox.FocusLost:Connect(function()
         local key = Enum.KeyCode[keyBox.Text]
         if key then
@@ -20003,7 +21736,7 @@ function Modules.AdonisPanel:_build()
         PlaceholderColor3=T.SubText, TextColor3=T.Text,
         Font=Enum.Font.SourceSans, TextSize=13, ClearTextOnFocus=false, ZIndex=4,
     }, decompBar)
-    corner(4, decompTargetBox)
+    corner(0, decompTargetBox)
     make("UIPadding", {PaddingLeft=UDim.new(0,6)}, decompTargetBox)
     local decompRunBtn = make("TextButton", {
         Size=UDim2.fromOffset(80,24), Position=UDim2.new(1,-193,0,3),
@@ -20011,21 +21744,21 @@ function Modules.AdonisPanel:_build()
         Text="Build", TextColor3=T.Text,
         Font=Enum.Font.SourceSansBold, TextSize=10, ZIndex=4,
     }, decompBar)
-    corner(4, decompRunBtn)
+    corner(0, decompRunBtn)
     local decompCopyBtn = make("TextButton", {
         Size=UDim2.fromOffset(52,24), Position=UDim2.new(1,-108,0,3),
         BackgroundColor3=T.Blue, BackgroundTransparency=0.3, BorderSizePixel=0,
         Text="Copy", TextColor3=T.Text,
         Font=Enum.Font.SourceSansBold, TextSize=12, ZIndex=4,
     }, decompBar)
-    corner(4, decompCopyBtn)
+    corner(0, decompCopyBtn)
     local decompClearBtn = make("TextButton", {
         Size=UDim2.fromOffset(52,24), Position=UDim2.new(1,-52,0,3),
         BackgroundColor3=T.Red, BackgroundTransparency=0.4, BorderSizePixel=0,
         Text="Clear", TextColor3=T.Text,
         Font=Enum.Font.SourceSans, TextSize=12, ZIndex=4,
     }, decompBar)
-    corner(4, decompClearBtn)
+    corner(0, decompClearBtn)
     local decompModeRow = make("Frame", {
         Size=UDim2.new(1,0,0,22), Position=UDim2.fromOffset(0,30),
         BackgroundColor3=Color3.fromRGB(18,18,18), BorderSizePixel=0, ZIndex=3,
@@ -20288,7 +22021,7 @@ end
             Font=Enum.Font.SourceSansBold, TextSize=11,
             LayoutOrder=i, ZIndex=4,
         }, tabRow)
-        corner(4, btn)
+        corner(0, btn)
         tab.Btn = btn
         btn.MouseButton1Click:Connect(function() setTab(tab) end)
     end
@@ -20572,7 +22305,7 @@ function Modules.AdonisPanel:_populatePlayers()
             BackgroundColor3=isLocal and Color3.fromRGB(30,40,30) or Color3.fromRGB(30,30,30),
             BackgroundTransparency=0.3, BorderSizePixel=0, LayoutOrder=i, ZIndex=2,
         }, self.State.PlrScroll)
-        corner(4, row)
+        corner(0, row)
         local thumb = make("ImageLabel", {
             Size=UDim2.fromOffset(42,42), Position=UDim2.fromOffset(4,7),
             BackgroundColor3=Color3.fromRGB(20,20,20), BorderSizePixel=0,
@@ -20718,7 +22451,7 @@ function Modules.AdonisPanel:_populateMacros()
             BackgroundColor3=i%2==0 and Color3.fromRGB(28,28,28) or Color3.fromRGB(34,34,34),
             BackgroundTransparency=0.2, BorderSizePixel=0, LayoutOrder=i, ZIndex=2,
         }, self.State.MacroScroll)
-        corner(4, row)
+        corner(0, row)
         make("TextLabel", {
             Size=UDim2.new(0.28,0,1,0), Position=UDim2.fromOffset(8,0),
             BackgroundTransparency=1, Text=Prefix..alias, TextColor3=T.Accent,
@@ -26133,7 +27866,7 @@ function Modules.PlayerLookup:_createInfoRows()
                 Font = Enum.Font.GothamBold,
                 AutoButtonColor = false,
             }, row)
-            corner(4, cp)
+            corner(0, cp)
             cp.MouseButton1Click:Connect(function()
                 copyToClipboard(val.Text)
                 tw(cp, {BackgroundColor3 = C.GREEN, TextColor3 = Color3.new(0,0,0)}, 0.1)
