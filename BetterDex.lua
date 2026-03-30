@@ -16226,18 +16226,18 @@ local function main()
 		Luau.OpCode = encoded
 	end
 	local DEFAULT_OPTIONS = {
-		EnabledRemarks       = {ColdRemark=true, InlineRemark=true},
+		EnabledRemarks       = {ColdRemark=false, InlineRemark=true},
 		DecompilerTimeout    = 10,
 		DecompilerMode       = "disasm",
 		ReaderFloatPrecision = 7,
-		ShowDebugInformation = true,
-		ShowInstructionLines = true,
-		ShowOperationIndex   = true,
-		ShowOperationNames   = true,
-		ShowTrivialOperations= true,
+		ShowDebugInformation = false,
+		ShowInstructionLines = false,
+		ShowOperationIndex   = false,
+		ShowOperationNames   = false,
+		ShowTrivialOperations= false,
 		UseTypeInfo          = true,
 		ListUsedGlobals      = true,
-		ReturnElapsedTime    = true,
+		ReturnElapsedTime    = false,
 		CleanMode            = true,  -- strip prefix, use debug names, suppress boilerplate
 	}
 	local LuauCompileUserdataInfo = true
@@ -16684,14 +16684,11 @@ local function main()
 						if r == nil then return "upv_unknown" end
 						local du = proto.debugUpvalues
 						if du then
-							-- debugUpvalues is 1-indexed; upvalue slot r is 0-based
 							local entry = du[r + 1]
 							if entry and entry.name and entry.name ~= "" then
 								return entry.name
 							end
 						end
-						-- Fallback: the upvalue slot r maps to a captured register in the
-						-- enclosing proto via the caps table. Walk debugLocals for that register.
 						local capturedReg = caps[r]
 						if capturedReg ~= nil and proto.debugLocals then
 							for _, dl in ipairs(proto.debugLocals) do
@@ -16740,15 +16737,7 @@ local function main()
 						if type(tonumber(k.value))=="number" then
 							return tostring(tonumber(string.format("%0."..options.ReaderFloatPrecision.."f", k.value)))
 						end
-						local s = toEscapedString(k.value)
-						-- sanitize import paths: collapse any accidental double-dots (e.g. "Enum..EasingStyle")
-						-- that can appear when the string table has trailing/leading dots from bad bytecode
-						if k.type == LuauBytecodeTag.LBC_CONSTANT_IMPORT then
-							s = s:gsub("%.%.+", ".")  -- collapse multiple consecutive dots to one
-							s = s:gsub("^%.", "")      -- strip leading dot
-							s = s:gsub("%.$", "")      -- strip trailing dot
-						end
-						return s
+						return toEscapedString(k.value)
 					end
 					local function fmtProto(p)
 						local body=""
@@ -16791,8 +16780,6 @@ local function main()
 						if p.name then
 							emit("\n"..body)
 							writeActions(registerActions[p.id])
-							-- CleanMode: `local function Name()` already declares the binding,
-							-- so the trailing `reg = Name` assignment is redundant noise.
 							if not options.CleanMode then
 								emit("end\n"..fmtReg(reg).." = "..p.name)
 							else
@@ -16882,21 +16869,18 @@ local function main()
 							emit(gk.." = "..R(ur[1]))
 	
 						elseif opn=="GETUPVAL" then
-							local slot = ed[1]
-							local resolvedCap = caps[slot]
-							emit(R(ur[1]).." = "..fmtUpv(resolvedCap))
-
+							local slot=ed[1]; local rc=caps[slot]
+							emit(R(ur[1]).." = "..fmtUpv(rc))
+	
 						elseif opn=="SETUPVAL" then
-							local slot = ed[1]
-							local resolvedCap = caps[slot]
-							emit(fmtUpv(resolvedCap).." = "..R(ur[1]))
+							local slot=ed[1]; local rc=caps[slot]
+							emit(fmtUpv(rc).." = "..R(ur[1]))
 	
 						elseif opn=="CLOSEUPVALS" then emit("-- clear captures from back until: "..ur[1])
 	
 						elseif opn=="GETIMPORT" then
 							local imp=tostring(consts[ed[1]+1] and consts[ed[1]+1].value or "")
-							-- sanitize: collapse double-dots, strip edge dots
-							imp = imp:gsub("%.%.+", "."):gsub("^%.", ""):gsub("%.$", "")
+							imp=imp:gsub("%.%.+","."):gsub("^%.",""):gsub("%.$","")
 							local totalIdx = bit32.rshift(ed[2] or 0, 30)
 							if totalIdx==1 and options.ListUsedGlobals and isValidGlobal(imp) then
 								table.insert(usedGlobals,imp); usedGlobalsSet[imp]=true
@@ -16931,8 +16915,10 @@ local function main()
 								local p2=protoTable[c.value-1]; if p2 then writeProto(ur[1],p2) end
 							end
 						elseif opn=="NAMECALL" then
-							local method=tostring(consts[ed[2]+1] and consts[ed[2]+1].value or "")
-							emit("-- :"..method)
+							if not options.CleanMode then
+								local method=tostring(consts[ed[2]+1] and consts[ed[2]+1].value or "")
+								emit("-- :"..method)
+							end
 	
 						elseif opn=="CALL" then
 							local baseR=ur[1]
@@ -16944,7 +16930,8 @@ local function main()
 								nArgs-=1; argOff+=1
 							end
 							local callBody=""
-							if nRes==-1 then callBody="... = "
+							if nRes==-1 then
+								callBody=""  -- multret: result count unknown, no LHS
 							elseif nRes>0 then
 								local rb=""
 								for k=1,nRes do
@@ -17104,12 +17091,12 @@ local function main()
 							emit("end -- iterate + jump to #"..(i+ed[1]))
 	
 						elseif opn=="FORGPREP_INEXT" then
-							local tr=ur[1]+1
-							emit("for "..R(tr+2)..", "..R(tr+3).." in ipairs("..R(tr)..") do")
+							local base=ur[1]  -- A=iter A+1=state A+2=ctrl; vars at A+3,A+4
+							emit("for "..R(base+3)..", "..R(base+4).." in ipairs("..R(base)..") do")
 	
 						elseif opn=="FORGPREP_NEXT" then
-							local tr=ur[1]+1
-							emit("for "..R(tr+2)..", "..R(tr+3).." in pairs("..R(tr)..") do")
+							local base=ur[1]  -- A=iter A+1=state A+2=ctrl; vars at A+3,A+4
+							emit("for "..R(base+3)..", "..R(base+4).." in pairs("..R(base)..") do")
 	
 						elseif opn=="FORGPREP" then
 							local ei=i+ed[1]+2
@@ -17120,18 +17107,13 @@ local function main()
 									vb..=fmtReg(r, ei); if k~=#ea.usedRegisters then vb..=", " end
 								end
 							else
-								-- FORGLOOP had no usedRegisters (debug stripped or aux=0).
-								-- Generic-for iteration vars live at baseReg+2, +3, ... relative to A.
-								local baseReg = ur[1]
-								local nVars = 2
+								local baseReg=ur[1]; local nVars=2
 								if ea and ea.extraData and ea.extraData[2] then
-									nVars = math.max(1, bit32.band(ea.extraData[2], 0xFF))
+									nVars=math.max(1, bit32.band(ea.extraData[2], 0xFF))
 								end
-								local parts = {}
-								for k = 1, nVars do
-									parts[k] = fmtReg(baseReg + 2 + (k - 1), i)
-								end
-								vb = table.concat(parts, ", ")
+								local parts={}
+								for k=1,nVars do parts[k]=fmtReg(baseReg+2+(k-1), i) end
+								vb=table.concat(parts, ", ")
 							end
 							emit("for "..vb.." in "..R(ur[1]).." do -- end at #"..ei)
 	
@@ -17481,10 +17463,9 @@ local function main()
 			for _ in nextLine:gmatch(ep) do count += 1 end
 			if count ~= 1 then return false end
 			if nextLine:match("^%s*" .. ep .. "%s*=") then return false end
-			-- don't collapse if reg is reassigned in any skipped blank lines between i and j
 			for k = i + 1, j - 1 do
-				local midLine = rawLines[k]
-				if midLine and midLine:match("^%s*" .. ep .. "%s*=") then return false end
+				local mid = rawLines[k]
+				if mid and mid:match("^%s*" .. ep .. "%s*=") then return false end
 			end
 			rawLines[j] = nextLine:gsub(ep, lit, 1)
 			rawLines[i] = nil
@@ -17511,19 +17492,14 @@ local function main()
 			local nextLine = rawLines[j]
 			local epSrc = escpat(src)
 			local epReg = escpat(lreg)
-			-- count uses of lreg in the next line
 			local count = 0
 			for _ in nextLine:gmatch(epReg) do count += 1 end
 			if count ~= 1 then return false end
-			-- don't fold into an assignment to lreg itself
 			if nextLine:match("^%s*" .. epReg .. "%s*=") then return false end
-			-- don't fold if src is reassigned between i and j
 			for k = i + 1, j - 1 do
-				local midLine = rawLines[k]
-				if midLine and midLine:match("^%s*" .. epSrc .. "%s*=") then return false end
+				local mid = rawLines[k]
+				if mid and mid:match("^%s*" .. epSrc .. "%s*=") then return false end
 			end
-			-- don't fold if src itself is also a folded upvalue reference (upv_ prefix)
-			-- to avoid chaining upvalue substitutions that create misleading expressions
 			if src:match("^upv_") then return false end
 			rawLines[j] = nextLine:gsub(epReg, src .. field, 1)
 			rawLines[i] = nil
