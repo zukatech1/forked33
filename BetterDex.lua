@@ -16231,10 +16231,10 @@ local function main()
 		DecompilerMode       = "disasm",
 		ReaderFloatPrecision = 7,
 		ShowDebugInformation = true,
-		ShowInstructionLines = false,
-		ShowOperationIndex   = false,
+		ShowInstructionLines = true,
+		ShowOperationIndex   = true,
 		ShowOperationNames   = true,
-		ShowTrivialOperations= false,
+		ShowTrivialOperations= true,
 		UseTypeInfo          = true,
 		ListUsedGlobals      = true,
 		ReturnElapsedTime    = true,
@@ -17598,7 +17598,7 @@ local function main()
 	end)
 	-- ─────────────────────────────────────────────────────────────────
 
-	local ScriptViewer = {}]]
+	local ScriptViewer = {}
 	local window, codeFrame
 	
 	local execute, clear, dumpbtn
