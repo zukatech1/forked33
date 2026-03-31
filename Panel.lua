@@ -2098,7 +2098,7 @@ local function GlowOutline(frame, color, thickness)
     end)
     return inner, glow
 end
---[[Modules.CommandBar = {
+Modules.CommandBar = {
     State = {
         UI = nil,
         Container = nil,
@@ -3105,7 +3105,7 @@ function DoNotif(text: string, duration: number?): ()
     if Modules.CommandBar and Modules.CommandBar.AddOutput then
         Modules.CommandBar:AddOutput(tostring(text), Modules.CommandBar.Theme.Text)
     end
-end]]
+end
 Modules.UnlockMouse = { State = { Enabled = false, Connection = nil } }
 RegisterCommand({ Name = "unlockmouse", Aliases = {"unlockcursor", "freemouse", "um"}, Description = "Toggles a persistent loop to unlock the mouse cursor." }, function()
 local State = Modules.UnlockMouse.State
@@ -20923,7 +20923,7 @@ Modules.AdonisPanel = {
             Accent        = Color3.fromRGB(195, 33,  35),
             Text          = Color3.fromRGB(255, 255, 255),
             SubText       = Color3.fromRGB(178, 178, 178),
-            Border        = Color3.fromRGB(27,  42,  53),
+            Border        = Color3.fromRGB(45,  45,  45),
             InputBg       = Color3.fromRGB(28,  28,  28),
             Green         = Color3.fromRGB(80,  200, 80),
             Yellow        = Color3.fromRGB(255, 200, 50),
@@ -20957,8 +20957,8 @@ local function scrollFrame(props, parent)
     local f = make("ScrollingFrame", {
         BackgroundColor3      = props.BackgroundColor3 or Color3.fromRGB(22,22,22),
         BorderSizePixel       = 0.5,
-        ScrollBarThickness    = 2,
-        ScrollBarImageColor3  = Color3.fromRGB(80,80,80),
+        ScrollBarThickness    = 3,
+        ScrollBarImageColor3  = Color3.fromRGB(100,100,100),
         CanvasSize            = UDim2.new(0,0,0,0),
         AutomaticCanvasSize   = Enum.AutomaticSize.Y,
         ScrollingDirection    = Enum.ScrollingDirection.Y,
@@ -21050,7 +21050,6 @@ function Modules.AdonisPanel:_toast(msg, color)
         BackgroundColor3=Color3.fromRGB(28,28,28), BackgroundTransparency=0.15,
         BorderSizePixel=0, ZIndex=10,
     }, self.State.ToastGui)
-    corner(6, frame)
     stroke(1, color, frame)
     make("Frame", {
         Size=UDim2.fromOffset(3,34), BackgroundColor3=color, BorderSizePixel=0, ZIndex=11,
@@ -21233,16 +21232,23 @@ function Modules.AdonisPanel:_build()
         BackgroundColor3=T.TitleBar, BorderSizePixel=0, ZIndex=3,
     }, titleBar)
     local titleLabel = make("TextLabel", {
-        Size=UDim2.new(1,-80,1,0), Position=UDim2.new(0,10,0,0),
-        BackgroundTransparency=1, Text="Adonis ~ //  ",
+        Size=UDim2.new(1,-120,1,0), Position=UDim2.new(0,10,0,0),
+        BackgroundTransparency=1, Text="Adonis ~ //  Terminal",
         TextColor3=T.Text, Font=Enum.Font.SourceSansLight, TextSize=15,
         TextXAlignment=Enum.TextXAlignment.Left, ZIndex=4,
+    }, titleBar)
+    local keyHintLabel = make("TextLabel", {
+        Size=UDim2.fromOffset(50,20), Position=UDim2.new(1,-120,0,3),
+        BackgroundTransparency=1,
+        Text="["..self.Config.ToggleKey.Name.."]",
+        TextColor3=T.SubText, Font=Enum.Font.SourceSans, TextSize=11,
+        TextXAlignment=Enum.TextXAlignment.Right, ZIndex=4,
     }, titleBar)
     local closeBtn = make("TextButton", {
         Size=UDim2.fromOffset(30,20), Position=UDim2.new(1,-35,0,3),
         BackgroundColor3=T.Accent, BackgroundTransparency=0.25, BorderSizePixel=0,
-        Text="X", TextColor3=Color3.fromRGB(220,220,220),
-        Font=Enum.Font.Cartoon, TextSize=18, ZIndex=5,
+        Text="×", TextColor3=Color3.fromRGB(220,220,220),
+        Font=Enum.Font.SourceSansBold, TextSize=18, ZIndex=5,
     }, titleBar)
     corner(0, closeBtn)
     local minBtn = make("TextButton", {
@@ -21262,14 +21268,50 @@ function Modules.AdonisPanel:_build()
     }, tabRow)
     make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,3)}, tabRow)
     local content = make("Frame", {
-        Size=UDim2.new(1,0,1,-52), Position=UDim2.new(0,0,0,52),
+        Size=UDim2.new(1,0,1,-66), Position=UDim2.new(0,0,0,52),
         BackgroundTransparency=1, BorderSizePixel=0, ClipsDescendants=true, ZIndex=2,
     }, win)
+    -- Status bar
+    local statusBar = make("Frame", {
+        Size=UDim2.new(1,0,0,14), Position=UDim2.new(0,0,1,-14),
+        BackgroundColor3=Color3.fromRGB(18,18,18), BorderSizePixel=0, ZIndex=9,
+    }, win)
+    make("Frame", {
+        Size=UDim2.new(1,0,0,1), Position=UDim2.new(0,0,0,0),
+        BackgroundColor3=Color3.fromRGB(45,45,45), BorderSizePixel=0, ZIndex=9,
+    }, statusBar)
+    local statusLeft = make("TextLabel", {
+        Size=UDim2.new(0.6,0,1,0), Position=UDim2.fromOffset(6,0),
+        BackgroundTransparency=1,
+        Text="● " .. (game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.Name or "—"),
+        TextColor3=Color3.fromRGB(100,100,100), Font=Enum.Font.SourceSans, TextSize=10,
+        TextXAlignment=Enum.TextXAlignment.Left, ZIndex=10,
+    }, statusBar)
+    local statusRight = make("TextLabel", {
+        Size=UDim2.new(0.4,0,1,0), Position=UDim2.new(0.6,0,0,0),
+        BackgroundTransparency=1,
+        Text=tostring(game.PlaceId),
+        TextColor3=Color3.fromRGB(70,70,70), Font=Enum.Font.SourceSans, TextSize=10,
+        TextXAlignment=Enum.TextXAlignment.Right, ZIndex=10,
+    }, statusBar)
+    make("UIPadding", {PaddingRight=UDim.new(0,6)}, statusRight)
+    -- Update status ping periodically
+    task.spawn(function()
+        while task.wait(2) do
+            if not statusBar.Parent then break end
+            local rs = game:GetService("Stats")
+            local ping = rs and rs.Network and rs.Network.ServerStatsItem and
+                pcall(function() return rs.Network.ServerStatsItem["Data Ping"]:GetValueString() end)
+            statusLeft.Text = "● " .. (game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.Name or "—")
+        end
+    end)
     local resizeHandle = make("TextButton", {
         Size=UDim2.fromOffset(14,14),
         Position=UDim2.new(1,-14,1,-14),
         BackgroundColor3=Color3.fromRGB(80,80,80),
-        BackgroundTransparency=0.6, BorderSizePixel=0, Text="", ZIndex=10,
+        BackgroundTransparency=0.6, BorderSizePixel=0, Text="◢",
+        TextColor3=Color3.fromRGB(120,120,120), Font=Enum.Font.SourceSansBold, TextSize=12,
+        ZIndex=10,
     }, win)
     corner(3, resizeHandle)
     local termPage = make("Frame", {
@@ -21392,90 +21434,135 @@ function Modules.AdonisPanel:_build()
         Text="+", TextColor3=T.Text, Font=Enum.Font.SourceSansBold, TextSize=18, ZIndex=4,
     }, macroAddBar)
     corner(0, macroAddBtn)
+    -- ── SCRIPT PAGE ──────────────────────────────────────────────────────
+    local EDITOR_FONT     = Enum.Font.Code
+    local EDITOR_FONTSIZE = 14
+    local LINE_H          = 17  -- px per line, must match font size render height
+
     local scriptPage = make("Frame", {
         Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, BorderSizePixel=0, Visible=false, ZIndex=2,
     }, content)
+
+    -- Top toolbar
     local scriptBar = make("Frame", {
-        Size=UDim2.new(1,0,0,30), BackgroundColor3=Color3.fromRGB(20,20,20), BorderSizePixel=0, ZIndex=3,
+        Size=UDim2.new(1,0,0,30), BackgroundColor3=Color3.fromRGB(18,18,18), BorderSizePixel=0, ZIndex=3,
     }, scriptPage)
-    local snippetDropLabel = make("TextButton", {
-        Size=UDim2.new(0,120,1,-6), Position=UDim2.fromOffset(5,3),
-        BackgroundColor3=T.InputBg, BorderSizePixel=0,
-        Text="New", TextColor3=T.Text,
-        Font=Enum.Font.SourceSans, TextSize=13, ZIndex=4,
+    -- 1px separator under toolbar
+    make("Frame", {
+        Size=UDim2.new(1,0,0,1), Position=UDim2.new(0,0,1,-1),
+        BackgroundColor3=Color3.fromRGB(45,45,45), BorderSizePixel=0, ZIndex=4,
     }, scriptBar)
-    corner(0, snippetDropLabel)
+
+    local newBtn = make("TextButton", {
+        Size=UDim2.fromOffset(46,22), Position=UDim2.fromOffset(4,4),
+        BackgroundColor3=Color3.fromRGB(45,45,45), BackgroundTransparency=0.2, BorderSizePixel=0,
+        Text="New", TextColor3=T.Text, Font=Enum.Font.SourceSansBold, TextSize=12, ZIndex=4,
+    }, scriptBar)
     local saveBtn = make("TextButton", {
-        Size=UDim2.fromOffset(52,24), Position=UDim2.fromOffset(130,3),
-        BackgroundColor3=T.Blue, BackgroundTransparency=0.3, BorderSizePixel=0,
-        Text="Save", TextColor3=T.Text, Font=Enum.Font.SourceSansBold, TextSize=13, ZIndex=4,
+        Size=UDim2.fromOffset(46,22), Position=UDim2.fromOffset(54,4),
+        BackgroundColor3=T.Blue, BackgroundTransparency=0.35, BorderSizePixel=0,
+        Text="Save", TextColor3=T.Text, Font=Enum.Font.SourceSansBold, TextSize=12, ZIndex=4,
     }, scriptBar)
-    corner(0, saveBtn)
     local runBtn = make("TextButton", {
-        Size=UDim2.fromOffset(52,24), Position=UDim2.fromOffset(186,3),
+        Size=UDim2.fromOffset(46,22), Position=UDim2.fromOffset(104,4),
         BackgroundColor3=T.Green, BackgroundTransparency=0.3, BorderSizePixel=0,
-        Text="Run", TextColor3=T.Text, Font=Enum.Font.SourceSansBold, TextSize=13, ZIndex=4,
+        Text="▶  Run", TextColor3=T.Text, Font=Enum.Font.SourceSansBold, TextSize=12, ZIndex=4,
     }, scriptBar)
-    corner(0, runBtn)
     local clearScriptBtn = make("TextButton", {
-        Size=UDim2.fromOffset(44,24), Position=UDim2.fromOffset(242,3),
-        BackgroundColor3=T.Red, BackgroundTransparency=0.4, BorderSizePixel=0,
+        Size=UDim2.fromOffset(46,22), Position=UDim2.fromOffset(154,4),
+        BackgroundColor3=T.Red, BackgroundTransparency=0.45, BorderSizePixel=0,
         Text="Clear", TextColor3=T.Text, Font=Enum.Font.SourceSans, TextSize=12, ZIndex=4,
     }, scriptBar)
-    corner(0, clearScriptBtn)
+    -- Copy button on the right
+    local copyScriptBtn = make("TextButton", {
+        Size=UDim2.fromOffset(46,22), Position=UDim2.new(1,-50,0,4),
+        BackgroundColor3=Color3.fromRGB(50,50,50), BackgroundTransparency=0.3, BorderSizePixel=0,
+        Text="Copy", TextColor3=T.SubText, Font=Enum.Font.SourceSans, TextSize=12, ZIndex=4,
+    }, scriptBar)
+    -- Active snippet label (center of toolbar)
+    local activeSnipLabel = make("TextLabel", {
+        Size=UDim2.new(1,-310,1,0), Position=UDim2.fromOffset(206,0),
+        BackgroundTransparency=1, Text="untitled",
+        TextColor3=T.SubText, Font=Enum.Font.SourceSansItalic, TextSize=12,
+        TextXAlignment=Enum.TextXAlignment.Left, ZIndex=4,
+    }, scriptBar)
+
+    -- Left snippet sidebar (wider, cleaner)
+    local SIDEBAR_W = 120
     local snippetPanel = make("ScrollingFrame", {
-        Size=UDim2.new(0,110,1,-30), Position=UDim2.fromOffset(0,30),
-        BackgroundColor3=Color3.fromRGB(20,20,20), BorderSizePixel=0,
-        ScrollBarThickness=2, ScrollBarImageColor3=Color3.fromRGB(60,60,60),
+        Size=UDim2.new(0,SIDEBAR_W,1,-30), Position=UDim2.fromOffset(0,30),
+        BackgroundColor3=Color3.fromRGB(18,18,18), BorderSizePixel=0,
+        ScrollBarThickness=3, ScrollBarImageColor3=Color3.fromRGB(80,80,80),
         CanvasSize=UDim2.new(0,0,0,0), AutomaticCanvasSize=Enum.AutomaticSize.Y,
         ZIndex=3,
     }, scriptPage)
     make("UIListLayout", {SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,1)}, snippetPanel)
+    -- Right border on sidebar
+    make("Frame", {
+        Size=UDim2.new(0,1,1,0), Position=UDim2.new(1,-1,0,0),
+        BackgroundColor3=Color3.fromRGB(45,45,45), BorderSizePixel=0, ZIndex=4,
+    }, snippetPanel)
+
+    -- Editor area
     local editorHolder = make("Frame", {
-        Size=UDim2.new(1,-114,1,-30), Position=UDim2.fromOffset(114,30),
+        Size=UDim2.new(1,-SIDEBAR_W,1,-30), Position=UDim2.fromOffset(SIDEBAR_W,30),
         BackgroundColor3=Color3.fromRGB(20,20,20), BorderSizePixel=0,
         ClipsDescendants=true, ZIndex=3,
     }, scriptPage)
-    local lineNumScroll = make("ScrollingFrame", {
-        Size=UDim2.new(0,28,1,0), Position=UDim2.new(0,0,0,0),
-        BackgroundColor3=Color3.fromRGB(24,24,24), BorderSizePixel=0,
-        ScrollBarThickness=0, CanvasSize=UDim2.new(0,0,0,0),
-        AutomaticCanvasSize=Enum.AutomaticSize.Y,
-        ScrollingEnabled=false, ZIndex=4,
+
+    -- Line number gutter
+    local LINE_GUTTER = 36
+    local lineNumHolder = make("Frame", {
+        Size=UDim2.new(0,LINE_GUTTER,1,0), Position=UDim2.new(0,0,0,0),
+        BackgroundColor3=Color3.fromRGB(24,24,24), BorderSizePixel=0, ClipsDescendants=true, ZIndex=4,
     }, editorHolder)
-    make("UIListLayout", {SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,0)}, lineNumScroll)
-    local hlScroll = make("ScrollingFrame", {
-        Size=UDim2.new(1,-28,1,0), Position=UDim2.new(0,28,0,0),
+    -- Separator between gutter and code
+    make("Frame", {
+        Size=UDim2.new(0,1,1,0), Position=UDim2.new(1,-1,0,0),
+        BackgroundColor3=Color3.fromRGB(38,38,38), BorderSizePixel=0, ZIndex=5,
+    }, lineNumHolder)
+
+    -- Single scrolling code frame (input + highlight overlay share one scroll)
+    local codeScroll = make("ScrollingFrame", {
+        Size=UDim2.new(1,-LINE_GUTTER,1,0), Position=UDim2.fromOffset(LINE_GUTTER,0),
         BackgroundTransparency=1, BorderSizePixel=0,
-        ScrollBarThickness=0, CanvasSize=UDim2.new(0,0,0,0),
-        AutomaticCanvasSize=Enum.AutomaticSize.Y,
-        ScrollingEnabled=false, ZIndex=4,
+        ScrollBarThickness=3, ScrollBarImageColor3=Color3.fromRGB(90,90,90),
+        CanvasSize=UDim2.new(0,0,0,0),
+        AutomaticCanvasSize=Enum.AutomaticSize.None,
+        ScrollingDirection=Enum.ScrollingDirection.XY,
+        ZIndex=4,
     }, editorHolder)
-    make("UIListLayout", {SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,0)}, hlScroll)
-    local codeInput = make("TextBox", {
-        Size=UDim2.new(1,-28,1,0), Position=UDim2.new(0,28,0,0),
-        BackgroundTransparency=1,
-        Text="-- write your script here\n",
-        TextColor3=Color3.fromRGB(0,0,0,0),
-        PlaceholderText="", PlaceholderColor3=Color3.fromRGB(0,0,0),
-        Font=Enum.Font.Code, TextSize=10,
-        TextXAlignment=Enum.TextXAlignment.Left,
-        TextYAlignment=Enum.TextYAlignment.Top,
-        MultiLine=true, ClearTextOnFocus=false,
-        ZIndex=5,
-    }, editorHolder)
-    make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,2)}, codeInput)
+
+    -- Syntax highlight overlay (rendered behind the input)
     local hlOverlay = make("TextLabel", {
-        Size=UDim2.new(1,-28,1,0), Position=UDim2.new(0,28,0,0),
+        Size=UDim2.new(1,0,1,0),
         BackgroundTransparency=1,
         Text="", RichText=true,
-        TextColor3=T.Text, Font=Enum.Font.Code, TextSize=13,
+        TextColor3=T.Text, Font=EDITOR_FONT, TextSize=EDITOR_FONTSIZE,
         TextXAlignment=Enum.TextXAlignment.Left,
         TextYAlignment=Enum.TextYAlignment.Top,
         TextWrapped=false, ZIndex=4,
-    }, editorHolder)
-    make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,2)}, hlOverlay)
-    codeInput.TextColor3 = Color3.fromRGB(20,20,20)
+    }, codeScroll)
+    make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,3)}, hlOverlay)
+
+    -- Actual input box (transparent text so only highlight shows)
+    local codeInput = make("TextBox", {
+        Size=UDim2.new(1,0,1,0),
+        BackgroundTransparency=1,
+        Text="-- write your script here\n",
+        TextColor3=Color3.fromRGB(1,1,1,0), -- fully transparent text
+        PlaceholderText="", PlaceholderColor3=Color3.fromRGB(0,0,0),
+        Font=EDITOR_FONT, TextSize=EDITOR_FONTSIZE,
+        TextXAlignment=Enum.TextXAlignment.Left,
+        TextYAlignment=Enum.TextYAlignment.Top,
+        MultiLine=true, ClearTextOnFocus=false,
+        ZIndex=6,
+    }, codeScroll)
+    make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,3)}, codeInput)
+    -- make caret visible by giving text a near-black color that blends with bg
+    codeInput.TextColor3 = Color3.fromRGB(22,22,22)
+
+    -- Helpers
     local function colorToHex(c)
         return string.format("%02X%02X%02X",
             math.floor(c.R*255), math.floor(c.G*255), math.floor(c.B*255))
@@ -21486,101 +21573,219 @@ function Modules.AdonisPanel:_build()
         s = s:gsub(">","&gt;")
         return s
     end
-    local function updateHighlight(code)
-        local lines = code:split("\n")
-        for _, c in ipairs(lineNumScroll:GetChildren()) do
-            if c:IsA("TextLabel") then c:Destroy() end
+
+    -- Rebuild line numbers to match current line count
+    local _lineLabels = {}
+    local function rebuildLineNums(count)
+        -- remove excess
+        for i = count+1, #_lineLabels do
+            if _lineLabels[i] then _lineLabels[i]:Destroy() end
+            _lineLabels[i] = nil
         end
-        local richLines = {}
-        for i, line in ipairs(lines) do
-            make("TextLabel", {
-                Size=UDim2.new(1,0,0,16), BackgroundTransparency=1,
-                Text=tostring(i), TextColor3=Color3.fromRGB(90,90,90),
-                Font=Enum.Font.Code, TextSize=13,
-                TextXAlignment=Enum.TextXAlignment.Right, LayoutOrder=i, ZIndex=5,
-            }, lineNumScroll)
-            make("UIPadding", {PaddingRight=UDim.new(0,3)}, lineNumScroll:GetChildren()[#lineNumScroll:GetChildren()])
-            local tokens = tokenizeLua(line)
-            local richLine = ""
-            for _, tok in ipairs(tokens) do
-                local hex = colorToHex(tok.color)
-                richLine = richLine..('<font color="#'..hex..'">'..escapeRich(tok.text)..'</font>')
-            end
-            table.insert(richLines, richLine)
+        -- add missing
+        for i = #_lineLabels+1, count do
+            local lbl = make("TextLabel", {
+                Size=UDim2.new(1,-2,0,LINE_H), BackgroundTransparency=1,
+                Text=tostring(i), TextColor3=Color3.fromRGB(80,80,80),
+                Font=EDITOR_FONT, TextSize=EDITOR_FONTSIZE,
+                TextXAlignment=Enum.TextXAlignment.Right,
+                Position=UDim2.fromOffset(0,(i-1)*LINE_H),
+                ZIndex=5,
+            }, lineNumHolder)
+            _lineLabels[i] = lbl
         end
-        hlOverlay.Text = table.concat(richLines, "\n")
+        lineNumHolder.Size = UDim2.new(0,LINE_GUTTER, 0, math.max(count*LINE_H, editorHolder.AbsoluteSize.Y))
     end
+
+    -- Sync line number scroll offset to code scroll
+    local function syncLineNums()
+        local yOff = codeScroll.CanvasPosition.Y
+        -- shift lineNumHolder up by scroll amount
+        lineNumHolder.Position = UDim2.fromOffset(0, -yOff)
+    end
+
+    -- Rebuild syntax highlight and resize canvas
+    local _highlightPending = false
+    local function updateHighlight(code)
+        if _highlightPending then return end
+        _highlightPending = true
+        task.defer(function()
+            _highlightPending = false
+            local lines = code:split("\n")
+            local richLines = {}
+            for _, line in ipairs(lines) do
+                local tokens = tokenizeLua(line)
+                local richLine = ""
+                for _, tok in ipairs(tokens) do
+                    richLine = richLine..('<font color="#'..colorToHex(tok.color)..'">'..(escapeRich(tok.text))..'</font>')
+                end
+                table.insert(richLines, richLine)
+            end
+            hlOverlay.Text = table.concat(richLines, "\n")
+            -- Resize canvas so scroll works correctly
+            local lineCount = #lines
+            local canvasH = math.max(lineCount * LINE_H + 20, editorHolder.AbsoluteSize.Y)
+            codeScroll.CanvasSize = UDim2.new(0, 2000, 0, canvasH)
+            hlOverlay.Size = UDim2.new(0, 2000, 0, canvasH)
+            codeInput.Size  = UDim2.new(0, 2000, 0, canvasH)
+            rebuildLineNums(lineCount)
+            syncLineNums()
+        end)
+    end
+
     codeInput:GetPropertyChangedSignal("Text"):Connect(function()
         updateHighlight(codeInput.Text)
     end)
+    codeScroll:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+        syncLineNums()
+    end)
     updateHighlight(codeInput.Text)
+
+    -- ── Snippet sidebar logic ─────────────────────────────────────────────
+    local function getSnipDisplayName(sn) return sn.name or "untitled" end
+
     local function refreshSnippetList()
         for _, c in ipairs(snippetPanel:GetChildren()) do
-            if c:IsA("TextButton") then c:Destroy() end
+            if c:IsA("Frame") or c:IsA("TextButton") then c:Destroy() end
         end
         for i, sn in ipairs(self.State.Snippets) do
-            local btn = make("TextButton", {
-                Size=UDim2.new(1,0,0,26), BackgroundColor3=Color3.fromRGB(28,28,28),
-                BackgroundTransparency=0.2, BorderSizePixel=0,
-                Text=sn.name, TextColor3=T.Text,
-                Font=Enum.Font.SourceSans, TextSize=12,
-                TextXAlignment=Enum.TextXAlignment.Left,
+            local isActive = (i == self.State.ActiveSnippet)
+            local row = make("Frame", {
+                Size=UDim2.new(1,0,0,28),
+                BackgroundColor3= isActive and Color3.fromRGB(38,38,38) or Color3.fromRGB(24,24,24),
+                BackgroundTransparency=0, BorderSizePixel=0,
                 LayoutOrder=i, ZIndex=4,
             }, snippetPanel)
-            make("UIPadding", {PaddingLeft=UDim.new(0,6)}, btn)
-            btn.MouseButton1Click:Connect(function()
+            -- Active accent left bar
+            if isActive then
+                make("Frame", {
+                    Size=UDim2.new(0,2,1,0), BackgroundColor3=T.Accent, BorderSizePixel=0, ZIndex=5,
+                }, row)
+            end
+            local nameBtn = make("TextButton", {
+                Size=UDim2.new(1,-22,1,0), Position=UDim2.fromOffset(isActive and 6 or 4, 0),
+                BackgroundTransparency=1, Text=getSnipDisplayName(sn),
+                TextColor3= isActive and T.Text or T.SubText,
+                Font= isActive and Enum.Font.SourceSansBold or Enum.Font.SourceSans,
+                TextSize=12, TextXAlignment=Enum.TextXAlignment.Left,
+                TextTruncate=Enum.TextTruncate.AtEnd, ZIndex=5,
+            }, row)
+            make("UIPadding", {PaddingLeft=UDim.new(0,4)}, nameBtn)
+            -- Delete button (X)
+            local delBtn = make("TextButton", {
+                Size=UDim2.fromOffset(18,18), Position=UDim2.new(1,-20,0,5),
+                BackgroundColor3=Color3.fromRGB(60,30,30), BackgroundTransparency=0.3, BorderSizePixel=0,
+                Text="×", TextColor3=Color3.fromRGB(180,80,80),
+                Font=Enum.Font.SourceSansBold, TextSize=14, ZIndex=6,
+            }, row)
+            nameBtn.MouseButton1Click:Connect(function()
+                -- Save current before switching
+                if self.State.ActiveSnippet and self.State.Snippets[self.State.ActiveSnippet] then
+                    self.State.Snippets[self.State.ActiveSnippet].code = codeInput.Text
+                end
                 self.State.ActiveSnippet = i
-                codeInput.Text = sn.code
-                snippetDropLabel.Text = "▾ "..sn.name
+                codeInput.Text = sn.code or ""
+                activeSnipLabel.Text = getSnipDisplayName(sn)
+                refreshSnippetList()
+            end)
+            delBtn.MouseButton1Click:Connect(function()
+                table.remove(self.State.Snippets, i)
+                if self.State.ActiveSnippet == i then
+                    self.State.ActiveSnippet = nil
+                    codeInput.Text = ""
+                    activeSnipLabel.Text = "untitled"
+                elseif self.State.ActiveSnippet and self.State.ActiveSnippet > i then
+                    self.State.ActiveSnippet = self.State.ActiveSnippet - 1
+                end
+                refreshSnippetList()
+                self:Print("Snippet deleted.", T.SubText)
             end)
         end
     end
     self.State.RefreshSnippets = refreshSnippetList
-    saveBtn.MouseButton1Click:Connect(function()
-        local name
-        if self.State.ActiveSnippet then
-            name = self.State.Snippets[self.State.ActiveSnippet].name
-        else
-            name = "Script "..tostring(#self.State.Snippets+1)
+
+    -- New script
+    newBtn.MouseButton1Click:Connect(function()
+        -- auto-save current
+        if self.State.ActiveSnippet and self.State.Snippets[self.State.ActiveSnippet] then
+            self.State.Snippets[self.State.ActiveSnippet].code = codeInput.Text
         end
-        local entry = {name=name, code=codeInput.Text}
-        if self.State.ActiveSnippet then
-            self.State.Snippets[self.State.ActiveSnippet] = entry
-        else
-            table.insert(self.State.Snippets, entry)
-            self.State.ActiveSnippet = #self.State.Snippets
-        end
-        snippetDropLabel.Text = "▾ "..name
+        local newName = "Script " .. tostring(#self.State.Snippets + 1)
+        table.insert(self.State.Snippets, {name=newName, code="-- "..newName.."\n"})
+        self.State.ActiveSnippet = #self.State.Snippets
+        codeInput.Text = self.State.Snippets[self.State.ActiveSnippet].code
+        activeSnipLabel.Text = newName
         refreshSnippetList()
-        self:Print("Snippet saved: "..name, T.Green)
+        self:Print("New snippet: "..newName, T.SubText)
     end)
-    snippetDropLabel.MouseButton1Click:Connect(function()
-        self.State.ActiveSnippet = nil
-        local newName = "Script "..tostring(#self.State.Snippets+1)
-        snippetDropLabel.Text = "▾ "..newName
-        codeInput.Text = "-- "..newName.."\n"
+
+    -- Save current snippet
+    saveBtn.MouseButton1Click:Connect(function()
+        local code = codeInput.Text
+        if self.State.ActiveSnippet and self.State.Snippets[self.State.ActiveSnippet] then
+            self.State.Snippets[self.State.ActiveSnippet].code = code
+            local name = self.State.Snippets[self.State.ActiveSnippet].name
+            refreshSnippetList()
+            self:Print("Saved: "..name, T.Green)
+            self:_toast("Saved: "..name, T.Green)
+        else
+            -- No active snippet — create one
+            local newName = "Script " .. tostring(#self.State.Snippets + 1)
+            table.insert(self.State.Snippets, {name=newName, code=code})
+            self.State.ActiveSnippet = #self.State.Snippets
+            activeSnipLabel.Text = newName
+            refreshSnippetList()
+            self:Print("Saved as: "..newName, T.Green)
+            self:_toast("Saved as: "..newName, T.Green)
+        end
     end)
+
+    -- Clear editor
     clearScriptBtn.MouseButton1Click:Connect(function()
         codeInput.Text = ""
     end)
+
+    -- Copy to clipboard
+    copyScriptBtn.MouseButton1Click:Connect(function()
+        local code = codeInput.Text
+        if code:match("^%s*$") then return end
+        if setclipboard then
+            pcall(setclipboard, code)
+            self:_toast("Script copied to clipboard", T.Blue)
+        else
+            self:Print("setclipboard not available on this executor.", T.Red)
+        end
+    end)
+
+    -- Execute
     runBtn.MouseButton1Click:Connect(function()
         local code = codeInput.Text
         if code:match("^%s*$") then return end
-        self:Print("Executing script!", T.Green)
-        local fn, err = loadstring(code)
-        if not fn then
-            self:Print("Syntax error: "..tostring(err), T.Red)
-            self:_toast("Syntax error — check terminal", T.Red)
-        else
-            local ok, runErr = pcall(fn)
-            if not ok then
-                self:Print("Runtime error: "..tostring(runErr), T.Red)
-                self:_toast("Runtime error — check terminal", T.Red)
-            else
-                self:Print("Script executed OK.", T.Green)
-                self:_toast("Script executed OK", T.Green)
-            end
+        -- Auto-save before run
+        if self.State.ActiveSnippet and self.State.Snippets[self.State.ActiveSnippet] then
+            self.State.Snippets[self.State.ActiveSnippet].code = code
         end
+        runBtn.Text = "..."
+        runBtn.BackgroundTransparency = 0.6
+        task.defer(function()
+            self:Print("▶ Executing script...", T.Green)
+            local fn, compErr = loadstring(code)
+            if not fn then
+                self:Print("Syntax error: "..tostring(compErr), T.Red)
+                self:_toast("Syntax error — check terminal", T.Red)
+            else
+                local ok, runErr = pcall(fn)
+                if not ok then
+                    self:Print("Runtime error: "..tostring(runErr), T.Red)
+                    self:_toast("Runtime error — check terminal", T.Red)
+                else
+                    self:Print("Script executed OK.", T.Green)
+                    self:_toast("Script executed OK", T.Green)
+                end
+            end
+            runBtn.Text = "▶  Run"
+            runBtn.BackgroundTransparency = 0.3
+        end)
     end)
     local settingsPage = make("Frame", {
         Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, BorderSizePixel=0, Visible=false, ZIndex=2,
@@ -21643,6 +21848,7 @@ function Modules.AdonisPanel:_build()
         local key = Enum.KeyCode[keyBox.Text]
         if key then
             self.Config.ToggleKey = key
+            keyHintLabel.Text = "["..keyBox.Text.."]"
             self:Print("Toggle key → "..keyBox.Text, T.SubText)
         else
             keyBox.Text = self.Config.ToggleKey.Name
@@ -21821,19 +22027,16 @@ function Modules.AdonisPanel:_build()
         self.State.DecompLastText = text
     end
     local function resolveScript(path)
-    -- Handle game:GetService("ServiceName") style calls in the path
     path = path:gsub('game:GetService%("([^"]+)"%)', function(svc)
         return svc
     end)
     path = path:gsub("game:GetService%('([^']+)'%)", function(svc)
         return svc
     end)
-
     local parts = {}
     for part in path:gmatch("[^%.]+") do
         table.insert(parts, part)
     end
-
     local serviceAliases = {
         players        = "Players",
         workspace      = "Workspace",
@@ -21849,7 +22052,6 @@ function Modules.AdonisPanel:_build()
         chat           = "Chat",
         teams          = "Teams",
     }
-
     local cur = game
     for i, part in ipairs(parts) do
         if i == 1 then
@@ -21859,7 +22061,6 @@ function Modules.AdonisPanel:_build()
             elseif lo == "workspace" then
                 cur = workspace
             else
-                -- Try GetService first (handles "Players", "ReplicatedStorage", etc.)
                 local realName = serviceAliases[lo] or part
                 local ok, svc = pcall(function() return game:GetService(realName) end)
                 if ok and svc then
@@ -21869,7 +22070,6 @@ function Modules.AdonisPanel:_build()
                 end
             end
         elseif part == "LocalPlayer" then
-            -- game:GetService("Players").LocalPlayer
             local ok, lp = pcall(function()
                 return game:GetService("Players").LocalPlayer
             end)
@@ -22003,8 +22203,25 @@ end
             if t.Btn then
                 t.Btn.BackgroundColor3 = (t==tab) and T.Accent or Color3.fromRGB(40,40,40)
                 t.Btn.BackgroundTransparency = (t==tab) and 0.2 or 0.6
+                -- Active tab underline indicator
+                local ind = t.Btn:FindFirstChild("_ActiveInd")
+                if t == tab then
+                    if not ind then
+                        ind = make("Frame", {
+                            Name="_ActiveInd",
+                            Size=UDim2.new(1,0,0,2),
+                            Position=UDim2.new(0,0,1,-2),
+                            BackgroundColor3=T.Accent,
+                            BorderSizePixel=0, ZIndex=6,
+                        }, t.Btn)
+                    end
+                    ind.Visible = true
+                else
+                    if ind then ind.Visible = false end
+                end
             end
         end
+        titleLabel.Text = "Adonis ~ //  "..tab.Name
         if tab.Name == "Commands" then self:_populateCommands() end
         if tab.Name == "Players"  then self:_populatePlayers()  end
         if tab.Name == "Logs"     then self:_populateLogs()     end
@@ -22190,7 +22407,7 @@ end
         Terminal    = termPage,    Commands = cmdPage, Players  = plrPage,
         Logs        = logsPage,    Macros   = macroPage,
         Scripts     = scriptPage,  Settings = settingsPage,
-        Decompiler  = decompPage,  -- ← add this
+        Decompiler  = decompPage,
 }
     win.Visible = false
     self:Print("Adonis has been loaded.", T.Accent)
@@ -22211,10 +22428,26 @@ function Modules.AdonisPanel:Print(text, color)
         BackgroundTransparency=rowBg and 0.35 or 1,
         BackgroundColor3=rowBg or Color3.fromRGB(0,0,0),
         Text=text, TextColor3=color,
-        Font=Enum.Font.SourceSans, TextSize=self.Config.FontSize,
+        Font=Enum.Font.Code, TextSize=self.Config.FontSize,
         TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true,
         LayoutOrder=#self.State.TerminalLines, ZIndex=2,
     }, self.State.OutputScroll)
+    -- Left severity gutter bar
+    local gutterColor = nil
+    if rowBg then
+        gutterColor = color
+    elseif text:sub(1,1) == ">" then
+        gutterColor = T.Accent
+    end
+    if gutterColor then
+        make("Frame", {
+            Size=UDim2.new(0,2,1,0), Position=UDim2.new(0,0,0,0),
+            BackgroundColor3=gutterColor, BorderSizePixel=0, ZIndex=3,
+        }, lbl)
+        make("UIPadding", {PaddingLeft=UDim.new(0,6)}, lbl)
+    else
+        make("UIPadding", {PaddingLeft=UDim.new(0,4)}, lbl)
+    end
     if rowBg then corner(3, lbl) end
     lbl.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton2 then
@@ -22573,11 +22806,7 @@ function Modules.AdonisPanel:Initialize()
         self:_initDeathLogger()
         task.spawn(function()
             local ok, err = pcall(function()
-
- --── zukv2 decompiler core ──────────────────────────────────────────
-            
 local function main()
-
 	local ZukDecompile
 	local prettyPrint
 	local cleanOutput
@@ -22639,7 +22868,7 @@ local function main()
 	end
 	function Reader:Set(fp) FLOAT_PRECISION = fp end
 	local Strings = {
-		SUCCESS              = "%s",  -- no meme header; callers add their own metadata
+		SUCCESS              = "%s",
 		TIMEOUT              = "-- DECOMPILER TIMEOUT",
 		COMPILATION_FAILURE  = "-- SCRIPT FAILED TO COMPILE, ERROR:\n%s",
 		UNSUPPORTED_LBC_VERSION = "-- PASSED BYTECODE IS TOO OLD AND IS NOT SUPPORTED",
@@ -22843,7 +23072,7 @@ local function main()
 		UseTypeInfo          = true,
 		ListUsedGlobals      = true,
 		ReturnElapsedTime    = false,
-		CleanMode            = true,  -- strip prefix, use debug names, suppress boilerplate
+		CleanMode            = true,
 	}
 	local LuauCompileUserdataInfo = true
 	pcall(function()
@@ -23103,7 +23332,6 @@ local function main()
 					end
 				end
 				local function writeFlags()
-					-- guard: flags may already be a table if proto visited twice (DUPCLOSURE)
 					if type(flags) == "table" then return end
 					local rawFlags = type(flags) == "number" and flags or 0
 					local df = {}
@@ -23241,8 +23469,8 @@ local function main()
 		local function finalize(mainProtoId, registerActions, protoTable)
 			local finalResult = ""
 			local totalParameters = 0
-			local usedGlobals    = {}   -- ordered list for display
-			local usedGlobalsSet = {}   -- set for O(1) duplicate check
+			local usedGlobals    = {}
+			local usedGlobalsSet = {}
 			local function isValidGlobal(key)
 				if usedGlobalsSet[key] then return false end
 				return not isGlobal(key)
@@ -23270,9 +23498,6 @@ local function main()
 					local function makeJump(idx) idx-=1; jumpMarkers[idx]=(jumpMarkers[idx] or 0)+1 end
 					totalParameters += numParams
 					if proto.main and pflags and pflags.native then emit("--!native\n") end
-	
-					-- ── Debug name lookups ────────────────────────────────────────────
-					-- Build register-name map from debugLocals: reg → name at a given PC
 					local function buildRegNames(instrIdx)
 						local names = {}
 						if proto.debugLocals then
@@ -23284,19 +23509,15 @@ local function main()
 						end
 						return names
 					end
-					-- Upvalue names from debugUpvalues
 					local function fmtUpv(r)
 						if r == nil then return "upv_unknown" end
 						local du = proto.debugUpvalues
 						if du then
-							-- debugUpvalues is 1-indexed; upvalue slot r is 0-based
 							local entry = du[r + 1]
 							if entry and entry.name and entry.name ~= "" then
 								return entry.name
 							end
 						end
-						-- Fallback: the upvalue slot r maps to a captured register in the
-						-- enclosing proto via the caps table. Walk debugLocals for that register.
 						local capturedReg = caps[r]
 						if capturedReg ~= nil and proto.debugLocals then
 							for _, dl in ipairs(proto.debugLocals) do
@@ -23307,7 +23528,6 @@ local function main()
 						end
 						return "upv_" .. tostring(r)
 					end
-					-- Register name: prefer debug name, fall back to p/v scheme
 					local regNameCache = {}
 					local function fmtReg(r, instrIdx)
 						if instrIdx and proto.debugLocals then
@@ -23326,7 +23546,6 @@ local function main()
 						end
 						return "v"..(r-numParams)
 					end
-					-- Param name helper (for fmtProto)
 					local function paramName(j)
 						if proto.debugLocals then
 							for _, dl in ipairs(proto.debugLocals) do
@@ -23346,12 +23565,10 @@ local function main()
 							return tostring(tonumber(string.format("%0."..options.ReaderFloatPrecision.."f", k.value)))
 						end
 						local s = toEscapedString(k.value)
-						-- sanitize import paths: collapse any accidental double-dots (e.g. "Enum..EasingStyle")
-						-- that can appear when the string table has trailing/leading dots from bad bytecode
 						if k.type == LuauBytecodeTag.LBC_CONSTANT_IMPORT then
-							s = s:gsub("%.%.+", ".")  -- collapse multiple consecutive dots to one
-							s = s:gsub("^%.", "")      -- strip leading dot
-							s = s:gsub("%.$", "")      -- strip trailing dot
+							s = s:gsub("%.%.+", ".")
+							s = s:gsub("^%.", "")
+							s = s:gsub("%.$", "")
 						end
 						return s
 					end
@@ -23396,8 +23613,6 @@ local function main()
 						if p.name then
 							emit("\n"..body)
 							writeActions(registerActions[p.id])
-							-- CleanMode: `local function Name()` already declares the binding,
-							-- so the trailing `reg = Name` assignment is redundant noise.
 							if not options.CleanMode then
 								emit("end\n"..fmtReg(reg).." = "..p.name)
 							else
@@ -23409,7 +23624,6 @@ local function main()
 							emit("end")
 						end
 					end
-					-- Instructions that are pure VM bookkeeping in clean mode
 					local CLEAN_SUPPRESS = {
 						CLOSEUPVALS=true, PREPVARARGS=true, COVERAGE=true,
 						CAPTURE=true, FASTCALL=true, FASTCALL1=true,
@@ -23423,29 +23637,23 @@ local function main()
 						local oci = action.opCode
 						if not oci then continue end
 						local opn = oci.name
-						-- clean mode: skip pure bookkeeping ops
 						if options.CleanMode and CLEAN_SUPPRESS[opn] then continue end
-						-- clean mode: skip bare RETURN with no value at end of proto
 						if options.CleanMode and opn == "RETURN" then
 							local b = ed and ed[1] or 0
-							if b == 1 then continue end  -- RETURN with B=1 means return nothing
+							if b == 1 then continue end
 						end
-						-- clean mode: skip MOVE that just wires up a closure assignment
-						-- (those are handled inside writeProto already)
 						if options.CleanMode and opn == "MOVE" and
 						   i > 1 and actions[i-1] and
 						   (actions[i-1].opCode.name == "NEWCLOSURE" or
 						    actions[i-1].opCode.name == "DUPCLOSURE") then
 							continue
 						end
-						-- resolve register names at this instruction index
 						local function R(r) return fmtReg(r, i) end
 						local function handleJumps()
 							local n = jumpMarkers[i]
 							if n then
 								jumpMarkers[i]=nil
 							for _=1,n do emit("end\n") end
-	
 							end
 						end
 						if not options.CleanMode then
@@ -23460,74 +23668,55 @@ local function main()
 							end
 						end
 						if opn=="LOADNIL" then emit(R(ur[1]).." = nil")
-	
 						elseif opn=="LOADB" then
 							emit(R(ur[1]).." = "..toEscapedString(toBoolean(ed[1])))
-	
 							if ed[2]~=0 then emit(" +"..ed[2]) end
-	
 						elseif opn=="LOADN" then emit(R(ur[1]).." = "..ed[1])
-	
 						elseif opn=="LOADK" then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="MOVE"  then emit(R(ur[1]).." = "..R(ur[2]))
-	
 						elseif opn=="GETGLOBAL" then
 							local gk=tostring(consts[ed[1]+1] and consts[ed[1]+1].value or "")
 							if options.ListUsedGlobals and isValidGlobal(gk) then
 								table.insert(usedGlobals,gk); usedGlobalsSet[gk]=true
 							end
 							emit(R(ur[1]).." = "..gk)
-	
 						elseif opn=="SETGLOBAL" then
 							local gk=tostring(consts[ed[1]+1] and consts[ed[1]+1].value or "")
 							if options.ListUsedGlobals and isValidGlobal(gk) then
 								table.insert(usedGlobals,gk); usedGlobalsSet[gk]=true
 							end
 							emit(gk.." = "..R(ur[1]))
-	
 						elseif opn=="GETUPVAL" then
 							local slot = ed[1]
 							local resolvedCap = caps[slot]
 							emit(R(ur[1]).." = "..fmtUpv(resolvedCap))
-
 						elseif opn=="SETUPVAL" then
 							local slot = ed[1]
 							local resolvedCap = caps[slot]
 							emit(fmtUpv(resolvedCap).." = "..R(ur[1]))
-	
 						elseif opn=="CLOSEUPVALS" then emit("-- clear captures from back until: "..ur[1])
-	
 						elseif opn=="GETIMPORT" then
 							local imp=tostring(consts[ed[1]+1] and consts[ed[1]+1].value or "")
-							-- sanitize: collapse double-dots, strip edge dots
 							imp = imp:gsub("%.%.+", "."):gsub("^%.", ""):gsub("%.$", "")
 							local totalIdx = bit32.rshift(ed[2] or 0, 30)
 							if totalIdx==1 and options.ListUsedGlobals and isValidGlobal(imp) then
 								table.insert(usedGlobals,imp); usedGlobalsSet[imp]=true
 							end
 							emit(R(ur[1]).." = "..imp)
-	
 						elseif opn=="GETTABLE" then
 							emit(R(ur[1]).." = "..R(ur[2]).."["..R(ur[3]).."]")
-	
 						elseif opn=="SETTABLE" then
 							emit(R(ur[2]).."["..R(ur[3]).."] = "..R(ur[1]))
-	
 						elseif opn=="GETTABLEKS" then
 							local key = consts[ed[2]+1] and consts[ed[2]+1].value
 							emit(R(ur[1]).." = "..R(ur[2])..formatIndexString(key))
-	
 						elseif opn=="SETTABLEKS" then
 							local key = consts[ed[2]+1] and consts[ed[2]+1].value
 							emit(R(ur[2])..formatIndexString(key).." = "..R(ur[1]))
-	
 						elseif opn=="GETTABLEN" then
 							emit(R(ur[1]).." = "..R(ur[2]).."["..(ed[1]+1).."]")
-	
 						elseif opn=="SETTABLEN" then
 							emit(R(ur[2]).."["..(ed[1]+1).."] = "..R(ur[1]))
-	
 						elseif opn=="NEWCLOSURE" then
 							local p2=inner[ed[1]+1]; if p2 then writeProto(ur[1],p2) end
 						elseif opn=="DUPCLOSURE" then
@@ -23538,7 +23727,6 @@ local function main()
 						elseif opn=="NAMECALL" then
 							local method=tostring(consts[ed[2]+1] and consts[ed[2]+1].value or "")
 							emit("-- :"..method)
-	
 						elseif opn=="CALL" then
 							local baseR=ur[1]
 							local nArgs=ed[1]-1; local nRes=ed[2]-1
@@ -23570,7 +23758,6 @@ local function main()
 							end
 							callBody..=")"
 							emit(callBody)
-	
 						elseif opn=="RETURN" then
 							local baseR=ur[1]; local tot=ed[1]-2
 							local rb=""
@@ -23583,75 +23770,48 @@ local function main()
 								end
 							end
 							emit("return"..rb)
-	
 						elseif opn=="JUMP" then emit("-- jump to #"..(i+ed[1]))
-	
 						elseif opn=="JUMPBACK" then emit("-- jump back to #"..(i+ed[1]+1))
-	
 						elseif opn=="JUMPIF" then
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if not "..R(ur[1]).." then -- goto #"..ei)
-	
 						elseif opn=="JUMPIFNOT" then
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if "..R(ur[1]).." then -- goto #"..ei)
-	
 						elseif opn=="JUMPIFEQ" then
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if "..R(ur[1]).." == "..R(ur[2]).." then -- goto #"..ei)
-	
 						elseif opn=="JUMPIFLE" then
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if "..R(ur[1]).." >= "..R(ur[2]).." then -- goto #"..ei)
-	
 						elseif opn=="JUMPIFLT" then
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if "..R(ur[1]).." > "..R(ur[2]).." then -- goto #"..ei)
-	
 						elseif opn=="JUMPIFNOTEQ" then
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if "..R(ur[1]).." ~= "..R(ur[2]).." then -- goto #"..ei)
-	
 						elseif opn=="JUMPIFNOTLE" then
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if "..R(ur[1]).." <= "..R(ur[2]).." then -- goto #"..ei)
-	
 						elseif opn=="JUMPIFNOTLT" then
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if "..R(ur[1]).." < "..R(ur[2]).." then -- goto #"..ei)
-	
 						elseif opn=="ADD"  then emit(R(ur[1]).." = "..R(ur[2]).." + "..R(ur[3]))
-	
 						elseif opn=="SUB"  then emit(R(ur[1]).." = "..R(ur[2]).." - "..R(ur[3]))
-	
 						elseif opn=="MUL"  then emit(R(ur[1]).." = "..R(ur[2]).." * "..R(ur[3]))
-	
 						elseif opn=="DIV"  then emit(R(ur[1]).." = "..R(ur[2]).." / "..R(ur[3]))
-	
 						elseif opn=="MOD"  then emit(R(ur[1]).." = "..R(ur[2]).." % "..R(ur[3]))
-	
 						elseif opn=="POW"  then emit(R(ur[1]).." = "..R(ur[2]).." ^ "..R(ur[3]))
-	
 						elseif opn=="ADDK" then emit(R(ur[1]).." = "..R(ur[2]).." + "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="SUBK" then emit(R(ur[1]).." = "..R(ur[2]).." - "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="MULK" then emit(R(ur[1]).." = "..R(ur[2]).." * "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="DIVK" then emit(R(ur[1]).." = "..R(ur[2]).." / "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="MODK" then emit(R(ur[1]).." = "..R(ur[2]).." % "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="POWK" then emit(R(ur[1]).." = "..R(ur[2]).." ^ "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="AND"  then emit(R(ur[1]).." = "..R(ur[2]).." and "..R(ur[3]))
-	
 						elseif opn=="OR"   then emit(R(ur[1]).." = "..R(ur[2]).." or "..R(ur[3]))
-	
 						elseif opn=="ANDK" then emit(R(ur[1]).." = "..R(ur[2]).." and "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="ORK"  then emit(R(ur[1]).." = "..R(ur[2]).." or "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="CONCAT" then
 							local tgt=table.remove(ur,1)
 							local cb=""
@@ -23659,19 +23819,13 @@ local function main()
 								cb..=fmtReg(r); if k~=#ur then cb..=" .. " end
 							end
 							emit(R(tgt).." = "..cb)
-	
 						elseif opn=="NOT"    then emit(R(ur[1]).." = not "..R(ur[2]))
-	
 						elseif opn=="MINUS"  then emit(R(ur[1]).." = -"..R(ur[2]))
-	
 						elseif opn=="LENGTH" then emit(R(ur[1]).." = #"..R(ur[2]))
-	
 						elseif opn=="NEWTABLE" then
 							emit(R(ur[1]).." = {}")
-	
 							if options.ShowDebugInformation and ed[2] and ed[2]>0 then
 								emit(" ")
-	
 							end
 						elseif opn=="DUPTABLE" then
 							local cv=consts[ed[1]+1]
@@ -23682,15 +23836,12 @@ local function main()
 									if k~=cv.value.size then tb..=", " end
 								end
 								emit(R(ur[1]).." = {} -- "..tb.."}")
-	
 							else emit(R(ur[1]).." = {}") end
-	
 						elseif opn=="SETLIST" then
 							local tgt=ur[1]; local src=ur[2]
 							local si=ed[1]; local vc=ed[2]
 							if vc==0 then
 								emit(R(tgt).."["..si.."] = [...]")
-	
 							else
 								local tot2=#ur-1; local cb=""
 								for k=1,tot2 do
@@ -23698,24 +23849,19 @@ local function main()
 									if k~=tot2 then cb..="\n" end
 								end
 								emit(cb)
-	
 							end
 						elseif opn=="FORNPREP" then
 							emit("for "..R(ur[3]).." = "..R(ur[3])..", "..R(ur[1])..", "..R(ur[2]).." do -- end at #"..(i+ed[1]))
 						elseif opn=="FORNLOOP" then
 							emit("end -- iterate + jump to #"..(i+ed[1]))
-	
 						elseif opn=="FORGLOOP" then
 							emit("end -- iterate + jump to #"..(i+ed[1]))
-	
 						elseif opn=="FORGPREP_INEXT" then
 							local tr=ur[1]+1
 							emit("for "..R(tr+2)..", "..R(tr+3).." in ipairs("..R(tr)..") do")
-	
 						elseif opn=="FORGPREP_NEXT" then
 							local tr=ur[1]+1
 							emit("for "..R(tr+2)..", "..R(tr+3).." in pairs("..R(tr)..") do")
-	
 						elseif opn=="FORGPREP" then
 							local ei=i+ed[1]+2
 							local ea=actions[ei]
@@ -23725,8 +23871,6 @@ local function main()
 									vb..=fmtReg(r, ei); if k~=#ea.usedRegisters then vb..=", " end
 								end
 							else
-								-- FORGLOOP had no usedRegisters (debug stripped or aux=0).
-								-- Generic-for iteration vars live at baseReg+2, +3, ... relative to A.
 								local baseReg = ur[1]
 								local nVars = 2
 								if ea and ea.extraData and ea.extraData[2] then
@@ -23739,7 +23883,6 @@ local function main()
 								vb = table.concat(parts, ", ")
 							end
 							emit("for "..vb.." in "..R(ur[1]).." do -- end at #"..ei)
-	
 						elseif opn=="GETVARARGS" then
 							local vc2=ed[1]-1
 							local rb=""
@@ -23750,28 +23893,21 @@ local function main()
 								end
 							end
 							emit(rb.." = ...")
-	
 						elseif opn=="PREPVARARGS" then emit("-- ... ; number of fixed args: "..ed[1])
-	
 						elseif opn=="LOADKX" then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="JUMPX"    then emit("-- jump to #"..(i+ed[1]))
-	
 						elseif opn=="COVERAGE" then emit("-- coverage ("..ed[1]..")")
-	
 						elseif opn=="JUMPXEQKNIL" then
 							local rev=bit32.rshift(ed[2] or 0,0x1F)~=1
 							local sign=rev and "~=" or "=="
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if "..R(ur[1]).." "..sign.." nil then -- goto #"..ei)
-	
 						elseif opn=="JUMPXEQKB" then
 							local val=tostring(toBoolean(bit32.band(ed[2] or 0,1)))
 							local rev=bit32.rshift(ed[2] or 0,0x1F)~=1
 							local sign=rev and "~=" or "=="
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if "..R(ur[1]).." "..sign.." "..val.." then -- goto #"..ei)
-	
 						elseif opn=="JUMPXEQKN" or opn=="JUMPXEQKS" then
 							local cidx=bit32.band(ed[2] or 0,0xFFFFFF)
 							local val=fmtConst(consts[cidx+1])
@@ -23779,32 +23915,20 @@ local function main()
 							local sign=rev and "~=" or "=="
 							local ei=i+ed[1]; makeJump(ei)
 							emit("if "..R(ur[1]).." "..sign.." "..val.." then -- goto #"..ei)
-	
 						elseif opn=="CAPTURE"  then emit("-- upvalue capture")
-	
 						elseif opn=="SUBRK"    then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]).." - "..R(ur[2]))
-	
 						elseif opn=="DIVRK"    then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]).." / "..R(ur[2]))
-	
 						elseif opn=="IDIV"     then emit(R(ur[1]).." = "..R(ur[2]).." // "..R(ur[3]))
-	
 						elseif opn=="IDIVK"    then emit(R(ur[1]).." = "..R(ur[2]).." // "..fmtConst(consts[ed[1]+1]))
-	
 						elseif opn=="FASTCALL" then emit("-- FASTCALL; "..Luau:GetBuiltinInfo(ed[1]).."()")
-	
 						elseif opn=="FASTCALL1" then emit("-- FASTCALL1; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..")")
-	
 						elseif opn=="FASTCALL2" then emit("-- FASTCALL2; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..", "..R(ur[2])..")")
-	
 						elseif opn=="FASTCALL2K" then
 							emit("-- FASTCALL2K; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..", "..fmtConst(consts[(ed[3] or 0)+1])..")")
-	
 						elseif opn=="FASTCALL3" then
 							emit("-- FASTCALL3; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..", "..R(ur[2])..", "..R(ur[3])..")")
-	
 						end
 						emit("\n")
-	
 						handleJumps()
 					end
 				end
@@ -23984,30 +24108,23 @@ local function main()
 		for i,proto in ipairs(parsed.protos) do walkProto(proto,i) end
 		return table.concat(lines,"\n")
 	end
-
 	local function _ppImpl(text)
 		local result = {}
 		local depth  = 0
-	
 		local DEDENT_BEFORE      = { ["end"]=true, ["until"]=true }
 		local INDENT_AFTER       = { ["then"]=true, ["do"]=true, ["repeat"]=true }
 		local DEDENT_THEN_INDENT = { ["else"]=true, ["elseif"]=true }
-	
 		local function stripStrings(s)
-			-- remove string literals then line comments to get bare keyword tokens
 			s = s:gsub('"[^"\\]*(?:\\.[^"\\]*)*"', '""')
 			s = s:gsub("'[^'\\]*(?:\\.[^'\\]*)*'", "''")
-			s = s:gsub("%-%-.*$", "")  -- strip trailing comment
+			s = s:gsub("%-%-.*$", "")
 			return s
 		end
-	
 		local function firstWord(s)
 			return (stripStrings(s):match("^%s*([%a_][%w_]*)")) or ""
 		end
-	
 		local function containsOpener(s)
 			local clean = stripStrings(s)
-			-- elseif/else are already handled by DEDENT_THEN_INDENT; don't double-indent
 			local fw = clean:match("^%s*([%a_][%w_]*)")
 			if fw == "elseif" or fw == "else" then return false end
 			for w in clean:gmatch("[%a_][%w_]*") do
@@ -24016,46 +24133,35 @@ local function main()
 			end
 			return false
 		end
-	
 		for line in (text .. "\n"):gmatch("[^\n]*\n") do
 			local bare = line:gsub("\n$", "")
 			if bare == "" then
 				result[#result + 1] = "\n"; continue
 			end
-	
-			-- strip disasm prefix: [NNN] :NNN: OPNAME<spaces>
 			local expr = bare:match("^%[%d+%]%s*:?%d*:?%s*%u[%u_]*%s+(.*)") or bare
-	
 			local kw = firstWord(expr)
-	
 			if DEDENT_THEN_INDENT[kw] then
 				depth = math.max(0, depth - 1)
 				result[#result + 1] = string.rep("    ", depth) .. bare .. "\n"
 				depth += 1
-	
 			elseif DEDENT_BEFORE[kw] then
 				depth = math.max(0, depth - 1)
 				result[#result + 1] = string.rep("    ", depth) .. bare .. "\n"
-	
 			else
 				result[#result + 1] = string.rep("    ", depth) .. bare .. "\n"
 				if containsOpener(expr) then depth += 1 end
 			end
 		end
-	
 		return table.concat(result)
 	end
-
 	local function _coImpl(text)
 		local rawLines = {}
 		for line in (text .. "\n"):gmatch("[^\n]*\n") do
 			rawLines[#rawLines + 1] = line:gsub("\n$", "")
 		end
-
 		local function escpat(s)
 			return s:gsub("([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
 		end
-
 		local function nextNonBlank(start)
 			local j = start
 			while j <= #rawLines and (rawLines[j] == nil or rawLines[j]:match("^%s*$")) do
@@ -24063,10 +24169,6 @@ local function main()
 			end
 			return j
 		end
-
-		-- Pass 1: collapse single-use constant loads into the next usage line
-		-- Handles: strings, numbers, booleans, nil, and bare name/import paths
-		-- e.g. v2 = "RunService" / v0 = v0:GetService(v2) → v0 = v0:GetService("RunService")
 		local function tryCollapse(i)
 			local line = rawLines[i]
 			if line == nil then return false end
@@ -24075,7 +24177,6 @@ local function main()
 			if not reg then reg, lit = line:match('^%s*(v%d+) = (true)%s*$') end
 			if not reg then reg, lit = line:match('^%s*(v%d+) = (false)%s*$') end
 			if not reg then reg, lit = line:match('^%s*(v%d+) = (nil)%s*$') end
-			-- bare import/global paths like: v2 = game.Players.LocalPlayer
 			if not reg then reg, lit = line:match('^%s*(v%d+) = ([%a_][%w_%.]+)%s*$') end
 			if not reg then return false end
 			local j = nextNonBlank(i + 1)
@@ -24086,7 +24187,6 @@ local function main()
 			for _ in nextLine:gmatch(ep) do count += 1 end
 			if count ~= 1 then return false end
 			if nextLine:match("^%s*" .. ep .. "%s*=") then return false end
-			-- don't collapse if reg is reassigned in any skipped blank lines between i and j
 			for k = i + 1, j - 1 do
 				local midLine = rawLines[k]
 				if midLine and midLine:match("^%s*" .. ep .. "%s*=") then return false end
@@ -24095,12 +24195,9 @@ local function main()
 			rawLines[i] = nil
 			return true
 		end
-		for _ = 1, 8 do  -- more passes for deeper constant chains
+		for _ = 1, 8 do
 			for i = 1, #rawLines do tryCollapse(i) end
 		end
-
-		-- Pass 1b: fold single-use field/index accesses
-		-- e.g. v3 = v2.Players / use(v3)  →  use(v2.Players)
 		local function tryFoldField(i)
 			local line = rawLines[i]
 			if not line then return false end
@@ -24116,19 +24213,14 @@ local function main()
 			local nextLine = rawLines[j]
 			local epSrc = escpat(src)
 			local epReg = escpat(lreg)
-			-- count uses of lreg in the next line
 			local count = 0
 			for _ in nextLine:gmatch(epReg) do count += 1 end
 			if count ~= 1 then return false end
-			-- don't fold into an assignment to lreg itself
 			if nextLine:match("^%s*" .. epReg .. "%s*=") then return false end
-			-- don't fold if src is reassigned between i and j
 			for k = i + 1, j - 1 do
 				local midLine = rawLines[k]
 				if midLine and midLine:match("^%s*" .. epSrc .. "%s*=") then return false end
 			end
-			-- don't fold if src itself is also a folded upvalue reference (upv_ prefix)
-			-- to avoid chaining upvalue substitutions that create misleading expressions
 			if src:match("^upv_") then return false end
 			rawLines[j] = nextLine:gsub(epReg, src .. field, 1)
 			rawLines[i] = nil
@@ -24137,8 +24229,6 @@ local function main()
 		for _ = 1, 6 do
 			for i = 1, #rawLines do tryFoldField(i) end
 		end
-
-		-- Pass 2: strip comment noise
 		local pass2 = {}
 		for idx = 1, #rawLines do
 			local line = rawLines[idx]
@@ -24151,8 +24241,6 @@ local function main()
 			line = line:gsub("%s*%-%- iterate %+ jump to #%d+$", "")
 			pass2[#pass2 + 1] = line
 		end
-
-		-- Pass 3: drop vN = nil lines immediately before a for loop
 		local pass3 = {}
 		local i = 1
 		while i <= #pass2 do
@@ -24168,8 +24256,6 @@ local function main()
 				i += 1
 			end
 		end
-
-		-- Pass 4: insert `local` on first assignment of each vN register
 		local seen = {}
 		local pass4 = {}
 		for _, line in ipairs(pass3) do
@@ -24180,8 +24266,6 @@ local function main()
 			end
 			pass4[#pass4 + 1] = line
 		end
-
-		-- Pass 5: collapse runs of multiple blank lines into one
 		local final = {}
 		local lastBlank = false
 		for _, line in ipairs(pass4) do
@@ -24190,10 +24274,8 @@ local function main()
 			lastBlank = isBlank
 			final[#final + 1] = line
 		end
-
 		return table.concat(final, "\n")
 	end
-
 		ZukDecompile = Decompile
 		prettyPrint  = _ppImpl
 		cleanOutput  = _coImpl
@@ -24213,7 +24295,6 @@ end)
 warn("[AdonisPanel] v2 Ready — "..self.Config.ToggleKey.Name.." or ;apanel")
 end)
 end
-
 RegisterCommand({
     Name        = "freezer",
     Aliases     = {"fanim"},
