@@ -21596,23 +21596,8 @@ function Modules.AdonisPanel:_build()
         ZIndex=4,
     }, editorHolder)
 
-    -- Actual input box — sits below the highlight overlay.
-    -- Text color matches editor bg so it's invisible; caret still renders.
-    local codeInput = make("TextBox", {
-        Size=UDim2.new(1,0,1,0),
-        BackgroundTransparency=1,
-        Text="-- write your script here\n",
-        TextColor3=Color3.fromRGB(21,21,21),
-        PlaceholderText="", PlaceholderColor3=Color3.fromRGB(0,0,0),
-        Font=EDITOR_FONT, TextSize=EDITOR_FONTSIZE,
-        TextXAlignment=Enum.TextXAlignment.Left,
-        TextYAlignment=Enum.TextYAlignment.Top,
-        MultiLine=true, ClearTextOnFocus=false,
-        ZIndex=5,
-    }, codeScroll)
-    make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,3)}, codeInput)
-
-    -- Syntax highlight overlay — ON TOP of input so colored text is visible
+    -- Syntax highlight overlay — rendered BELOW the input.
+    -- Shows the colored rich text. Non-interactive.
     local hlOverlay = make("TextLabel", {
         Size=UDim2.new(1,0,1,0),
         BackgroundTransparency=1,
@@ -21621,11 +21606,26 @@ function Modules.AdonisPanel:_build()
         TextXAlignment=Enum.TextXAlignment.Left,
         TextYAlignment=Enum.TextYAlignment.Top,
         TextWrapped=false,
-        ZIndex=6,
-        -- Clicks pass through to codeInput below
-        Interactable=false,
+        ZIndex=5,
     }, codeScroll)
     make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,3)}, hlOverlay)
+
+    -- Actual input box — ON TOP of overlay, text fully transparent so only
+    -- the highlight shows through. Caret is unaffected by TextTransparency.
+    local codeInput = make("TextBox", {
+        Size=UDim2.new(1,0,1,0),
+        BackgroundTransparency=1,
+        Text="-- write your script here\n",
+        TextColor3=Color3.fromRGB(255,255,255),
+        TextTransparency=1,
+        PlaceholderText="", PlaceholderColor3=Color3.fromRGB(0,0,0),
+        Font=EDITOR_FONT, TextSize=EDITOR_FONTSIZE,
+        TextXAlignment=Enum.TextXAlignment.Left,
+        TextYAlignment=Enum.TextYAlignment.Top,
+        MultiLine=true, ClearTextOnFocus=false,
+        ZIndex=6,
+    }, codeScroll)
+    make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,3)}, codeInput)
 
     -- Rebuild line numbers to match current line count
     local _lineLabels = {}
