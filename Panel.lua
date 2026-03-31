@@ -21596,7 +21596,23 @@ function Modules.AdonisPanel:_build()
         ZIndex=4,
     }, editorHolder)
 
-    -- Syntax highlight overlay (rendered behind the input)
+    -- Actual input box — sits below the highlight overlay.
+    -- Text color matches editor bg so it's invisible; caret still renders.
+    local codeInput = make("TextBox", {
+        Size=UDim2.new(1,0,1,0),
+        BackgroundTransparency=1,
+        Text="-- write your script here\n",
+        TextColor3=Color3.fromRGB(21,21,21),
+        PlaceholderText="", PlaceholderColor3=Color3.fromRGB(0,0,0),
+        Font=EDITOR_FONT, TextSize=EDITOR_FONTSIZE,
+        TextXAlignment=Enum.TextXAlignment.Left,
+        TextYAlignment=Enum.TextYAlignment.Top,
+        MultiLine=true, ClearTextOnFocus=false,
+        ZIndex=5,
+    }, codeScroll)
+    make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,3)}, codeInput)
+
+    -- Syntax highlight overlay — ON TOP of input so colored text is visible
     local hlOverlay = make("TextLabel", {
         Size=UDim2.new(1,0,1,0),
         BackgroundTransparency=1,
@@ -21604,26 +21620,12 @@ function Modules.AdonisPanel:_build()
         TextColor3=T.Text, Font=EDITOR_FONT, TextSize=EDITOR_FONTSIZE,
         TextXAlignment=Enum.TextXAlignment.Left,
         TextYAlignment=Enum.TextYAlignment.Top,
-        TextWrapped=false, ZIndex=4,
+        TextWrapped=false,
+        ZIndex=6,
+        -- Clicks pass through to codeInput below
+        Interactable=false,
     }, codeScroll)
     make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,3)}, hlOverlay)
-
-    -- Actual input box (transparent text so only highlight shows)
-    local codeInput = make("TextBox", {
-        Size=UDim2.new(1,0,1,0),
-        BackgroundTransparency=1,
-        Text="-- write your script here\n",
-        TextColor3=Color3.fromRGB(1,1,1,0), -- fully transparent text
-        PlaceholderText="", PlaceholderColor3=Color3.fromRGB(0,0,0),
-        Font=EDITOR_FONT, TextSize=EDITOR_FONTSIZE,
-        TextXAlignment=Enum.TextXAlignment.Left,
-        TextYAlignment=Enum.TextYAlignment.Top,
-        MultiLine=true, ClearTextOnFocus=false,
-        ZIndex=6,
-    }, codeScroll)
-    make("UIPadding", {PaddingLeft=UDim.new(0,4), PaddingTop=UDim.new(0,3)}, codeInput)
-    -- make caret visible by giving text a near-black color that blends with bg
-    codeInput.TextColor3 = Color3.fromRGB(22,22,22)
 
     -- Rebuild line numbers to match current line count
     local _lineLabels = {}
