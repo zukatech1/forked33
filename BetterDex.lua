@@ -1,17193 +1,1135 @@
-local nodes = {}
+  --[[
+              __          ________               
+__________ __|  | _____  _\_____  \      .__     
+\___   /  |  \  |/ /\  \/ //  ____/    __|  |___ 
+ /    /|  |  /    <  \   //       \   /__    __/ 
+/_____ \____/|__|_ \  \_/ \_______ \     |__|    
+      \/          \/              \/             
 
-local oldgame = game
-local game = workspace.Parent
+--]]
 
-cloneref = cloneref or function(ref)
-	if not getreg then return ref end
-	
-	local InstanceList
-	
-	local a = Instance.new("Part")
-	for _, c in pairs(getreg()) do
-		if type(c) == "table" and #c then
-			if rawget(c, "__mode") == "kvs" then
-				for d, e in pairs(c) do
-					if e == a then
-						InstanceList = c
-						break
-					end
-				end
-			end
+
+
+
+local FLOAT_PRECISION = 7
+                 local Players               =      game:GetService("Players")
+                 local UserInputService     =           game:GetService("UserInputService")
+                 local localPlayer          =                Players.LocalPlayer
+                 local playerGui            =                     localPlayer:WaitForChild("PlayerGui")
+local Reader = {}
+function Reader.new(bytecode)
+	local stream = buffer.fromstring(bytecode)
+	local cursor = 0
+	local blen   = buffer.len(stream)
+	local self   = {}
+	local function guard(n)
+		if cursor + n > blen then
+			error(string.format("Reader OOB: need %d byte(s) at offset %d (buf len %d)", n, cursor, blen), 2)
 		end
 	end
-	local f = {}
-	function f.invalidate(g)
-		if not InstanceList then
-			return
-		end
-		for b, c in pairs(InstanceList) do
-			if c == g then
-				InstanceList[b] = nil
-				return g
-			end
-		end
+	function self:len()       return blen end
+	function self:nextByte()
+		guard(1); local r = buffer.readu8(stream, cursor); cursor += 1; return r
 	end
-	return f.invalidate
-end
-
-local EmbeddedModules = {
-["Console"] = function()
-
-local Main,Lib,Apps,Settings
-local Explorer, Properties, ScriptViewer, Notebook
-local API,RMD,env,service,plr,create,createSimple
-
-local function initDeps(data)
-	Main = data.Main
-	Lib = data.Lib
-	Apps = data.Apps
-	Settings = data.Settings
-
-	API = data.API
-	RMD = data.RMD
-	env = data.env
-	service = data.service
-	plr = data.plr
-	create = data.create
-	createSimple = data.createSimple
-end
-
-local function initAfterMain()
-	Explorer = Apps.Explorer
-	Properties = Apps.Properties
-	ScriptViewer = Apps.ScriptViewer
-	Notebook = Apps.Notebook
-end
-
-local function main()
-	local Console = {}
-
-	local window,ConsoleFrame
-
-	local OutputLimit = 500
-
-	local G2L = {};
-
-	window = Lib.Window.new()
-	window:SetTitle("Console")
-	window:Resize(500,400)
-	Console.Window = window
-
-	ConsoleFrame = Instance.new("ImageButton", window.GuiElems.Content);
-	ConsoleFrame["BorderSizePixel"] = 0;
-	ConsoleFrame["AutoButtonColor"] = false;
-	ConsoleFrame["BackgroundTransparency"] = 1;
-	ConsoleFrame["BackgroundColor3"] = Color3.fromRGB(47, 47, 47);
-	ConsoleFrame["Selectable"] = false;
-	ConsoleFrame["Size"] = UDim2.new(1,0,1,0);
-	ConsoleFrame["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	ConsoleFrame["Name"] = [[Console]];
-	ConsoleFrame["Position"] = UDim2.new(0,0,0,0);
-
-	G2L["3"] = Lib.Frame.new().Gui
-	G2L["3"].Parent = ConsoleFrame
-	G2L["3"]["BorderSizePixel"] = 0;
-	G2L["3"]["BackgroundColor3"] = Color3.fromRGB(37, 37, 37);
-	G2L["3"]["AnchorPoint"] = Vector2.new(0.5, 1);
-	G2L["3"]["ClipsDescendants"] = true;
-	G2L["3"]["Size"] = UDim2.new(1, -8, 0, 22);
-	G2L["3"]["Position"] = UDim2.new(0.5, 0, 1, -5);
-	G2L["3"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["3"]["Name"] = [[CommandLine]];
-
-	G2L["4"] = Instance.new("UIStroke", G2L["3"]);
-	G2L["4"]["Transparency"] = 0.65;
-	G2L["4"]["Thickness"] = 1.25;
-
-	G2L["5"] = Instance.new("ScrollingFrame", G2L["3"]);
-	G2L["5"]["Active"] = true;
-	G2L["5"]["ScrollingDirection"] = Enum.ScrollingDirection.X;
-	G2L["5"]["BorderSizePixel"] = 0;
-	G2L["5"]["CanvasSize"] = UDim2.new(0, 0, 0, 0);
-	G2L["5"]["ElasticBehavior"] = Enum.ElasticBehavior.Never;
-	G2L["5"]["TopImage"] = [[rbxasset://textures/ui/Scroll/scroll-middle.png]];
-	G2L["5"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["5"]["HorizontalScrollBarInset"] = Enum.ScrollBarInset.Always;
-	G2L["5"]["BottomImage"] = [[rbxasset://textures/ui/Scroll/scroll-middle.png]];
-	G2L["5"]["AutomaticCanvasSize"] = Enum.AutomaticSize.X;
-	G2L["5"]["Size"] = UDim2.new(1, 0, 1, 0);
-	G2L["5"]["ScrollBarImageColor3"] = Color3.fromRGB(57, 57, 57);
-	G2L["5"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["5"]["ScrollBarThickness"] = 2;
-	G2L["5"]["BackgroundTransparency"] = 1;
-
-	G2L["6"] = Instance.new("TextBox", G2L["5"]);
-	G2L["6"]["CursorPosition"] = -1;
-	G2L["6"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-	G2L["6"]["PlaceholderColor3"] = Color3.fromRGB(211, 211, 211);
-	G2L["6"]["BorderSizePixel"] = 0;
-	G2L["6"]["TextSize"] = 13;
-	G2L["6"]["TextColor3"] = Color3.fromRGB(211, 211, 211);
-	G2L["6"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["6"]["FontFace"] = Font.new([[rbxasset://fonts/families/Inconsolata.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-	G2L["6"]["AutomaticSize"] = Enum.AutomaticSize.X;
-	G2L["6"]["ClearTextOnFocus"] = false;
-	G2L["6"]["PlaceholderText"] = [[Run a command]];
-	G2L["6"]["Size"] = UDim2.new(0, 246, 0, 22);
-	G2L["6"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["6"]["Text"] = [[]];
-	G2L["6"]["BackgroundTransparency"] = 1;
-
-	G2L["7"] = Instance.new("UIPadding", G2L["6"]);
-	G2L["7"]["PaddingLeft"] = UDim.new(0, 7);
-
-	G2L["8"] = Instance.new("TextLabel", G2L["5"]);
-	G2L["8"]["Interactable"] = false;
-	G2L["8"]["ZIndex"] = 2;
-	G2L["8"]["BorderSizePixel"] = 0;
-	G2L["8"]["TextSize"] = 13;
-	G2L["8"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-	G2L["8"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["8"]["FontFace"] = Font.new([[rbxasset://fonts/families/Inconsolata.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-	G2L["8"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["8"]["BackgroundTransparency"] = 1;
-	G2L["8"]["RichText"] = true;
-	G2L["8"]["Size"] = UDim2.new(0, 246, 0, 22);
-	G2L["8"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["8"]["Text"] = [[]];
-	G2L["8"]["Selectable"] = true;
-	G2L["8"]["AutomaticSize"] = Enum.AutomaticSize.X;
-	G2L["8"]["Name"] = [[Highlight]];
-
-	G2L["9"] = Instance.new("UIPadding", G2L["8"]);
-	G2L["9"]["PaddingLeft"] = UDim.new(0, 7);
-
-	G2L["backgroundOutput"] = Instance.new("Frame", ConsoleFrame);
-	G2L["backgroundOutput"]["BorderSizePixel"] = 0;
-	G2L["backgroundOutput"]["BackgroundColor3"] = Color3.fromRGB(36, 36, 36);
-	G2L["backgroundOutput"]["Name"] = [[BackgroundOutput]];
-	G2L["backgroundOutput"]["AnchorPoint"] = Vector2.new(0, 0);
-	G2L["backgroundOutput"]["Size"] = UDim2.new(1, -8, 1, -55);
-	G2L["backgroundOutput"]["Position"] = UDim2.new(0, 4, 0, 23);
-	G2L["backgroundOutput"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["backgroundOutput"]["ZIndex"] = 1;
-
-	local scrollbar = Lib.ScrollBar.new()
-	scrollbar.Gui.Parent = ConsoleFrame
-	scrollbar.Gui.Size = UDim2.new(0, 16, 1, -55);
-	scrollbar.Gui.Position = UDim2.new(1, -20,0, 23);
-	scrollbar.Gui.Up.ZIndex = 3
-	scrollbar.Gui.Down.ZIndex = 3
-
-	G2L["a"] = Instance.new("ScrollingFrame", ConsoleFrame);
-	G2L["a"]["Active"] = true;
-	G2L["a"]["BorderSizePixel"] = 0;
-	G2L["a"]["CanvasSize"] = UDim2.new(0, 0, 0, 0);
-	G2L["a"]["TopImage"] = '';
-	G2L["a"]["BackgroundColor3"] = Color3.fromRGB(36, 36, 36);
-	G2L["a"].BackgroundTransparency = 1
-	G2L["a"]["Name"] = [[Output]];
-	G2L["a"]["ScrollBarImageTransparency"] = 0;
-	G2L["a"]["BottomImage"] = '';
-	G2L["a"]["AnchorPoint"] = Vector2.new(0, 0);
-	G2L["a"]["AutomaticCanvasSize"] = Enum.AutomaticSize.Y;
-	G2L["a"]["Size"] = UDim2.new(1, -8, 1, -55);
-	G2L["a"]["Position"] = UDim2.new(0, 4, 0, 23);
-	G2L["a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["a"].ScrollBarImageColor3 = Color3.fromRGB(70, 70, 70)
-	G2L["a"]["ScrollBarThickness"] = 16;
-	G2L["a"]["ZIndex"] = 1;
-
-	G2L["a"]:GetPropertyChangedSignal("AbsoluteWindowSize"):Connect(function()
-		if G2L["a"].AbsoluteCanvasSize ~= G2L["a"].AbsoluteWindowSize then
-			scrollbar.Gui.Visible = true
-		else
-			scrollbar.Gui.Visible = false
-		end
-	end)
-
-	G2L["b"] = Instance.new("UIListLayout", G2L["a"]);
-	G2L["b"]["SortOrder"] = Enum.SortOrder.LayoutOrder;
-
-	G2L["c"] = Instance.new("UIStroke", G2L["a"]);
-	G2L["c"]["Transparency"] = 0.7;
-	G2L["c"]["Thickness"] = 1.25;
-	G2L["c"]["Color"] = Color3.fromRGB(12, 12, 12);
-
-	G2L["d"] = Instance.new("NumberValue", G2L["a"]);
-	G2L["d"]["Name"] = [[OutputTextSize]];
-	G2L["d"]["Value"] = 15;
-
-	G2L["e"] = Instance.new("NumberValue", G2L["a"]);
-	G2L["e"]["Name"] = [[OutputLimit]];
-	G2L["e"]["Value"] = OutputLimit;
-
-	G2L["f"] = Instance.new("UIPadding", G2L["a"]);
-	G2L["f"]["PaddingTop"] = UDim.new(0, 2);
-
-	G2L["10"] = Instance.new("Frame", ConsoleFrame);
-	G2L["10"]["BorderSizePixel"] = 0;
-	G2L["10"]["BackgroundColor3"] = Color3.fromRGB(37, 37, 37);
-	G2L["10"]["ClipsDescendants"] = true;
-	G2L["10"]["Size"] = UDim2.new(0, 37, 0, 15);
-	G2L["10"]["Position"] = UDim2.new(0, 4, 0, 4);
-	G2L["10"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["10"]["Name"] = [[TextSizeBox]];
-
-	G2L["11"] = Instance.new("TextBox", G2L["10"]);
-	G2L["11"]["PlaceholderColor3"] = Color3.fromRGB(108, 108, 108);
-	G2L["11"]["BorderSizePixel"] = 0;
-	G2L["11"]["TextWrapped"] = true;
-	G2L["11"]["TextSize"] = 15;
-	G2L["11"]["TextColor3"] = Color3.fromRGB(211, 211, 211);
-	G2L["11"]["TextScaled"] = true;
-	G2L["11"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["11"]["FontFace"] = Font.new([[rbxasset://fonts/families/Inconsolata.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-	G2L["11"]["PlaceholderText"] = [[Size]];
-	G2L["11"]["Size"] = UDim2.new(1, 0, 1, 0);
-	G2L["11"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["11"]["Text"] = [[]];
-	G2L["11"]["BackgroundTransparency"] = 1;
-
-	G2L["12"] = Instance.new("UIPadding", G2L["11"]);
-	G2L["12"]["PaddingTop"] = UDim.new(0, 2);
-	G2L["12"]["PaddingRight"] = UDim.new(0, 5);
-	G2L["12"]["PaddingLeft"] = UDim.new(0, 5);
-	G2L["12"]["PaddingBottom"] = UDim.new(0, 2);
-
-	G2L["13"] = Instance.new("UIStroke", G2L["10"]);
-	G2L["13"]["Transparency"] = 0.65;
-	G2L["13"]["Thickness"] = 1.25;
-
-	G2L["14"] = Instance.new("ImageButton", ConsoleFrame);
-	G2L["14"]["BorderSizePixel"] = 0;
-	G2L["14"]["BackgroundColor3"] = Color3.fromRGB(57, 57, 57);
-	G2L["14"]["Size"] = UDim2.new(0, 37, 0, 15);
-	G2L["14"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["14"]["Name"] = [[Clear]];
-	G2L["14"]["Position"] = UDim2.new(1, -42, 0, 4);
-
-	G2L["15"] = Instance.new("TextLabel", G2L["14"]);
-	G2L["15"]["TextWrapped"] = true;
-	G2L["15"]["Interactable"] = false;
-	G2L["15"]["BorderSizePixel"] = 0;
-	G2L["15"]["TextSize"] = 20;
-	G2L["15"]["TextScaled"] = true;
-	G2L["15"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["15"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-	G2L["15"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["15"]["BackgroundTransparency"] = 1;
-	G2L["15"]["Size"] = UDim2.new(1, 0, 1, 0);
-	G2L["15"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["15"]["Text"] = [[Clear]];
-
-	G2L["16"] = Instance.new("UIPadding", G2L["14"]);
-	G2L["16"]["PaddingTop"] = UDim.new(0, 1);
-	G2L["16"]["PaddingBottom"] = UDim.new(0, 1);
-
-	G2L["17"] = Instance.new("TextBox", ConsoleFrame);
-	G2L["17"]["Visible"] = false;
-	G2L["17"]["Active"] = false;
-	G2L["17"]["Name"] = [[OutputTemplate]];
-	G2L["17"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-	G2L["17"]["BorderSizePixel"] = 0;
-	G2L["17"]["TextEditable"] = false;
-	G2L["17"]["TextWrapped"] = true;
-	G2L["17"]["TextSize"] = 15;
-	G2L["17"]["TextColor3"] = Color3.fromRGB(171, 171, 171);
-	G2L["17"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["17"]["RichText"] = true;
-	G2L["17"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-	G2L["17"]["AutomaticSize"] = Enum.AutomaticSize.Y;
-	G2L["17"]["Selectable"] = false;
-	G2L["17"]["ClearTextOnFocus"] = false;
-	G2L["17"]["Size"] = UDim2.new(1, 0, 0, 1);
-	G2L["17"]["Position"] = UDim2.new(0, 20, 0, 0);
-	G2L["17"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["17"]["Text"] = [[(timestamp) <font color="rgb(255, 255, 255)">Output</font>]];
-	G2L["17"]["BackgroundTransparency"] = 1;
-
-	G2L["18"] = Instance.new("UIPadding", G2L["17"]);
-	G2L["18"]["PaddingRight"] = UDim.new(0, 6);
-	G2L["18"]["PaddingLeft"] = UDim.new(0, 6);
-
-	G2L["19"] = Instance.new("ImageButton", ConsoleFrame);
-	G2L["19"]["BorderSizePixel"] = 0;
-	G2L["19"]["BackgroundColor3"] = Color3.fromRGB(57, 57, 57);
-	G2L["19"]["Size"] = UDim2.new(0, 60, 0, 15);
-	G2L["19"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["19"]["Name"] = [[CtrlScroll]];
-	G2L["19"]["Position"] = UDim2.new(0, 46, 0, 4);
-
-	G2L["1a"] = Instance.new("TextLabel", G2L["19"]);
-	G2L["1a"]["TextWrapped"] = true;
-	G2L["1a"]["Interactable"] = false;
-	G2L["1a"]["BorderSizePixel"] = 0;
-	G2L["1a"]["TextSize"] = 20;
-	G2L["1a"]["TextScaled"] = true;
-	G2L["1a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["1a"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-	G2L["1a"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["1a"]["BackgroundTransparency"] = 1;
-	G2L["1a"]["Size"] = UDim2.new(1, 0, 1, 0);
-	G2L["1a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["1a"]["Text"] = [[Ctrl Scroll]];
-
-	G2L["1b"] = Instance.new("UIPadding", G2L["19"]);
-	G2L["1b"]["PaddingTop"] = UDim.new(0, 1);
-	G2L["1b"]["PaddingBottom"] = UDim.new(0, 1);
-
-	G2L["20"] = Instance.new("ImageButton", ConsoleFrame);
-	G2L["20"]["BorderSizePixel"] = 0;
-	G2L["20"]["BackgroundColor3"] = Color3.fromRGB(57, 57, 57);
-	G2L["20"]["Size"] = UDim2.new(0, 60, 0, 15);
-	G2L["20"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["20"]["Name"] = [[AutoScroll]];
-	G2L["20"]["Position"] = UDim2.new(0, 110, 0, 4);
-
-	G2L["1e"] = Instance.new("TextLabel", G2L["20"]);
-	G2L["1e"]["TextWrapped"] = true;
-	G2L["1e"]["Interactable"] = false;
-	G2L["1e"]["BorderSizePixel"] = 0;
-	G2L["1e"]["TextSize"] = 20;
-	G2L["1e"]["TextScaled"] = true;
-	G2L["1e"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["1e"]["FontFace"] = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-	G2L["1e"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-	G2L["1e"]["BackgroundTransparency"] = 1;
-	G2L["1e"]["Size"] = UDim2.new(1, 0, 1, 0);
-	G2L["1e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-	G2L["1e"]["Text"] = [[Auto Scroll]];
-
-	G2L["1f"] = Instance.new("UIPadding", G2L["20"]);
-	G2L["1f"]["PaddingTop"] = UDim.new(0, 1);
-	G2L["1f"]["PaddingBottom"] = UDim.new(0, 1);
-
-	G2L["1c"] = Instance.new("LocalScript", G2L["1"]);
-	G2L["1c"]["Name"] = [[ConsoleHandler]];
-
-	G2L["1d"] = Instance.new("ModuleScript", G2L["1c"]);
-	G2L["1d"]["Name"] = [[SyntaxHighlighter]];
-
-	local G2L_REQUIRE = require;
-	local G2L_MODULES = {};
-	local function require(Module)
-		local ModuleState = G2L_MODULES[Module];
-		if ModuleState then
-			if not ModuleState.Required then
-				ModuleState.Required = true;
-				ModuleState.Value = ModuleState.Closure();
-			end
-			return ModuleState.Value;
-		end;
-		return G2L_REQUIRE(Module);
+	function self:nextSignedByte()
+		guard(1); local r = buffer.readi8(stream, cursor); cursor += 1; return r
 	end
-
-	G2L_MODULES[G2L["1d"]] = {
-		Closure = function()
-			local script = G2L["1d"];local highlighter = {}
-			local keywords = {
-				lua = {
-					"and", "break", "or", "else", "elseif", "if", "then", "until", "repeat", "while", "do", "for", "in", "end",
-					"local", "return", "function", "export"
-				},
-				rbx = {
-					"game", "workspace", "script", "math", "string", "table", "task", "wait", "select", "next", "Enum",
-					"error", "warn", "tick", "assert", "shared", "loadstring", "tonumber", "tostring", "type",
-					"typeof", "unpack", "print", "Instance", "CFrame", "Vector3", "Vector2", "Color3", "UDim", "UDim2", "Ray", "BrickColor",
-					"OverlapParams", "RaycastParams", "Axes", "Random", "Region3", "Rect", "TweenInfo",
-					"collectgarbage", "not", "utf8", "pcall", "xpcall", "_G", "setmetatable", "getmetatable", "os", "pairs", "ipairs"
-				},
-				exploit = {
-					"hookmetamethod", "hookfunction", "getgc", "filtergc", "Drawing", "getgenv", "getsenv", "getrenv", "getfenv", "setfenv",
-					"decompile", "saveinstance", "getrawmetatable", "setrawmetatable", "checkcaller", "cloneref", "clonefunction",
-					"iscclosure", "islclosure", "isexecutorclosure", "newcclosure", "getfunctionhash", "crypt", "writefile", "appendfile", "loadfile", "readfile", "listfiles",
-					"makefolder", "isfolder", "isfile", "delfile", "delfolder", "getcustomasset", "fireclickdetector", "firetouchinterest", "fireproximityprompt"
-				},
-				operators = {
-					"#", "+", "-", "*", "%", "/", "^", "=", "~", "=", "<", ">", ",", ".", "(", ")", "{", "}", "[", "]", ";", ":"
-				}
-			}
-
-			local colors = {
-				numbers = Color3.fromRGB(255, 198, 0),
-				boolean = Color3.fromRGB(255, 198, 0),
-				operator = Color3.fromRGB(204, 204, 204),
-				lua = Color3.fromRGB(132, 214, 247),
-				exploit = Color3.fromRGB(171, 84, 247),
-				rbx = Color3.fromRGB(248, 109, 124),
-				str = Color3.fromRGB(173, 241, 132),
-				comment = Color3.fromRGB(102, 102, 102),
-				null = Color3.fromRGB(255, 198, 0),
-				call = Color3.fromRGB(253, 251, 172),
-				self_call = Color3.fromRGB(253, 251, 172),
-				local_color = Color3.fromRGB(248, 109, 115),
-				function_color = Color3.fromRGB(248, 109, 115),
-				self_color = Color3.fromRGB(248, 109, 115),
-				local_property = Color3.fromRGB(97, 161, 241),
-			}
-
-			local function createKeywordSet(keywords)
-				local keywordSet = {}
-				for _, keyword in ipairs(keywords) do
-					keywordSet[keyword] = true
-				end
-				return keywordSet
-			end
-
-			local luaSet = createKeywordSet(keywords.lua)
-			local exploitSet = createKeywordSet(keywords.exploit)
-			local rbxSet = createKeywordSet(keywords.rbx)
-			local operatorsSet = createKeywordSet(keywords.operators)
-
-			local function getHighlight(tokens, index)
-				local token = tokens[index]
-
-				if colors[token .. "_color"] then
-					return colors[token .. "_color"]
-				end
-
-				if tonumber(token) then
-					return colors.numbers
-				elseif token == "nil" then
-					return colors.null
-				elseif token:sub(1, 2) == "--" then
-					return colors.comment
-				elseif operatorsSet[token] then
-					return colors.operator
-				elseif luaSet[token] then
-					return colors.rbx
-				elseif rbxSet[token] then
-					return colors.lua
-				elseif exploitSet[token] then
-					return colors.exploit
-				elseif token:sub(1, 1) == "\"" or token:sub(1, 1) == "\'" then
-					return colors.str
-				elseif token == "true" or token == "false" then
-					return colors.boolean
-				end
-
-				if tokens[index + 1] == "(" then
-					if tokens[index - 1] == ":" then
-						return colors.self_call
-					end
-
-					return colors.call
-				end
-
-				if tokens[index - 1] == "." then
-					if tokens[index - 2] == "Enum" then
-						return colors.rbx
-					end
-
-					return colors.local_property
-				end
-			end
-
-			function highlighter.run(source)
-				local tokens = {}
-				local currentToken = ""
-
-				local inString = false
-				local inComment = false
-				local commentPersist = false
-
-				for i = 1, #source do
-					local character = source:sub(i, i)
-
-					if inComment then
-						if character == "\n" and not commentPersist then
-							table.insert(tokens, currentToken)
-							table.insert(tokens, character)
-							currentToken = ""
-
-							inComment = false
-						elseif source:sub(i - 1, i) == "]]" and commentPersist then
-							currentToken ..= "]"
-
-							table.insert(tokens, currentToken)
-							currentToken = ""
-
-							inComment = false
-							commentPersist = false
-						else
-							currentToken = currentToken .. character
-						end
-					elseif inString then
-						if character == inString and source:sub(i-1, i-1) ~= "\\" or character == "\n" then
-							currentToken = currentToken .. character
-							inString = false
-						else
-							currentToken = currentToken .. character
-						end
-					else
-						if source:sub(i, i + 1) == "--" then
-							table.insert(tokens, currentToken)
-							currentToken = "-"
-							inComment = true
-							commentPersist = source:sub(i + 2, i + 3) == "[["
-						elseif character == "\"" or character == "\'" then
-							table.insert(tokens, currentToken)
-							currentToken = character
-							inString = character
-						elseif operatorsSet[character] then
-							table.insert(tokens, currentToken)
-							table.insert(tokens, character)
-							currentToken = ""
-						elseif character:match("[%w_]") then
-							currentToken = currentToken .. character
-						else
-							table.insert(tokens, currentToken)
-							table.insert(tokens, character)
-							currentToken = ""
-						end
-					end
-				end
-
-				table.insert(tokens, currentToken)
-
-				local highlighted = {}
-
-				for i, token in ipairs(tokens) do
-					local highlight = getHighlight(tokens, i)
-
-					if highlight then
-						local syntax = string.format("<font color = \"#%s\">%s</font>", highlight:ToHex(), token:gsub("<", "&lt;"):gsub(">", "&gt;"))
-
-						table.insert(highlighted, syntax)
-					else
-						table.insert(highlighted, token)
-					end
-				end
-
-				return table.concat(highlighted)
-			end
-
-			return highlighter
-		end;
-	};
-
-	Console.Init = function()
-
-		local CtrlScroll = false
-		local AutoScroll = false
-
-		local LogService = game:GetService("LogService")
-		local Players = game:GetService("Players")
-		local LocalPlayer = Players.LocalPlayer
-		local Mouse = LocalPlayer:GetMouse()
-		local UserInputService = game:GetService("UserInputService")
-		local RunService = game:GetService("RunService")
-
-		local Console = ConsoleFrame
-		local SyntaxHighlightingModule = require(G2L["1c"].SyntaxHighlighter)
-		local OutputTextSize = Console.Output.OutputTextSize
-
-		local function Tween(obj, info, prop)
-			local tween = game:GetService("TweenService"):Create(obj, info, prop)
-			tween:Play()
-			return tween
-		end
-
-		if CtrlScroll == true then
-			Console.CtrlScroll.BackgroundColor3 = Color3.fromRGB(11, 90, 175)
-		elseif CtrlScroll == false then
-			Console.CtrlScroll.BackgroundColor3 = Color3.fromRGB(56, 56, 56)
-		end
-		Console.CtrlScroll.MouseButton1Click:Connect(function()
-			CtrlScroll = not CtrlScroll
-			if CtrlScroll == true then
-				Console.CtrlScroll.BackgroundColor3 = Color3.fromRGB(11, 90, 175)
-			elseif CtrlScroll == false then
-				Console.CtrlScroll.BackgroundColor3 = Color3.fromRGB(56, 56, 56)
-			end
-		end)
-
-		local IsHoldingCTRL = false
-		UserInputService.InputBegan:Connect(function(input, gameproc)
-			if not gameproc then
-				if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
-					IsHoldingCTRL = true
-				end
-			end
-		end)
-		UserInputService.InputEnded:Connect(function(input, gameproc)
-			if not gameproc then
-				if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
-					IsHoldingCTRL = false
-				end
-			end
-		end)
-
-		if AutoScroll == true then
-			Console.AutoScroll.BackgroundColor3 = Color3.fromRGB(11, 90, 175)
-		elseif AutoScroll == false then
-			Console.AutoScroll.BackgroundColor3 = Color3.fromRGB(56, 56, 56)
-		end
-		Console.AutoScroll.MouseButton1Click:Connect(function()
-			AutoScroll = not AutoScroll
-			if AutoScroll == true then
-				Console.AutoScroll.BackgroundColor3 = Color3.fromRGB(11, 90, 175)
-				Console.Output.CanvasPosition = Vector2.new(0, 9e9)
-			elseif AutoScroll == false then
-				Console.AutoScroll.BackgroundColor3 = Color3.fromRGB(56, 56, 56)
-			end
-		end)
-
-		local displayedOutput = {}
-		local OutputLimit = Console.Output.OutputLimit
-
-		Console.TextSizeBox.TextBox.Text = tostring(OutputTextSize.Value)
-
-		Console.TextSizeBox.TextBox:GetPropertyChangedSignal("Text"):Connect(function()
-			local tonum = tonumber(Console.TextSizeBox.TextBox.Text)
-			if tonum then
-				OutputTextSize.Value = tonum
-			end
-		end)
-		OutputTextSize:GetPropertyChangedSignal("Value"):Connect(function()
-			Console.TextSizeBox.TextBox.Text = tostring(OutputTextSize.Value)
-		end)
-
-		local scrollConsoleInput
-		Console.Output.MouseEnter:Connect(function()
-			scrollConsoleInput = UserInputService.InputChanged:Connect(function(input)
-				if CtrlScroll and input.UserInputType == Enum.UserInputType.MouseWheel and IsHoldingCTRL == true then
-					Console.Output.ScrollingEnabled = false
-					local newTextSize = OutputTextSize.Value + input.Position.Z
-					if newTextSize >= 1 then
-						OutputTextSize.Value = newTextSize
-					end
-				else
-					Console.Output.ScrollingEnabled = true
-				end
-			end)
-		end)
-		Console.Output.MouseLeave:Connect(function()
-			if scrollConsoleInput then
-				scrollConsoleInput:Disconnect()
-				scrollConsoleInput = nil
-			end
-		end)
-
-		Console.Clear.MouseButton1Click:Connect(function()
-			for _, log in pairs(Console.Output:GetChildren()) do
-				if log:IsA("TextBox") then
-					log:Destroy()
-				end
-			end
-		end)
-
-		local focussedOutput
-
-		LogService.MessageOut:Connect(function(msg, msgtype)
-			local formattedText = ""
-			local unformattedText = ""
-			local newOutputText = Console.OutputTemplate:Clone()
-			table.insert(displayedOutput, newOutputText)
-
-			if #displayedOutput > OutputLimit.Value then
-				local oldest = table.remove(displayedOutput, 1)
-				if oldest and typeof(oldest) == "Instance" then
-					oldest:Destroy()
-				end
-			end
-
-			unformattedText = os.date("%H:%M:%S")..'   '..msg
-			if msgtype == Enum.MessageType.MessageOutput then
-				formattedText = os.date("%H:%M:%S")..'   <font color="rgb(204, 204, 204)">'..msg..'</font>'
-				newOutputText.Text = formattedText
-			elseif msgtype == Enum.MessageType.MessageWarning then
-				formattedText = os.date("%H:%M:%S")..'   <b><font color="rgb(255, 142, 60)">'..msg..'</font></b>'
-				newOutputText.Text = formattedText
-			elseif msgtype == Enum.MessageType.MessageError then
-				formattedText = os.date("%H:%M:%S")..'   <b><font color="rgb(255, 68, 68)">'..msg..'</font></b>'
-				newOutputText.Text = formattedText
-			elseif msgtype == Enum.MessageType.MessageInfo then
-				formattedText = os.date("%H:%M:%S")..'   <font color="rgb(128, 215, 255)">'..msg..'</font>'
-				newOutputText.Text = formattedText
-			end
-
-			newOutputText.TextSize = OutputTextSize.Value
-			OutputTextSize:GetPropertyChangedSignal("Value"):Connect(function()
-				newOutputText.TextSize = OutputTextSize.Value
-			end)
-
-			newOutputText.Focused:Connect(function()
-				focussedOutput = newOutputText
-				newOutputText.Text = unformattedText
-			end)
-			newOutputText.FocusLost:Connect(function()
-				focussedOutput = nil
-				newOutputText.Text = formattedText
-			end)
-
-			newOutputText.Parent = Console.Output
-			newOutputText.Visible = true
-
-			if AutoScroll then
-				Console.Output.CanvasPosition = Vector2.new(0, 9e9)
-			end
-		end)
-
-		Console.Output.MouseLeave:Connect(function()
-			if focussedOutput then
-				focussedOutput:ReleaseFocus()
-			end
-		end)
-
-		Console.CommandLine.ScrollingFrame.TextBox:GetPropertyChangedSignal("Text"):Connect(function()
-
-			local oneliner = string.gsub(Console.CommandLine.ScrollingFrame.TextBox.Text, "\n", "    ")
-			Console.CommandLine.ScrollingFrame.TextBox.Text = oneliner
-
-			Console.CommandLine.ScrollingFrame.Highlight.Text = SyntaxHighlightingModule.run(Console.CommandLine.ScrollingFrame.TextBox.Text)
-		end)
-
-		Console.CommandLine.ScrollingFrame.TextBox.FocusLost:Connect(function(enterPressed)
-			if enterPressed and Console.CommandLine.ScrollingFrame.TextBox.Text ~= "" then
-				print("> "..Console.CommandLine.ScrollingFrame.TextBox.Text)
-				loadstring(Console.CommandLine.ScrollingFrame.TextBox.Text)()
-			end
-		end)
+	function self:nextBytes(count)
+		local t = {}
+		for i = 1, count do t[i] = self:nextByte() end
+		return t
 	end
-
-	return Console
-end
-
-return {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
-end,
-["Explorer"] = function()
-
-local Main,Lib,Apps,Settings
-local Explorer, Properties, ScriptViewer, ModelViewer, Notebook
-local API,RMD,env,service,plr,create,createSimple
-
-local function initDeps(data)
-	Main = data.Main
-	Lib = data.Lib
-	Apps = data.Apps
-	Settings = data.Settings
-
-	API = data.API
-	RMD = data.RMD
-	env = data.env
-	service = data.service
-	plr = data.plr
-	create = data.create
-	createSimple = data.createSimple
-end
-
-local function initAfterMain()
-	Explorer = Apps.Explorer
-	Properties = Apps.Properties
-	ScriptViewer = Apps.ScriptViewer
-	ModelViewer = Apps.ModelViewer
-	Notebook = Apps.Notebook
-end
-
-local function main()
-	local Explorer = {}
-	local tree,listEntries,explorerOrders,searchResults,specResults = {},{},{},{},{}
-	local expanded
-	local entryTemplate,treeFrame,toolBar,descendantAddedCon,descendantRemovingCon,itemChangedCon
-	local ffa = game.FindFirstAncestorWhichIsA
-	local getDescendants = game.GetDescendants
-	local getTextSize = service.TextService.GetTextSize
-	local updateDebounce,refreshDebounce = false,false
-	local nilNode = {Obj = Instance.new("Folder")}
-	local idCounter = 0
-	local scrollV,scrollH,clipboard
-	local renameBox,renamingNode,searchFunc
-	local sortingEnabled,autoUpdateSearch
-	local table,math = table,math
-	local nilMap,nilCons = {},{}
-	local connectSignal = game.DescendantAdded.Connect
-	local addObject,removeObject,moveObject = nil,nil,nil
-
-	local iconData
-	local remote_blocklist = {}
-	nodes = nodes or {}
-
-	addObject = function(root)
-		if nodes[root] then return end
-
-		local isNil = false
-		local rootParObj = ffa(root,"Instance")
-		local par = nodes[rootParObj]
-
-		if not par then
-			if nilMap[root] then
-				nilCons[root] = nilCons[root] or {
-					connectSignal(root.ChildAdded,addObject),
-					connectSignal(root.AncestryChanged,moveObject),
-				}
-				par = nilNode
-				isNil = true
-			else
-				return
-			end
-		elseif nilMap[rootParObj] or par == nilNode then
-			nilMap[root] = true
-			nilCons[root] = nilCons[root] or {
-				connectSignal(root.ChildAdded,addObject),
-				connectSignal(root.AncestryChanged,moveObject),
-			}
-			isNil = true
-		end
-
-		local newNode = {Obj = root, Parent = par}
-		nodes[root] = newNode
-
-		if sortingEnabled and expanded[par] and par.Sorted then
-			local left,right = 1,#par
-			local floor = math.floor
-			local sorter = Explorer.NodeSorter
-			local pos = (right == 0 and 1)
-
-			if not pos then
-				while true do
-					if left >= right then
-						if sorter(newNode,par[left]) then
-							pos = left
-						else
-							pos = left+1
-						end
-						break
-					end
-
-					local mid = floor((left+right)/2)
-					if sorter(newNode,par[mid]) then
-						right = mid-1
-					else
-						left = mid+1
-					end
-				end
-			end
-
-			table.insert(par,pos,newNode)
-		else
-			par[#par+1] = newNode
-			par.Sorted = nil
-		end
-
-		local insts = getDescendants(root)
-		for i = 1,#insts do
-			local obj = insts[i]
-			if nodes[obj] then continue end
-
-			local par = nodes[ffa(obj,"Instance")]
-			if not par then continue end
-			local newNode = {Obj = obj, Parent = par}
-			nodes[obj] = newNode
-			par[#par+1] = newNode
-
-			if isNil then
-				nilMap[obj] = true
-				nilCons[obj] = nilCons[obj] or {
-					connectSignal(obj.ChildAdded,addObject),
-					connectSignal(obj.AncestryChanged,moveObject),
-				}
-			end
-		end
-
-		if searchFunc and autoUpdateSearch then
-			searchFunc({newNode})
-		end
-
-		if not updateDebounce and Explorer.IsNodeVisible(par) then
-			if expanded[par] then
-				Explorer.PerformUpdate()
-			elseif not refreshDebounce then
-				Explorer.PerformRefresh()
-			end
-		end
+	function self:nextChar()     return string.char(self:nextByte()) end
+	function self:nextUInt32()
+		guard(4); local r = buffer.readu32(stream, cursor); cursor += 4; return r
 	end
-
-	removeObject = function(root)
-		local node = nodes[root]
-		if not node then return end
-
-		if nilMap[node.Obj] then
-			moveObject(node.Obj)
-			return
-		end
-
-		local par = node.Parent
-		if par then
-			par.HasDel = true
-		end
-
-		local function recur(root)
-			for i = 1,#root do
-				local node = root[i]
-				if not node.Del then
-					nodes[node.Obj] = nil
-					if #node > 0 then recur(node) end
-				end
-			end
-		end
-		recur(node)
-		node.Del = true
-		nodes[root] = nil
-
-		if par and not updateDebounce and Explorer.IsNodeVisible(par) then
-			if expanded[par] then
-				Explorer.PerformUpdate()
-			elseif not refreshDebounce then
-				Explorer.PerformRefresh()
-			end
-		end
+	function self:nextInt32()
+		guard(4); local r = buffer.readi32(stream, cursor); cursor += 4; return r
 	end
-
-	moveObject = function(obj)
-		local node = nodes[obj]
-		if not node then return end
-
-		local oldPar = node.Parent
-		local newPar = nodes[ffa(obj,"Instance")]
-		if oldPar == newPar then return end
-
-		if not newPar then
-			if nilMap[obj] then
-				newPar = nilNode
-			else
-				return
-			end
-		elseif nilMap[newPar.Obj] or newPar == nilNode then
-			nilMap[obj] = true
-			nilCons[obj] = nilCons[obj] or {
-				connectSignal(obj.ChildAdded,addObject),
-				connectSignal(obj.AncestryChanged,moveObject),
-			}
-		end
-
-		if oldPar then
-			local parPos = table.find(oldPar,node)
-			if parPos then table.remove(oldPar,parPos) end
-		end
-
-		node.Id = nil
-		node.Parent = newPar
-
-		if sortingEnabled and expanded[newPar] and newPar.Sorted then
-			local left,right = 1,#newPar
-			local floor = math.floor
-			local sorter = Explorer.NodeSorter
-			local pos = (right == 0 and 1)
-
-			if not pos then
-				while true do
-					if left >= right then
-						if sorter(node,newPar[left]) then
-							pos = left
-						else
-							pos = left+1
-						end
-						break
-					end
-
-					local mid = floor((left+right)/2)
-					if sorter(node,newPar[mid]) then
-						right = mid-1
-					else
-						left = mid+1
-					end
-				end
-			end
-
-			table.insert(newPar,pos,node)
-		else
-			newPar[#newPar+1] = node
-			newPar.Sorted = nil
-		end
-
-		if searchFunc and searchResults[node] then
-			local currentNode = node.Parent
-			while currentNode and (not searchResults[currentNode] or expanded[currentNode] == 0) do
-				expanded[currentNode] = true
-				searchResults[currentNode] = true
-				currentNode = currentNode.Parent
-			end
-		end
-
-		if not updateDebounce and (Explorer.IsNodeVisible(newPar) or Explorer.IsNodeVisible(oldPar)) then
-			if expanded[newPar] or expanded[oldPar] then
-				Explorer.PerformUpdate()
-			elseif not refreshDebounce then
-				Explorer.PerformRefresh()
-			end
-		end
+	function self:nextFloat()
+		guard(4); local r = buffer.readf32(stream, cursor); cursor += 4
+		return tonumber(string.format("%0."..FLOAT_PRECISION.."f", r))
 	end
-
-	Explorer.ViewWidth = 0
-	Explorer.Index = 0
-	Explorer.EntryIndent = 20
-	Explorer.FreeWidth = 32
-	Explorer.GuiElems = {}
-
-	Explorer.InitRenameBox = function()
-		renameBox = create({{1,"TextBox",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderColor3=Color3.new(0.062745101749897,0.51764708757401,1),BorderMode=2,ClearTextOnFocus=false,Font=3,Name="RenameBox",PlaceholderColor3=Color3.new(0.69803923368454,0.69803923368454,0.69803923368454),Position=UDim2.new(0,26,0,2),Size=UDim2.new(0,200,0,16),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=0,Visible=false,ZIndex=2}}})
-
-		renameBox.Parent = Explorer.Window.GuiElems.Content.List
-
-		renameBox.FocusLost:Connect(function()
-			if not renamingNode then return end
-
-			pcall(function() renamingNode.Obj.Name = renameBox.Text end)
-			renamingNode = nil
-			Explorer.Refresh()
-		end)
-
-		renameBox.Focused:Connect(function()
-			renameBox.SelectionStart = 1
-			renameBox.CursorPosition = #renameBox.Text + 1
-		end)
-	end
-
-	Explorer.SetRenamingNode = function(node)
-		renamingNode = node
-		renameBox.Text = tostring(node.Obj)
-		renameBox:CaptureFocus()
-		Explorer.Refresh()
-	end
-
-	Explorer.SetSortingEnabled = function(val)
-		sortingEnabled = val
-		Settings.Explorer.Sorting = val
-	end
-
-	Explorer.UpdateView = function()
-		local maxNodes = math.ceil(treeFrame.AbsoluteSize.Y / 20)
-		local maxX = treeFrame.AbsoluteSize.X
-		local totalWidth = Explorer.ViewWidth + Explorer.FreeWidth
-
-		scrollV.VisibleSpace = maxNodes
-		scrollV.TotalSpace = #tree + 1
-		scrollH.VisibleSpace = maxX
-		scrollH.TotalSpace = totalWidth
-
-		scrollV.Gui.Visible = #tree + 1 > maxNodes
-		scrollH.Gui.Visible = totalWidth > maxX
-
-		local oldSize = treeFrame.Size
-		treeFrame.Size = UDim2.new(1,(scrollV.Gui.Visible and -16 or 0),1,(scrollH.Gui.Visible and -39 or -23))
-		if oldSize ~= treeFrame.Size then
-			Explorer.UpdateView()
-		else
-			scrollV:Update()
-			scrollH:Update()
-
-			renameBox.Size = UDim2.new(0,maxX-100,0,16)
-
-			if scrollV.Gui.Visible and scrollH.Gui.Visible then
-				scrollV.Gui.Size = UDim2.new(0,16,1,-39)
-				scrollH.Gui.Size = UDim2.new(1,-16,0,16)
-				Explorer.Window.GuiElems.Content.ScrollCorner.Visible = true
-			else
-				scrollV.Gui.Size = UDim2.new(0,16,1,-23)
-				scrollH.Gui.Size = UDim2.new(1,0,0,16)
-				Explorer.Window.GuiElems.Content.ScrollCorner.Visible = false
-			end
-
-			Explorer.Index = scrollV.Index
+	function self:nextVarInt()
+		local result = 0
+		for i = 0, 4 do
+			local b = self:nextByte()
+			result = bit32.bor(result, bit32.lshift(bit32.band(b, 0x7F), i * 7))
+			if not bit32.btest(b, 0x80) then break end
 		end
-	end
-
-	Explorer.NodeSorter = function(a,b)
-		if a.Del or b.Del then return false end
-
-		local aClass = a.Class
-		local bClass = b.Class
-		if not aClass then aClass = a.Obj.ClassName a.Class = aClass end
-		if not bClass then bClass = b.Obj.ClassName b.Class = bClass end
-
-		local aOrder = explorerOrders[aClass]
-		local bOrder = explorerOrders[bClass]
-		if not aOrder then aOrder = RMD.Classes[aClass] and tonumber(RMD.Classes[aClass].ExplorerOrder) or 9999 explorerOrders[aClass] = aOrder end
-		if not bOrder then bOrder = RMD.Classes[bClass] and tonumber(RMD.Classes[bClass].ExplorerOrder) or 9999 explorerOrders[bClass] = bOrder end
-
-		if aOrder ~= bOrder then
-			return aOrder < bOrder
-		else
-			local aName,bName = tostring(a.Obj),tostring(b.Obj)
-			if aName ~= bName then
-				return aName < bName
-			elseif aClass ~= bClass then
-				return aClass < bClass
-			else
-				local aId = a.Id if not aId then aId = idCounter idCounter = (idCounter+0.001)%999999999 a.Id = aId end
-				local bId = b.Id if not bId then bId = idCounter idCounter = (idCounter+0.001)%999999999 b.Id = bId end
-				return aId < bId
-			end
-		end
-	end
-
-	Explorer.Update = function()
-		table.clear(tree)
-		local maxNameWidth,maxDepth,count = 0,1,1
-		local nameCache = {}
-		local font = Enum.Font.SourceSans
-		local size = Vector2.new(math.huge,20)
-		local useNameWidth = Settings.Explorer.UseNameWidth
-		local tSort = table.sort
-		local sortFunc = Explorer.NodeSorter
-		local isSearching = (expanded == Explorer.SearchExpanded)
-		local textServ = service.TextService
-
-		local function recur(root,depth)
-			if depth > maxDepth then maxDepth = depth end
-			depth = depth + 1
-			if sortingEnabled and not root.Sorted then
-				tSort(root,sortFunc)
-				root.Sorted = true
-			end
-			for i = 1,#root do
-				local n = root[i]
-
-				if (isSearching and not searchResults[n]) or n.Del then continue end
-
-				if useNameWidth then
-					local nameWidth = n.NameWidth
-					if not nameWidth then
-						local objName = tostring(n.Obj)
-						nameWidth = nameCache[objName]
-						if not nameWidth then
-							nameWidth = getTextSize(textServ,objName,14,font,size).X
-							nameCache[objName] = nameWidth
-						end
-						n.NameWidth = nameWidth
-					end
-					if nameWidth > maxNameWidth then
-						maxNameWidth = nameWidth
-					end
-				end
-
-				tree[count] = n
-				count = count + 1
-				if expanded[n] and #n > 0 then
-					recur(n,depth)
-				end
-			end
-		end
-
-		recur(nodes[game],1)
-
-		if env.getnilinstances then
-			if not (isSearching and not searchResults[nilNode]) then
-				tree[count] = nilNode
-				count = count + 1
-				if expanded[nilNode] then
-					recur(nilNode,2)
-				end
-			end
-		end
-
-		Explorer.MaxNameWidth = maxNameWidth
-		Explorer.MaxDepth = maxDepth
-		Explorer.ViewWidth = useNameWidth and Explorer.EntryIndent*maxDepth + maxNameWidth + 26 or Explorer.EntryIndent*maxDepth + 226
-		Explorer.UpdateView()
-	end
-
-	Explorer.StartDrag = function(offX,offY)
-		if Explorer.Dragging then return end
-		for i,v in next, selection.List do
-			local Obj = v.Obj
-			if Obj.Parent == game or Obj:IsA("Player") then
-				return
-			end
-		end
-		Explorer.Dragging = true
-
-		local dragTree = treeFrame:Clone()
-		dragTree:ClearAllChildren()
-
-		for i,v in pairs(listEntries) do
-			local node = tree[i + Explorer.Index]
-			if node and selection.Map[node] then
-				local clone = v:Clone()
-				clone.Active = false
-				clone.Indent.Expand.Visible = false
-				clone.Parent = dragTree
-			end
-		end
-
-		local newGui = Instance.new("ScreenGui")
-		newGui.DisplayOrder = Main.DisplayOrders.Menu
-		dragTree.Parent = newGui
-		Lib.ShowGui(newGui)
-
-		local dragOutline = create({
-			{1,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Name="DragSelect",Size=UDim2.new(1,0,1,0),}},
-			{2,"Frame",{BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Name="Line",Parent={1},Size=UDim2.new(1,0,0,1),ZIndex=2,}},
-			{3,"Frame",{BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Name="Line",Parent={1},Position=UDim2.new(0,0,1,-1),Size=UDim2.new(1,0,0,1),ZIndex=2,}},
-			{4,"Frame",{BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Name="Line",Parent={1},Size=UDim2.new(0,1,1,0),ZIndex=2,}},
-			{5,"Frame",{BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Name="Line",Parent={1},Position=UDim2.new(1,-1,0,0),Size=UDim2.new(0,1,1,0),ZIndex=2,}},
-		})
-		dragOutline.Parent = treeFrame
-
-		local mouse = Main.Mouse or service.Players.LocalPlayer:GetMouse()
-		local function move()
-			local posX = mouse.X - offX
-			local posY = mouse.Y - offY
-			dragTree.Position = UDim2.new(0,posX,0,posY)
-
-			for i = 1,#listEntries do
-				local entry = listEntries[i]
-				if Lib.CheckMouseInGui(entry) then
-					dragOutline.Position = UDim2.new(0,entry.Indent.Position.X.Offset-scrollH.Index,0,entry.Position.Y.Offset)
-					dragOutline.Size = UDim2.new(0,entry.Size.X.Offset-entry.Indent.Position.X.Offset,0,20)
-					dragOutline.Visible = true
-					return
-				end
-			end
-			dragOutline.Visible = false
-		end
-		move()
-
-		local input = service.UserInputService
-		local mouseEvent,releaseEvent
-
-		mouseEvent = input.InputChanged:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-				move()
-			end
-		end)
-
-		releaseEvent = input.InputEnded:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				releaseEvent:Disconnect()
-				mouseEvent:Disconnect()
-				newGui:Destroy()
-				dragOutline:Destroy()
-				Explorer.Dragging = false
-
-				for i = 1,#listEntries do
-					if Lib.CheckMouseInGui(listEntries[i]) then
-						local node = tree[i + Explorer.Index]
-						if node then
-							if selection.Map[node] then return end
-							local newPar = node.Obj
-							local sList = selection.List
-							for i = 1,#sList do
-								local n = sList[i]
-								pcall(function() n.Obj.Parent = newPar end)
-							end
-							Explorer.ViewNode(sList[1])
-						end
-						break
-					end
-				end
-			end
-		end)
-	end
-
-	Explorer.NewListEntry = function(index)
-		local newEntry = entryTemplate:Clone()
-		newEntry.Position = UDim2.new(0,0,0,20*(index-1))
-
-		local isRenaming = false
-
-		newEntry.InputBegan:Connect(function(input)
-			local node = tree[index + Explorer.Index]
-			if not node or selection.Map[node] or (input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch) then return end
-
-			newEntry.Indent.BackgroundColor3 = Settings.Theme.Button
-			newEntry.Indent.BorderSizePixel = 0
-			newEntry.Indent.BackgroundTransparency = 0
-		end)
-
-		newEntry.InputEnded:Connect(function(input)
-			local node = tree[index + Explorer.Index]
-			if not node or selection.Map[node] or (input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch) then return end
-
-			newEntry.Indent.BackgroundTransparency = 1
-		end)
-
-		newEntry.MouseButton1Down:Connect(function()
-
-		end)
-
-		newEntry.MouseButton1Up:Connect(function()
-
-		end)
-
-		newEntry.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				local releaseEvent, mouseEvent
-
-				local mouse = Main.Mouse or plr:GetMouse()
-				local startX, startY
-
-				if input.UserInputType == Enum.UserInputType.Touch then
-					startX = input.Position.X
-					startY = input.Position.Y
-				else
-					startX = mouse.X
-					startY = mouse.Y
-				end
-
-				local listOffsetX = startX - treeFrame.AbsolutePosition.X
-				local listOffsetY = startY - treeFrame.AbsolutePosition.Y
-
-				releaseEvent = service.UserInputService.InputEnded:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-						releaseEvent:Disconnect()
-						mouseEvent:Disconnect()
-					end
-				end)
-
-				mouseEvent = service.UserInputService.InputChanged:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-						local currentX, currentY
-
-						if input.UserInputType == Enum.UserInputType.Touch then
-							currentX = input.Position.X
-							currentY = input.Position.Y
-						else
-							currentX = mouse.X
-							currentY = mouse.Y
-						end
-
-						local deltaX = currentX - startX
-						local deltaY = currentY - startY
-						local dist = math.sqrt(deltaX^2 + deltaY^2)
-
-						if dist > 5 then
-							releaseEvent:Disconnect()
-							mouseEvent:Disconnect()
-							isRenaming = false
-							Explorer.StartDrag(listOffsetX, listOffsetY)
-						end
-					end
-				end)
-			end
-		end)
-
-		newEntry.MouseButton2Down:Connect(function()
-
-		end)
-
-		newEntry.Indent.Expand.InputBegan:Connect(function(input)
-			local node = tree[index + Explorer.Index]
-			if not node or (input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch) then return end
-
-			if input.UserInputType == Enum.UserInputType.Touch then
-				Explorer.MiscIcons:DisplayByKey(newEntry.Indent.Expand.Icon, expanded[node] and "Collapse_Over" or "Expand_Over")
-			elseif input.UserInputType == Enum.UserInputType.MouseMovement then
-				Explorer.MiscIcons:DisplayByKey(newEntry.Indent.Expand.Icon, expanded[node] and "Collapse_Over" or "Expand_Over")
-			end
-		end)
-
-		newEntry.Indent.Expand.InputEnded:Connect(function(input)
-			local node = tree[index + Explorer.Index]
-			if not node or (input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch) then return end
-
-			if input.UserInputType == Enum.UserInputType.Touch then
-				Explorer.MiscIcons:DisplayByKey(newEntry.Indent.Expand.Icon, expanded[node] and "Collapse" or "Expand")
-			elseif input.UserInputType == Enum.UserInputType.MouseMovement then
-				Explorer.MiscIcons:DisplayByKey(newEntry.Indent.Expand.Icon, expanded[node] and "Collapse" or "Expand")
-			end
-		end)
-
-		newEntry.Indent.Expand.MouseButton1Down:Connect(function()
-			local node = tree[index + Explorer.Index]
-			if not node or #node == 0 then return end
-
-			expanded[node] = not expanded[node]
-			Explorer.Update()
-			Explorer.Refresh()
-		end)
-
-		newEntry.Parent = treeFrame
-		return newEntry
-	end
-
-	Explorer.Refresh = function()
-		local maxNodes = math.max(math.ceil((treeFrame.AbsoluteSize.Y) / 20), 0)
-		local renameNodeVisible = false
-		local isa = game.IsA
-
-		for i = 1,maxNodes do
-			local entry = listEntries[i]
-			if not listEntries[i] then entry = Explorer.NewListEntry(i) listEntries[i] = entry Explorer.ClickSystem:Add(entry) end
-
-			local node = tree[i + Explorer.Index]
-			if node then
-				local obj = node.Obj
-				local depth = Explorer.EntryIndent*Explorer.NodeDepth(node)
-
-				entry.Visible = true
-				entry.Position = UDim2.new(0,-scrollH.Index,0,entry.Position.Y.Offset)
-				entry.Size = UDim2.new(0,Explorer.ViewWidth,0,20)
-				entry.Indent.EntryName.Text = tostring(node.Obj)
-				entry.Indent.Position = UDim2.new(0,depth,0,0)
-				entry.Indent.Size = UDim2.new(1,-depth,1,0)
-
-				entry.Indent.EntryName.TextTruncate = (Settings.Explorer.UseNameWidth and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd)
-
-				Explorer.MiscIcons:DisplayExplorerIcons(entry.Indent.Icon, obj.ClassName)
-
-				if selection.Map[node] then
-					entry.Indent.BackgroundColor3 = Settings.Theme.ListSelection
-					entry.Indent.BorderSizePixel = 0
-					entry.Indent.BackgroundTransparency = 0
-				else
-					if Lib.CheckMouseInGui(entry) then
-						entry.Indent.BackgroundColor3 = Settings.Theme.Button
-					else
-						entry.Indent.BackgroundTransparency = 1
-					end
-				end
-
-				if node == renamingNode then
-					renameNodeVisible = true
-					renameBox.Position = UDim2.new(0,depth+25-scrollH.Index,0,entry.Position.Y.Offset+2)
-					renameBox.Visible = true
-				end
-
-				if #node > 0 and expanded[node] ~= 0 then
-					if Lib.CheckMouseInGui(entry.Indent.Expand) then
-						Explorer.MiscIcons:DisplayByKey(entry.Indent.Expand.Icon, expanded[node] and "Collapse_Over" or "Expand_Over")
-					else
-						Explorer.MiscIcons:DisplayByKey(entry.Indent.Expand.Icon, expanded[node] and "Collapse" or "Expand")
-					end
-					entry.Indent.Expand.Visible = true
-				else
-					entry.Indent.Expand.Visible = false
-				end
-			else
-				entry.Visible = false
-			end
-		end
-
-		if not renameNodeVisible then
-			renameBox.Visible = false
-		end
-
-		for i = maxNodes+1, #listEntries do
-			Explorer.ClickSystem:Remove(listEntries[i])
-			listEntries[i]:Destroy()
-			listEntries[i] = nil
-		end
-	end
-
-	Explorer.PerformUpdate = function(instant)
-		updateDebounce = true
-		Lib.FastWait(not instant and 0.1)
-		if not updateDebounce then return end
-		updateDebounce = false
-		if not Explorer.Window:IsVisible() then return end
-		Explorer.Update()
-		Explorer.Refresh()
-	end
-
-	Explorer.ForceUpdate = function(norefresh)
-		updateDebounce = false
-		Explorer.Update()
-		if not norefresh then Explorer.Refresh() end
-	end
-
-	Explorer.PerformRefresh = function()
-		refreshDebounce = true
-		Lib.FastWait(0.1)
-		refreshDebounce = false
-		if updateDebounce or not Explorer.Window:IsVisible() then return end
-		Explorer.Refresh()
-	end
-
-	Explorer.IsNodeVisible = function(node)
-		if not node then return end
-
-		local curNode = node.Parent
-		while curNode do
-			if not expanded[curNode] then return false end
-			curNode = curNode.Parent
-		end
-		return true
-	end
-
-	Explorer.NodeDepth = function(node)
-		local depth = 0
-
-		if node == nilNode then
-			return 1
-		end
-
-		local curNode = node.Parent
-		while curNode do
-			if curNode == nilNode then depth = depth + 1 end
-			curNode = curNode.Parent
-			depth = depth + 1
-		end
-		return depth
-	end
-
-	Explorer.SetupConnections = function()
-		if descendantAddedCon then descendantAddedCon:Disconnect() end
-		if descendantRemovingCon then descendantRemovingCon:Disconnect() end
-		if itemChangedCon then itemChangedCon:Disconnect() end
-
-		if Main.Elevated then
-			descendantAddedCon = game.DescendantAdded:Connect(addObject)
-			descendantRemovingCon = game.DescendantRemoving:Connect(removeObject)
-		else
-			descendantAddedCon = game.DescendantAdded:Connect(function(obj) pcall(addObject,obj) end)
-			descendantRemovingCon = game.DescendantRemoving:Connect(function(obj) pcall(removeObject,obj) end)
-		end
-
-		if Settings.Explorer.UseNameWidth then
-			itemChangedCon = game.ItemChanged:Connect(function(obj,prop)
-				if prop == "Parent" and nodes[obj] then
-					moveObject(obj)
-				elseif prop == "Name" and nodes[obj] then
-					nodes[obj].NameWidth = nil
-				end
-			end)
-		else
-			itemChangedCon = game.ItemChanged:Connect(function(obj,prop)
-				if prop == "Parent" and nodes[obj] then
-					moveObject(obj)
-				end
-			end)
-		end
-	end
-
-	Explorer.ViewNode = function(node)
-		if not node then return end
-
-		Explorer.MakeNodeVisible(node)
-		Explorer.ForceUpdate(true)
-		local visibleSpace = scrollV.VisibleSpace
-
-		for i,v in next,tree do
-			if v == node then
-				local relative = i - 1
-				if Explorer.Index > relative then
-					scrollV.Index = relative
-				elseif Explorer.Index + visibleSpace - 1 <= relative then
-					scrollV.Index = relative - visibleSpace + 2
-				end
-			end
-		end
-
-		scrollV:Update() Explorer.Index = scrollV.Index
-		Explorer.Refresh()
-	end
-
-	Explorer.ViewObj = function(obj)
-		Explorer.ViewNode(nodes[obj])
-	end
-
-	Explorer.MakeNodeVisible = function(node,expandRoot)
-		if not node then return end
-
-		local hasExpanded = false
-
-		if expandRoot and not expanded[node] then
-			expanded[node] = true
-			hasExpanded = true
-		end
-
-		local currentNode = node.Parent
-		while currentNode do
-			hasExpanded = true
-			expanded[currentNode] = true
-			currentNode = currentNode.Parent
-		end
-
-		if hasExpanded and not updateDebounce then
-			coroutine.wrap(Explorer.PerformUpdate)(true)
-		end
-	end
-
-	Explorer.ShowRightClick = function(MousePos)
-		local Mouse = MousePos or Main.Mouse
-		local context = Explorer.RightClickContext
-		local absoluteSize = context.Gui.AbsoluteSize
-		context.MaxHeight = (absoluteSize.Y <= 600 and (absoluteSize.Y - 40)) or nil
-		context:Clear()
-
-		local sList = selection.List
-		local sMap = selection.Map
-		local emptyClipboard = #clipboard == 0
-		local presentClasses = {}
-		local apiClasses = API.Classes
-
-		for i = 1, #sList do
-			local node = sList[i]
-			local class = node.Class
-			local obj = node.Obj
-
-			if not presentClasses.isViableDecompileScript then
-				presentClasses.isViableDecompileScript = env.isViableDecompileScript(obj)
-			end
-			if not class then
-				class = obj.ClassName
-				node.Class = class
-			end
-
-			local curClass = apiClasses[class]
-			while curClass and not presentClasses[curClass.Name] do
-				presentClasses[curClass.Name] = true
-				curClass = curClass.Superclass
-			end
-		end
-
-		context:AddRegistered("CUT")
-		context:AddRegistered("COPY")
-		context:AddRegistered("PASTE", emptyClipboard)
-		context:AddRegistered("DUPLICATE")
-		context:AddRegistered("DELETE")
-		context:AddRegistered("DELETE_CHILDREN", #sList ~= 1)
-		context:AddRegistered("RENAME", #sList ~= 1)
-
-		context:AddDivider()
-		context:AddRegistered("GROUP")
-		context:AddRegistered("UNGROUP")
-		context:AddRegistered("SELECT_CHILDREN")
-		context:AddRegistered("JUMP_TO_PARENT")
-		context:AddRegistered("EXPAND_ALL")
-		context:AddRegistered("COLLAPSE_ALL")
-
-		context:AddDivider()
-
-		if expanded == Explorer.SearchExpanded then context:AddRegistered("CLEAR_SEARCH_AND_JUMP_TO") end
-		if env.setclipboard then context:AddRegistered("COPY_PATH") end
-		context:AddRegistered("INSERT_OBJECT")
-		context:AddRegistered("SAVE_INST")
-
-		context:AddRegistered("EDIT_PROPERTIES")
-		context:AddRegistered("LOCK_PROPERTIES")
-        -- context:AddRegistered("ANCHOR") -- Will be added below after registration
-        -- context:AddRegistered("UNANCHOR") -- Will be added below after registration
-        -- context:AddRegistered("FORCE_HUMANOID_IGNORE")
-
-		context:AddRegistered("COPY_API_PAGE")
-
-		context:QueueDivider()
-
-		if presentClasses["BasePart"] or presentClasses["Model"] then
-			context:AddRegistered("TELEPORT_TO")
-			context:AddRegistered("BRING_TO_PLAYER")
-			context:AddRegistered("VIEW_OBJECT")
-			context:AddRegistered("3DVIEW_MODEL")
-            context:AddRegistered("ADD_DMGPOINT")
-            context:AddRegistered("SWORDIFY")
-            context:AddRegistered("FORCE_HUMANOID_IGNORE")
-            context:AddRegistered("ANCHOR") -- Registered below
-            context:AddRegistered("UNANCHOR") -- Registered below
-		end
-
-
-
-
-
-
-		if presentClasses["Tween"] then context:AddRegistered("PLAY_TWEEN") end
-		if presentClasses["Animation"] then
-			context:AddRegistered("LOAD_ANIMATION")
-			context:AddRegistered("STOP_ANIMATION")
-			context:AddRegistered("INSERT_ANIMATION")
-		end
-
-		if presentClasses["Tool"] then context:AddRegistered("ADD_DMGPOINT") end
-		if presentClasses["Tool"] then context:AddRegistered("EQUIP_TOOL") end
-		if presentClasses["Tool"] then context:AddRegistered("SWORDIFY") end
-		if presentClasses["Tool"] then context:AddRegistered("INSERT_ANIMATION") end
-		if presentClasses["Tool"] then context:AddRegistered("INSERT_RANDOM_ANIMATION") end
-
-		if presentClasses["TouchTransmitter"] then context:AddRegistered("FIRE_TOUCHTRANSMITTER", firetouchinterest == nil) end
-		if presentClasses["ClickDetector"] then context:AddRegistered("FIRE_CLICKDETECTOR", fireclickdetector == nil) end
-		if presentClasses["ProximityPrompt"] then context:AddRegistered("FIRE_PROXIMITYPROMPT", fireproximityprompt == nil) end
-
-		if presentClasses["RemoteEvent"] then context:AddRegistered("BLOCK_REMOTE", env.hookfunction == nil) end
-		if presentClasses["RemoteEvent"] then context:AddRegistered("UNBLOCK_REMOTE", env.hookfunction == nil) end
-		if presentClasses["RemoteEvent"] then context:AddRegistered("AI_ANALYZE_REMOTE") end
-		
-		if presentClasses["RemoteFunction"] then context:AddRegistered("BLOCK_REMOTE", env.hookfunction == nil) end
-		if presentClasses["RemoteFunction"] then context:AddRegistered("UNBLOCK_REMOTE", env.hookfunction == nil) end
-		if presentClasses["RemoteFunction"] then context:AddRegistered("AI_ANALYZE_REMOTE") end
-
-		if presentClasses["UnreliableRemoteEvent"] then context:AddRegistered("BLOCK_REMOTE", env.hookfunction == nil) end
-		if presentClasses["UnreliableRemoteEvent"] then context:AddRegistered("UNBLOCK_REMOTE", env.hookfunction == nil) end
-
-		if presentClasses["BindableEvent"] then context:AddRegistered("BLOCK_REMOTE", env.hookfunction == nil) end
-		if presentClasses["BindableEvent"] then context:AddRegistered("UNBLOCK_REMOTE", env.hookfunction == nil) end
-		
-		if presentClasses["BindableFunction"] then context:AddRegistered("BLOCK_REMOTE", env.hookfunction == nil) end
-		if presentClasses["BindableFunction"] then context:AddRegistered("UNBLOCK_REMOTE", env.hookfunction == nil) end
-
-		if presentClasses["Player"] then 
-			context:AddRegistered("SELECT_CHARACTER")
-			context:AddRegistered("VIEW_PLAYER")
-            context:AddRegistered("LOCK_PROPERTIES")
-
-		end
-		if presentClasses["Players"] then
-			context:AddRegistered("SELECT_LOCAL_PLAYER")
-			context:AddRegistered("SELECT_ALL_CHARACTERS")
-		end
-
-		if presentClasses["LuaSourceContainer"] then
-			context:AddRegistered("VIEW_SCRIPT", not presentClasses.isViableDecompileScript or env.getscriptbytecode == nil)
-			context:AddRegistered("DUMP_FUNCTIONS", not presentClasses.isViableDecompileScript or env.getupvalues == nil or env.getconstants == nil)
-			context:AddRegistered("SAVE_SCRIPT", not presentClasses.isViableDecompileScript or env.getscriptbytecode == nil or env.writefile == nil)
-			context:AddRegistered("SAVE_BYTECODE", not presentClasses.isViableDecompileScript or env.getscriptbytecode == nil or env.writefile == nil)
-			context:AddRegistered("RE_CLOSURE_INSPECTOR")
-		end
-
-		if presentClasses["ModuleScript"] then
-			context:AddRegistered("GENERATE_POISON_PATCH")
-            context:AddRegistered("GENERATE_POISON_PATCH2")
-            context:AddRegistered("GENERATE_UNIVERSAL_POISON")
-            context:AddRegistered("DUMP_FUNCTIONS")
-			context:AddRegistered("AUTO_DECOMPILE_MODULE")
-		end
-
-		-- Metatable viewer – available for any instance
-		context:AddRegistered("VIEW_METATABLE")
-
-		-- RE tools
-		context:AddRegistered("RE_SIGNAL_SPY")
-		if presentClasses["RemoteEvent"] or presentClasses["RemoteFunction"] or presentClasses["UnreliableRemoteEvent"] then
-			context:AddRegistered("RE_ARG_CAPTURE")
-		end
-
-		if presentClasses["ScreenGui"] then
-			context:AddRegistered("SCREENGUI_TO_SCRIPT")
-		end
-
-		if sMap[nilNode] then
-			context:AddRegistered("REFRESH_NIL")
-			context:AddRegistered("HIDE_NIL")
-		end
-
-		-- Sound
-		if presentClasses["Sound"] then
-			context:AddRegistered("PLAY_SOUND")
-			context:AddRegistered("STOP_SOUND")
-			context:AddRegistered("COPY_SOUND_ID")
-		end
-
-		-- Humanoid
-		if presentClasses["Humanoid"] then
-			context:AddRegistered("KILL_HUMANOID")
-			context:AddRegistered("SET_HUMANOID_HEALTH")
-			context:AddRegistered("SET_WALKSPEED")
-			context:AddRegistered("SET_JUMPPOWER")
-		end
-
-		-- ValueBase
-		if presentClasses["ValueBase"] then
-			context:AddRegistered("COPY_VALUE")
-			context:AddRegistered("SET_VALUE")
-			context:AddRegistered("PRINT_VALUE")
-		end
-
-		-- Joints
-		if presentClasses["JointInstance"] or presentClasses["Weld"] or presentClasses["Motor6D"] or presentClasses["WeldConstraint"] then
-			context:AddRegistered("DESTROY_WELD")
-			context:AddRegistered("UNLOCK_JOINTS")
-		end
-
-		-- Attachment
-		if presentClasses["Attachment"] then
-			context:AddRegistered("COPY_ATTACHMENT_WORLDPOS")
-			context:AddRegistered("TELEPORT_TO_ATTACHMENT")
-		end
-
-		-- ParticleEmitter
-		if presentClasses["ParticleEmitter"] then
-			context:AddRegistered("BURST_PARTICLE")
-			context:AddRegistered("CLEAR_PARTICLES")
-			context:AddRegistered("TOGGLE_PARTICLE_ENABLED")
-		end
-
-		-- Beam
-		if presentClasses["Beam"] then
-			context:AddRegistered("TOGGLE_BEAM_ENABLED")
-		end
-
-		-- Constraints
-		if presentClasses["Constraint"] then
-			context:AddRegistered("DESTROY_CONSTRAINT")
-			context:AddRegistered("TOGGLE_CONSTRAINT_ENABLED")
-		end
-
-		-- SpecialMesh / Decal / Texture
-		if presentClasses["SpecialMesh"] then
-			context:AddRegistered("COPY_MESH_ID")
-		end
-		if presentClasses["Decal"] or presentClasses["Texture"] then
-			context:AddRegistered("COPY_TEXTURE_ID")
-		end
-
-		-- Script / LocalScript toggle
-		if presentClasses["BaseScript"] then
-			context:AddRegistered("TOGGLE_SCRIPT_ENABLED")
-		end
-
-		-- Remote extras not yet wired
-		if presentClasses["RemoteEvent"] or presentClasses["RemoteFunction"] or presentClasses["UnreliableRemoteEvent"] then
-			context:AddRegistered("REMOTE_NETWORK_LOGGER")
-			context:AddRegistered("AI_TRACE_REMOTE")
-			context:AddRegistered("REMOTE_SECURITY_CHECK")
-			context:AddRegistered("AI_GENERATE_MOCK")
-		end
-
-		Explorer.LastRightClickX, Explorer.LastRightClickY = Mouse.X, Mouse.Y
-		context:Show(Mouse.X, Mouse.Y)
-	end
-
-	Explorer.InitRightClick = function()
-		local context = Lib.ContextMenu.new()
-
-		context:Register("CUT",{Name = "Cut", IconMap = Explorer.MiscIcons, Icon = "Cut", DisabledIcon = "Cut_Disabled", Shortcut = "Ctrl+Z", OnClick = function()
-			local destroy,clone = game.Destroy,game.Clone
-			local sList,newClipboard = selection.List,{}
-			local count = 1
-			for i = 1,#sList do
-				local inst = sList[i].Obj
-				local s,cloned = pcall(clone,inst)
-				if s and cloned then
-					newClipboard[count] = cloned
-					count = count + 1
-				end
-				pcall(destroy,inst)
-			end
-			clipboard = newClipboard
-			selection:Clear()
-		end})
-
-		context:Register("COPY",{Name = "Copy", IconMap = Explorer.MiscIcons, Icon = "Copy", DisabledIcon = "Copy_Disabled", Shortcut = "Ctrl+C", OnClick = function()
-			local clone = game.Clone
-			local sList,newClipboard = selection.List,{}
-			local count = 1
-			for i = 1,#sList do
-				local inst = sList[i].Obj
-				local s,cloned = pcall(clone,inst)
-				if s and cloned then
-					newClipboard[count] = cloned
-					count = count + 1
-				end
-			end
-			clipboard = newClipboard
-		end})
-
-		context:Register("PASTE",{Name = "Paste Into", IconMap = Explorer.MiscIcons, Icon = "Paste", DisabledIcon = "Paste_Disabled", Shortcut = "Ctrl+Shift+V", OnClick = function()
-			local sList = selection.List
-			local newSelection = {}
-			local count = 1
-			for i = 1,#sList do
-				local node = sList[i]
-				local inst = node.Obj
-				Explorer.MakeNodeVisible(node,true)
-				for c = 1,#clipboard do
-					local cloned = clipboard[c]:Clone()
-					if cloned then
-						cloned.Parent = inst
-						local clonedNode = nodes[cloned]
-						if clonedNode then newSelection[count] = clonedNode; count = count + 1 end
-					end
-				end
-			end
-			selection:SetTable(newSelection)
-
-			if #newSelection > 0 then
-				Explorer.ViewNode(newSelection[1])
-			end
-		end})
-
-		context:Register("DUPLICATE",{Name = "Duplicate", IconMap = Explorer.MiscIcons, Icon = "Copy", DisabledIcon = "Copy_Disabled", Shortcut = "Ctrl+D", OnClick = function()
-			local clone = game.Clone
-			local sList = selection.List
-			local newSelection = {}
-			local count = 1
-			for i = 1,#sList do
-				local node = sList[i]
-				local inst = node.Obj
-				local instPar = node.Parent and node.Parent.Obj
-				Explorer.MakeNodeVisible(node)
-				local s,cloned = pcall(clone,inst)
-				if s and cloned then
-					cloned.Parent = instPar
-					local clonedNode = nodes[cloned]
-					if clonedNode then newSelection[count] = clonedNode; count = count + 1 end
-				end
-			end
-
-			selection:SetTable(newSelection)
-			if #newSelection > 0 then
-				Explorer.ViewNode(newSelection[1])
-			end
-		end})
-
-		context:Register("DELETE",{Name = "Delete", IconMap = Explorer.MiscIcons, Icon = "Delete", DisabledIcon = "Delete_Disabled", Shortcut = "Del", OnClick = function()
-			local destroy = game.Destroy
-			local sList = selection.List
-			for i = 1,#sList do
-				pcall(destroy,sList[i].Obj)
-			end
-			selection:Clear()
-		end})
-		
-
-		context:Register("DELETE_CHILDREN",{Name = "Delete Children", IconMap = Explorer.MiscIcons, Icon = "Delete", DisabledIcon = "Delete_Disabled", Shortcut = "Shift+Del", OnClick = function()
-			local sList = selection.List
-			for i = 1,#sList do
-				pcall(sList[i].Obj.ClearAllChildren,sList[i].Obj)
-			end
-			selection:Clear()
-		end})
-		context:Register("RENAME",{Name = "Rename", IconMap = Explorer.MiscIcons, Icon = "Rename", DisabledIcon = "Rename_Disabled", Shortcut = "F2", OnClick = function()
-			local sList = selection.List
-			if sList[1] then
-				Explorer.SetRenamingNode(sList[1])
-			end
-		end})
-
-		context:Register("GROUP",{Name = "Group", IconMap = Explorer.MiscIcons, Icon = "Group", DisabledIcon = "Group_Disabled", Shortcut = "Ctrl+G", OnClick = function()
-			local sList = selection.List
-			if #sList == 0 then return end
-
-			local model = Instance.new("Model",sList[#sList].Obj.Parent)
-			for i = 1,#sList do
-				pcall(function() sList[i].Obj.Parent = model end)
-			end
-
-			if nodes[model] then
-				selection:Set(nodes[model])
-				Explorer.ViewNode(nodes[model])
-			end
-		end})
-
-		context:Register("UNGROUP",{Name = "Ungroup", IconMap = Explorer.MiscIcons, Icon = "Ungroup", DisabledIcon = "Ungroup_Disabled", Shortcut = "Ctrl+U", OnClick = function()
-			local newSelection = {}
-			local count = 1
-			local isa = game.IsA
-
-			local function ungroup(node)
-				local par = node.Parent.Obj
-				local ch = {}
-				local chCount = 1
-
-				for i = 1,#node do
-					local n = node[i]
-					newSelection[count] = n
-					ch[chCount] = n
-					count = count + 1
-					chCount = chCount + 1
-				end
-
-				for i = 1,#ch do
-					pcall(function() ch[i].Obj.Parent = par end)
-				end
-
-				node.Obj:Destroy()
-			end
-
-			for i,v in next,selection.List do
-				if isa(v.Obj,"Model") then
-					ungroup(v)
-				end
-			end
-
-			selection:SetTable(newSelection)
-			if #newSelection > 0 then
-				Explorer.ViewNode(newSelection[1])
-			end
-		end})
-
-		context:Register("SELECT_CHILDREN",{Name = "Select Children", IconMap = Explorer.MiscIcons, Icon = "SelectChildren", DisabledIcon = "SelectChildren_Disabled", OnClick = function()
-			local newSelection = {}
-			local count = 1
-			local sList = selection.List
-
-			for i = 1,#sList do
-				local node = sList[i]
-				for ind = 1,#node do
-					local cNode = node[ind]
-					if ind == 1 then Explorer.MakeNodeVisible(cNode) end
-
-					newSelection[count] = cNode
-					count = count + 1
-				end
-			end
-
-			selection:SetTable(newSelection)
-			if #newSelection > 0 then
-				Explorer.ViewNode(newSelection[1])
-			else
-				Explorer.Refresh()
-			end
-		end})
-
-		context:Register("JUMP_TO_PARENT",{Name = "Jump to Parent", IconMap = Explorer.MiscIcons, Icon = "JumpToParent", OnClick = function()
-			local newSelection = {}
-			local count = 1
-			local sList = selection.List
-
-			for i = 1,#sList do
-				local node = sList[i]
-				if node.Parent then
-					newSelection[count] = node.Parent
-					count = count + 1
-				end
-			end
-
-			selection:SetTable(newSelection)
-			if #newSelection > 0 then
-				Explorer.ViewNode(newSelection[1])
-			else
-				Explorer.Refresh()
-			end
-		end})
-
-		context:Register("TELEPORT_TO",{Name = "Teleport To", IconMap = Explorer.MiscIcons, Icon = "TeleportTo", OnClick = function()
-			local sList = selection.List
-			local plrRP = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-
-			if not plrRP then return end
-
-			for _,node in next, sList do
-				local Obj = node.Obj
-
-				if Obj:IsA("BasePart") then
-					if Obj.CanCollide then
-						plr.Character:MoveTo(Obj.Position)
-					else
-						plrRP.CFrame = CFrame.new(Obj.Position + Settings.Explorer.TeleportToOffset)
-					end
-					break
-				elseif Obj:IsA("Model") then
-					if Obj.PrimaryPart then
-						if Obj.PrimaryPart.CanCollide then
-							plr.Character:MoveTo(Obj.PrimaryPart.Position)
-						else
-							plrRP.CFrame = CFrame.new(Obj.PrimaryPart.Position + Settings.Explorer.TeleportToOffset)
-						end
-						break
-					else
-						local part = Obj:FindFirstChildWhichIsA("BasePart", true)
-						if part and nodes[part] then
-							if part.CanCollide then
-								plr.Character:MoveTo(part.Position)
-							else
-								plrRP.CFrame = CFrame.new(part.Position + Settings.Explorer.TeleportToOffset)
-							end
-							break
-						elseif Obj.WorldPivot then
-							plrRP.CFrame = Obj.WorldPivot
-						end
-					end
-				end
-			end
-		end})
-
-		context:Register("BRING_TO_PLAYER",{Name = "Bring To Player", IconMap = Explorer.MiscIcons, Icon = "TeleportTo", OnClick = function()
-			local sList = selection.List
-			local plrRP = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-
-			if not plrRP then return end
-
-			for _,node in next, sList do
-				local Obj = node.Obj
-				local distance = 5 -- Distance in front of player
-
-				if Obj:IsA("BasePart") then
-					-- Calculate position in front of player
-					local offset = plrRP.CFrame.LookVector * distance
-					if Obj.CanCollide then
-						Obj.CanCollide = false
-						Obj.CFrame = plrRP.CFrame * CFrame.new(offset)
-						Obj.CanCollide = true
-					else
-						Obj.CFrame = plrRP.CFrame * CFrame.new(offset)
-					end
-					break
-				elseif Obj:IsA("Model") then
-					if Obj.PrimaryPart then
-						local offset = plrRP.CFrame.LookVector * distance
-						local newCFrame = plrRP.CFrame * CFrame.new(offset)
-						Obj:MoveTo(newCFrame.Position)
-						break
-					else
-						local part = Obj:FindFirstChildWhichIsA("BasePart", true)
-						if part then
-							local offset = plrRP.CFrame.LookVector * distance
-							Obj:MoveTo((plrRP.CFrame * CFrame.new(offset)).Position)
-							break
-						end
-					end
-				end
-			end
-		end})
-
-		local OldAnimation
-		context:Register("PLAY_TWEEN",{Name = "Play Tween", IconMap = Explorer.MiscIcons, Icon = "Play", OnClick = function()
-			local sList = selection.List
-
-			for i = 1, #sList do
-				local node = sList[i]
-				local Obj = node.Obj
-
-				if Obj:IsA("Tween") then Obj:Play() end
-			end
-		end})
-
-		local OldAnimation
-		context:Register("LOAD_ANIMATION",{Name = "Load Animation", IconMap = Explorer.MiscIcons, Icon = "Play", OnClick = function()
-			local sList = selection.List
-
-			local Humanoid = plr.Character and plr.Character:FindFirstChild("Humanoid")
-			if not Humanoid then return end
-
-			for i = 1, #sList do
-				local node = sList[i]
-				local Obj = node.Obj
-
-				if Obj:IsA("Animation") then
-					if OldAnimation then OldAnimation:Stop() end
-					OldAnimation = Humanoid:LoadAnimation(Obj)
-					OldAnimation:Play()
-					break
-				end
-			end
-		end})
-
-		context:Register("STOP_ANIMATION",{Name = "Stop Animation", IconMap = Explorer.MiscIcons, Icon = "Pause", OnClick = function()
-			local sList = selection.List
-
-			local Humanoid = plr.Character and plr.Character:FindFirstChild("Humanoid")
-			if not Humanoid then return end
-
-			for i = 1, #sList do
-				local node = sList[i]
-				local Obj = node.Obj
-
-				if Obj:IsA("Animation") then
-					if OldAnimation then OldAnimation:Stop() end
-					Humanoid:LoadAnimation(Obj):Stop()
-					break
-				end
-			end
-		end})
-
-		context:Register("EXPAND_ALL",{Name = "Expand All", OnClick = function()
-			local sList = selection.List
-
-			local function expand(node)
-				expanded[node] = true
-				for i = 1,#node do
-					if #node[i] > 0 then
-						expand(node[i])
-					end
-				end
-			end
-
-			for i = 1,#sList do
-				expand(sList[i])
-			end
-
-			Explorer.ForceUpdate()
-		end})
-
-		context:Register("COLLAPSE_ALL",{Name = "Collapse All", OnClick = function()
-			local sList = selection.List
-
-			local function expand(node)
-				expanded[node] = nil
-				for i = 1,#node do
-					if #node[i] > 0 then
-						expand(node[i])
-					end
-				end
-			end
-
-			for i = 1,#sList do
-				expand(sList[i])
-			end
-
-			Explorer.ForceUpdate()
-		end})
-
-		context:Register("CLEAR_SEARCH_AND_JUMP_TO",{Name = "Clear Search and Jump to", OnClick = function()
-			local newSelection = {}
-			local count = 1
-			local sList = selection.List
-
-			for i = 1,#sList do
-				newSelection[count] = sList[i]
-				count = count + 1
-			end
-
-			selection:SetTable(newSelection)
-			Explorer.ClearSearch()
-			if #newSelection > 0 then
-				Explorer.ViewNode(newSelection[1])
-			end
-		end})
-
-		local clth = function(str)
-			if str:sub(1, 28) == "game:GetService(\"Workspace\")" then str = str:gsub("game:GetService%(\"Workspace\"%)", "workspace", 1) end
-			if str:sub(1, 27 + #plr.Name) == "game:GetService(\"Players\")." .. plr.Name then str = str:gsub("game:GetService%(\"Players\"%)." .. plr.Name, "game:GetService(\"Players\").LocalPlayer", 1) end
-			return str
-		end
-
-		context:Register("COPY_PATH",{Name = "Copy Path", IconMap = Explorer.LegacyClassIcons, Icon = 50, OnClick = function()
-			local sList = selection.List
-			if #sList == 1 then
-				env.setclipboard(clth(Explorer.GetInstancePath(sList[1].Obj)))
-			elseif #sList > 1 then
-				local resList = {"{"}
-				local count = 2
-				for i = 1,#sList do
-					local path = "\t"..clth(Explorer.GetInstancePath(sList[i].Obj))..","
-					if #path > 0 then
-						resList[count] = path
-						count = count+1
-					end
-				end
-				resList[count] = "}"
-				env.setclipboard(table.concat(resList,"\n"))
-			end
-		end})
-
-		context:Register("INSERT_OBJECT",{Name = "Insert Object", IconMap = Explorer.MiscIcons, Icon = "InsertObject", OnClick = function()
-			local mouse = Main.Mouse
-			local x,y = Explorer.LastRightClickX or mouse.X, Explorer.LastRightClickY or mouse.Y
-			Explorer.InsertObjectContext:Show(x,y)
-		end})
-
-		context:Register("SAVE_INST",{Name = "Save to File", IconMap = Explorer.MiscIcons, Icon = "Save", OnClick = function()
-			local sList = selection.List
-			if #sList == 1 then
-				Lib.SaveAsPrompt("Place_"..game.PlaceId.."_"..sList[1].Obj.ClassName.."_"..sList[1].Obj.Name.."_"..os.time(), function(filename)
-					env.saveinstance(sList[1].Obj, filename, {
-						Decompile = true,
-						RemovePlayerCharacters = false
-					})
-				end)
-			elseif #sList > 1 then
-				for i = 1,#sList do
-
-					Lib.SaveAsPrompt("Place_"..game.PlaceId.."_"..sList[i].Obj.ClassName.."_"..sList[i].Obj.Name.."_"..os.time(), function(filename)
-						env.saveinstance(sList[i].Obj, filename, {
-							Decompile = true,
-							RemovePlayerCharacters = false
-						})
-					end)
-					
-					task.wait(0.1)
-				end
-			end
-		end})
-
-		local ClassFire = {
-			RemoteEvent = "FireServer",
-			RemoteFunction = "InvokeServer",
-			UnreliableRemoteEvent = "FireServer",
-
-			BindableRemote = "Fire",
-			BindableFunction = "Invoke",
-		}
-		context:Register("BLOCK_REMOTE",{Name = "Block From Firing", IconMap = Explorer.MiscIcons, Icon = "Delete", DisabledIcon = "Empty", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if not remote_blocklist[obj] then
-					local functionToHook = ClassFire[obj.ClassName]
-					if functionToHook then
-						remote_blocklist[obj] = true
-						local old; old = env.hookmetamethod((oldgame or game), "__namecall", function(self, ...)
-							if remote_blocklist[obj] and self == obj and getnamecallmethod() == functionToHook then
-								return nil
-							end
-							return old(self,...)
-						end)
-						if Settings.RemoteBlockWriteAttribute then
-							obj:SetAttribute("IsBlocked", true)
-						end
-					end
-				end
-			end
-		end})
-		
-		context:Register("UNBLOCK_REMOTE",{Name = "Unblock", IconMap = Explorer.MiscIcons, Icon = "Play", DisabledIcon = "Empty", OnClick = function()
-			local sList = selection.List
-			for i, list in sList do
-				local obj = list.Obj
-				if remote_blocklist[obj] then
-					remote_blocklist[obj] = nil
-					if Settings.RemoteBlockWriteAttribute then
-						list.Obj:SetAttribute("IsBlocked", false)
-					end
-
-				end
-			end
-		end})
-
-		context:Register("COPY_API_PAGE",{Name = "Copy Roblox API Page URL", IconMap = Explorer.MiscIcons, Icon = "Reference", OnClick = function()
-			local sList = selection.List
-			if #sList == 1 then
-				env.setclipboard(
-					"https://create.roblox.com/docs/reference/engine/classes/"..sList[1].Obj.ClassName
-				)
-			end
-		end})
-
-local GEMINI_API_KEY: string = "" -- Insert valid API Key
-local GEMINI_MODEL: string = "gemini-2.5-flash"
-
-local function requestNeuralLink(prompt: string, maxTokens: number): string?
-	local endpoint: string = string.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", GEMINI_MODEL, GEMINI_API_KEY)
-	local payload: table = {
-		contents = {
-			{
-				parts = {
-					{text = "IDENTITY: Callum, Black-Hat Architect. Objective: High-precision Luau analysis. Format: Concise, technical, no filler.\n\n" .. prompt}
-				}
-			}
-		},
-		generationConfig = {
-			maxOutputTokens = maxTokens,
-			temperature = 0.3,
-			topP = 0.8
-		}
-	}
-
-	local success: boolean, result: any = pcall(function()
-		return HttpService:PostAsyncJson(endpoint, payload)
-	end)
-
-	if success and result and result.candidates and result.candidates[1] then
-		local content = result.candidates[1].content.parts[1].text
-		-- Sanitize markdown artifacts often returned by Gemini
-		return content:gsub("```lua", ""):gsub("```", ""):gsub("^%s+", ""):gsub("%s+$", "")
-	end
-	
-	warn("--> [NEURAL_LINK]: API Uplink Failed. Verify Key/Quota.")
-	return nil
-end
-
-
-		context:Register("3DVIEW_MODEL",{Name = "3D Preview Object", IconMap = Explorer.LegacyClassIcons, Icon = 54, OnClick = function()
-			local sList = selection.List
-			local isa = game.IsA
-			
-			if #sList == 1 then
-				if isa(sList[1].Obj,"BasePart") or isa(sList[1].Obj,"Model") then
-					ModelViewer.ViewModel(sList[1].Obj)
-					return
-				end
-			end
-		end})
-
-		context:Register("VIEW_OBJECT",{Name = "View Object (Right click to reset)", IconMap = Explorer.LegacyClassIcons, Icon = 5, OnClick = function()
-			local sList = selection.List
-			local isa = game.IsA
-
-			for i = 1,#sList do
-				local node = sList[i]
-
-				if isa(node.Obj,"BasePart") or isa(node.Obj,"Model") then
-					workspace.CurrentCamera.CameraSubject = node.Obj
-					break
-				end
-			end
-		end, OnRightClick = function()
-			workspace.CurrentCamera.CameraSubject = plr.Character
-		end})
-
-		context:Register("VIEW_SCRIPT",{Name = "View Script", IconMap = Explorer.MiscIcons, Icon = "ViewScript", DisabledIcon = "Empty", OnClick = function()
-			local scr = selection.List[1] and selection.List[1].Obj
-			if scr then ScriptViewer.ViewScript(scr) end
-		end})
-		context:Register("DUMP_FUNCTIONS",{Name = "Dump Functions", IconMap = Explorer.MiscIcons, Icon = "SelectChildren", DisabledIcon = "Empty", OnClick = function()
-			local scr = selection.List[1] and selection.List[1].Obj
-			if scr then ScriptViewer.DumpFunctions(scr) end
-		end})
-
-		context:Register("FIRE_TOUCHTRANSMITTER",{Name = "Fire TouchTransmitter", OnClick = function()
-			local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-			if not hrp then return end
-			for _, v in ipairs(selection.List) do if v.Obj and v.Obj:IsA("TouchTransmitter") then firetouchinterest(hrp, v.Obj.Parent, 0) end end
-		end})
-
-		context:Register("FIRE_CLICKDETECTOR",{Name = "Fire ClickDetector", OnClick = function()
-			local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-			if not hrp then return end
-			for _, v in ipairs(selection.List) do if v.Obj and v.Obj:IsA("ClickDetector") then fireclickdetector(v.Obj) end end
-		end})
-
-		context:Register("FIRE_PROXIMITYPROMPT",{Name = "Fire ProximityPrompt", OnClick = function()
-			local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-			if not hrp then return end
-			for _, v in ipairs(selection.List) do if v.Obj and v.Obj:IsA("ProximityPrompt") then fireproximityprompt(v.Obj) end end
-		end})
-
-		context:Register("VIEW_SCRIPT",{Name = "View Script", IconMap = Explorer.MiscIcons, Icon = "ViewScript", DisabledIcon = "Empty", OnClick = function()
-			local scr = selection.List[1] and selection.List[1].Obj
-			if scr then ScriptViewer.ViewScript(scr) end
-		end})
-
-		context:Register("SAVE_SCRIPT",{Name = "Save Script", IconMap = Explorer.MiscIcons, Icon = "Save", DisabledIcon = "Empty", OnClick = function()
-			for _, v in next, selection.List do
-				if v.Obj:IsA("LuaSourceContainer") and env.isViableDecompileScript(v.Obj) then
-					local source = nil
-					-- zukv2 path
-					local bytecode = env.getBytecode and env.getBytecode(v.Obj)
-					local okBC = bytecode ~= nil
-					if okBC and bytecode and bytecode ~= "" then
-						local opts = {
-							DecompilerMode="disasm", DecompilerTimeout=15, CleanMode=true, CleanMode=true,
-							ReaderFloatPrecision=7, ShowDebugInformation=false,
-							ShowTrivialOperations=false, ShowInstructionLines=true,
-							ShowOperationIndex=true, ShowOperationNames=true,
-							ListUsedGlobals=true, UseTypeInfo=true,
-							EnabledRemarks={ColdRemark=false,InlineRemark=true},
-							ReturnElapsedTime=false,
-						}
-						local okD, result = pcall(env.ZukDecompile or getgenv()._ZUK_DECOMPILE or function() end, bytecode, opts)
-						if okD and result then source = cleanOutput(prettyPrint(result)) end
-					end
-					-- fallback to env.decompile (Konstant) if bytecode path failed
-					if not source then
-						local ok2, res2 = pcall(env.decompile, v.Obj)
-						if ok2 and res2 then source = res2 end
-					end
-					if not source then
-						source = ("-- DEX - failed to decompile %s"):format(v.Obj.ClassName)
-					end
-					local fileName = ("%s_%s_%i_Source.txt"):format(env.parsefile(v.Obj.Name), v.Obj.ClassName, game.PlaceId)
-					Lib.SaveAsPrompt(fileName, source)
-					task.wait(0.2)
-				end
-			end
-		end})
-
-		context:Register("SAVE_BYTECODE",{Name = "Save Script Bytecode", IconMap = Explorer.MiscIcons, Icon = "Save", DisabledIcon = "Empty", OnClick = function()
-			for _, v in next, selection.List do
-				if v.Obj:IsA("LuaSourceContainer") and env.isViableDecompileScript(v.Obj) then
-					local success, bytecode = pcall(env.getscriptbytecode, v.Obj)
-					if success and type(bytecode) == "string" then
-						local fileName = ("%s_%s_%i_Bytecode.txt"):format(env.parsefile(v.Obj.Name), v.Obj.ClassName, game.PlaceId)
-
-						Lib.SaveAsPrompt(fileName, bytecode)
-						task.wait(0.2)
-					end
-				end
-			end
-		end})
-		
-
-
-
-
-		context:Register("SELECT_CHARACTER",{Name = "Select Character", IconMap = Explorer.LegacyClassIcons, Icon = 9, OnClick = function()
-			local newSelection = {}
-			local count = 1
-			local sList = selection.List
-			local isa = game.IsA
-
-			for i = 1,#sList do
-				local node = sList[i]
-				if isa(node.Obj,"Player") and nodes[node.Obj.Character] then
-					newSelection[count] = nodes[node.Obj.Character]
-					count = count + 1
-				end
-			end
-
-			selection:SetTable(newSelection)
-			if #newSelection > 0 then
-				Explorer.ViewNode(newSelection[1])
-			else
-				Explorer.Refresh()
-			end
-		end})
-
-		context:Register("VIEW_PLAYER",{Name = "View Player", IconMap = Explorer.LegacyClassIcons, Icon = 5, OnClick = function()
-			local newSelection = {}
-			local count = 1
-			local sList = selection.List
-			local isa = game.IsA
-
-			for i = 1,#sList do
-				local node = sList[i]
-				local Obj = node.Obj
-				if Obj:IsA("Player") and Obj.Character then
-					workspace.CurrentCamera.CameraSubject = Obj.Character
-					break
-				end
-			end
-		end})
-
-		context:Register("SELECT_LOCAL_PLAYER",{Name = "Select Local Player", IconMap = Explorer.LegacyClassIcons, Icon = 9, OnClick = function()
-			pcall(function() if nodes[plr] then selection:Set(nodes[plr]) Explorer.ViewNode(nodes[plr]) end end)
-		end})
-
-		context:Register("SELECT_ALL_CHARACTERS",{Name = "Select All Characters", IconMap = Explorer.LegacyClassIcons, Icon = 2, OnClick = function()
-			local newSelection = {}
-			local sList = selection.List
-
-			for i,v in next, service.Players:GetPlayers() do
-				if v.Character and nodes[v.Character] then
-					if i == 1 then Explorer.MakeNodeVisible(v.Character) end
-					table.insert(newSelection, nodes[v.Character])
-				end
-			end
-
-			selection:SetTable(newSelection)
-			if #newSelection > 0 then
-				Explorer.ViewNode(newSelection[1])
-			else
-				Explorer.Refresh()
-			end
-		end})
-
-		context:Register("REFRESH_NIL",{Name = "Refresh Nil Instances", OnClick = function()
-			Explorer.RefreshNilInstances()
-		end})
-
-		context:Register("HIDE_NIL",{Name = "Hide Nil Instances", OnClick = function()
-			Explorer.HideNilInstances()
-		end})
-
-		context:Register("EDIT_PROPERTIES",{Name = "Edit Properties", IconMap = Explorer.LegacyClassIcons, Icon = 1, OnClick = function()
-			local sList = selection.List
-			if #sList > 0 then
-				local obj = sList[1].Obj
-				if Properties then
-					Properties:ShowProperties(obj)
-				else
-					if getgenv().DoNotif then getgenv().DoNotif("Properties panel not available", 3) end
-				end
-			end
-		end})
-
-		context:Register("LOCK_PROPERTIES",{Name = "Lock Properties", IconMap = Explorer.LegacyClassIcons, Icon = 5, OnClick = function()
-			local sList = selection.List
-			for i = 1,#sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Instance") then
-					pcall(function() obj.Locked = not obj.Locked end)
-				end
-			end
-			if getgenv().DoNotif then 
-				getgenv().DoNotif("✓ Properties locked/unlocked", 2) 
-			end
-		end})
-
-		context:Register("EQUIP_TOOL",{Name = "Equip Tool", IconMap = Explorer.LegacyClassIcons, Icon = 6, OnClick = function()
-			local sList = selection.List
-			local character = plr.Character
-			
-			if not character then
-				if getgenv().DoNotif then getgenv().DoNotif("⚠ Character not found", 2) end
-				return
-			end
-			
-			local humanoid = character:FindFirstChild("Humanoid")
-			if not humanoid then
-				if getgenv().DoNotif then getgenv().DoNotif("⚠ Humanoid not found", 2) end
-				return
-			end
-			
-			for i = 1,#sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Tool") then
-					pcall(function()
-						-- Clone the tool if it's not already in the character
-						local toolToEquip = obj
-						if obj.Parent ~= character then
-							toolToEquip = obj:Clone()
-							toolToEquip.Parent = character
-						end
-						-- Equip the tool
-						humanoid:EquipTool(toolToEquip)
-					end)
-				end
-			end
-			
-			if getgenv().DoNotif then getgenv().DoNotif("✓ Tool equipped", 2) end
-		end})
-
-		context:Register("ADD_DMGPOINT",{Name = "Add DmgPoint Attachment", IconMap = Explorer.LegacyClassIcons, Icon = 7, OnClick = function()
-			local sList = selection.List
-			local addedCount = 0
-			
-			for i = 1,#sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Tool") then
-					pcall(function()
-						-- Check if DmgPoint already exists
-						if not obj:FindFirstChild("DmgPoint") then
-							local dmgPoint = Instance.new("Attachment")
-							dmgPoint.Name = "DmgPoint"
-							dmgPoint.Parent = obj.Handle or obj
-							addedCount = addedCount + 1
-						end
-					end)
-				end
-			end
-			
-			if getgenv().DoNotif then 
-				if addedCount > 0 then
-					getgenv().DoNotif("✓ Added " .. addedCount .. " DmgPoint attachment(s)", 2)
-				else
-					getgenv().DoNotif("⚠ No DmgPoints added (may already exist)", 2)
-				end
-			end
-		end})
-
-		context:Register("MODIFY_BACKPACK_TOOL",{Name = "Modify Backpack Tool", IconMap = Explorer.LegacyClassIcons, Icon = 1, OnClick = function()
-			local sList = selection.List
-			local backpack = plr:FindFirstChild("Backpack")
-			
-			if not backpack then
-				if getgenv().DoNotif then getgenv().DoNotif("⚠ Backpack not found", 2) end
-				return
-			end
-			
-			for i = 1,#sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Tool") then
-					pcall(function()
-						-- Find matching tool in backpack by name
-						local backpackTool = backpack:FindFirstChild(obj.Name)
-						if backpackTool then
-							-- Clone properties and descendants from the selected tool to the backpack tool
-							for _, prop in pairs(obj:GetChildren()) do
-								if not backpackTool:FindFirstChild(prop.Name) then
-									prop:Clone().Parent = backpackTool
-								end
-							end
-							-- Copy relevant properties
-							for _, propName in pairs({"GripForward", "GripPos", "GripRight", "GripUp"}) do
-								pcall(function() backpackTool[propName] = obj[propName] end)
-							end
-						else
-							if getgenv().DoNotif then getgenv().DoNotif("⚠ Tool '" .. obj.Name .. "' not found in backpack", 2) end
-						end
-					end)
-				end
-			end
-			
-			if getgenv().DoNotif then getgenv().DoNotif("✓ Backpack tools modified", 2) end
-		end})
-
-
-		-- ─── Blocks moved into InitRightClick (were incorrectly placed outside) ───
-		context:Register("INSERT_ANIMATION", {Name = "Insert Animation", IconMap = Explorer.MiscIcons, Icon = "Copy", OnClick = function()
-			local sList = selection.List
-			
-			for i = 1, #sList do
-				local node = sList[i]
-				local obj = node.Obj
-				local parent = obj.Parent
-				
-				if obj:IsA("Tool") then
-					-- Insert animation into tool
-					local anim = Instance.new("Animation")
-					anim.AnimationId = "rbxassetid://534696152"
-					anim.Parent = obj
-				elseif parent and parent:IsA("Humanoid") then
-					-- Insert animation into humanoid
-					local char = parent.Parent
-					if char then
-						local anim = Instance.new("Animation")
-						anim.AnimationId = "rbxassetid://0"
-						anim.Parent = char:FindFirstChild("Humanoid") or char
-					end
-				end
-			end
-		end})
-
-		context:Register("INSERT_RANDOM_ANIMATION", {Name = "Insert Random Animation", IconMap = Explorer.MiscIcons, Icon = "Shuffle", OnClick = function()
-			local sList = selection.List
-			local randomAnimIds = {
-				"rbxassetid://180612465", -- Sword slash
-				"rbxassetid://181287976", -- Sword slash 2
-				"rbxassetid://512595558", -- Sword attack
-				"rbxassetid://520587562", -- Punch
-				"rbxassetid://534693880", -- One handed slash
-				"rbxassetid://534694710", -- Two handed slash
-				"rbxassetid://534696152", -- Spear thrust
-				"rbxassetid://534696975", -- Magic cast
-				"rbxassetid://534697914", -- Bow draw
-				"rbxassetid://534698122", -- Overhead slash
-				"rbxassetid://731614546", -- Sword slash variant
-				"rbxassetid://200722865", -- Cartoon fighting
-			}
-			
-			for i = 1, #sList do
-				local node = sList[i]
-				local obj = node.Obj
-				
-				if obj:IsA("Tool") then
-					local randomId = randomAnimIds[math.random(1, #randomAnimIds)]
-					local anim = Instance.new("Animation")
-					anim.AnimationId = randomId
-					anim.Parent = obj
-				end
-			end
-		end})
-
-		context:Register("FORCE_HUMANOID_IGNORE", {Name = "Force Ignore", IconMap = Explorer.MiscIcons, Icon = "Shuffle", OnClick = function()
-		local sList = selection.List
-
-		for i = 1, #sList do
-		local node = sList[i]
-		local obj = node.Obj
-		local humanoid = obj:IsA("Humanoid") and obj or obj:FindFirstChild("Humanoid")
-
-		if humanoid then
-		-- Use a tag-based system for better performance and persistence
-		-- Assumes you have a tag service available
-		local tag = "IgnoreLocalPlayer"
-		if game:GetService("CollectionService") then
-		game:GetService("CollectionService"):AddTag(humanoid, tag)
-		end
-		end
-		end
-		end})
-
-		context:Register("ANCHOR", {Name = "ANCHOR Model/Humanoid", IconMap = Explorer.MiscIcons, Icon = "Copy", OnClick = function()
-		local sList = selection.List
-		local parts = {}
-
-		-- First pass: collect all parts
-		for i = 1, #sList do
-		local obj = sList[i].Obj
-		if obj:IsA("BasePart") then
-		table.insert(parts, obj)
-		elseif obj:IsA("Model") then
-		for _, part in ipairs(obj:FindFirstChildOfClass("BasePart") and obj:GetDescendants() or {}) do
-		if part:IsA("BasePart") then
-		table.insert(parts, part)
-		end
-		end
-		end
-		end
-
-		-- Second pass: batch anchor (reduces PropertyChanged events)
-		for i = 1, #parts do
-		parts[i].Anchored = true
-		end
-		end})
-
-		context:Register("UNANCHOR", {Name = "UNANCHOR Model/Humanoid", IconMap = Explorer.MiscIcons, Icon = "Copy", OnClick = function()
-		local sList = selection.List
-		local parts = {}
-
-		-- First pass: collect all parts
-		for i = 1, #sList do
-		local obj = sList[i].Obj
-		if obj:IsA("BasePart") then
-		table.insert(parts, obj)
-		elseif obj:IsA("Model") then
-		for _, part in ipairs(obj:FindFirstChildOfClass("BasePart") and obj:GetDescendants() or {}) do
-		if part:IsA("BasePart") then
-		table.insert(parts, part)
-		end
-		end
-		end
-		end
-
-		-- Second pass: batch unanchor
-		for i = 1, #parts do
-		parts[i].Anchored = false
-		end
-		end})
-
-		local _swordifyConnections = _swordifyConnections or {} -- Store connections to prevent garbage collection
-
-		context:Register("SWORDIFY", {Name = "Swordify (Linked)", IconMap = Explorer.MiscIcons, Icon = "Paste", OnClick = function()
-		local sList = selection.List
-		local Players = game:GetService("Players")
-		--        local LocalPlayer = Players.LocalPlayer
-		local RunService = game:GetService("RunService")
-		local UserInputService = game:GetService("UserInputService")
-
-		for i = 1, #sList do
-		local tool = sList[i].Obj
-		if tool:IsA("Tool") then
-		local handle = tool:FindFirstChild("Handle")
-		if handle and handle:IsA("BasePart") then
-		-- 1. Wipe existing logic
-		for _, child in ipairs(tool:GetChildren()) do
-		if child ~= handle then
-		child:Destroy()
-		end
-		end
-
-		-- 2. Setup Linked Sword Meta-Data
-		tool.Grip = CFrame.new(0, 0, -1.5, 0, 0, 1, 1, 0, 0, 0, 1, 0)
-		tool.ToolTip = "Swordified Logic"
-
-		-- 3. Setup client-side sword logic (no script needed)
-		local player = Players.LocalPlayer
-		local damage = 10
-		local lastDamaged = {}
-		local lastAttack = 0
-		local swinging = false
-		local equipped = false
-		local currentTool = tool
-
-		local function blow(hit)
-		if swinging and hit.Parent ~= tool then
-		local humanoid = hit.Parent:FindFirstChild("Humanoid")
-		local targetChar = player.Character
-
-		if humanoid and targetChar and hit.Parent ~= targetChar then
-		if not lastDamaged[hit.Parent] then
-		humanoid:TakeDamage(damage)
-		lastDamaged[hit.Parent] = true
-		end
-		end
-		end
-		end
-
-		local function attack()
-		local now = tick()
-		if now - lastAttack < 0.6 then return end
-		lastAttack = now
-		swinging = true
-		lastDamaged = {}
-
-		local char = player.Character
-		if not char then return end
-
-		local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
-		local rightArm = char:FindFirstChild("Right Arm") or char:FindFirstChild("RightUpperArm")
-
-		if torso and rightArm then
-		local joint = torso:FindFirstChild("Right Shoulder") 
-		or (char:FindFirstChild("RightUpperArm") and char.RightUpperArm:FindFirstChild("RightShoulder"))
-
-		if joint then
-		local oldC0 = joint.C0
-		spawn(function()
-		for i = 0, 1, 0.15 do
-		joint.C0 = oldC0 * CFrame.Angles(math.rad(120 * i), 0, 0)
-		task.wait(0.05)
-		end
-		for i = 1, 0, -0.15 do
-		joint.C0 = oldC0 * CFrame.Angles(math.rad(120 * i), 0, 0)
-		task.wait(0.05)
-		end
-		joint.C0 = oldC0
-		swinging = false
-		end)
-		end
-		end
-		end
-
-		handle.Touched:Connect(blow)
-
-		tool.Equipped:Connect(function()
-		equipped = true
-		end)
-
-		tool.Unequipped:Connect(function()
-		equipped = false
-		end)
-
-		-- M1 input detection (runs from executor client)
-		-- Store connection in external table to prevent garbage collection
-		local m1Connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if gameProcessed then return end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 and equipped and tool.Parent == player.Character then
-		attack()
-		end
-		end)
-		table.insert(_swordifyConnections, m1Connection)
-
-		-- 4. Re-parenting check for execution
-		if tool.Parent == nil then
-		tool.Parent = Players.LocalPlayer.Backpack
-		end
-		end
-		end
-		end
-		end})
-
-		context:Register("AI_ANALYZE_REMOTE", {
-		Name = "Analyze Remote (AI)",
-		IconMap = Explorer.MiscIcons,
-		Icon = "Reference",
-		OnClick = function()
-		local sList = selection.List
-		for i = 1, #sList do
-		local obj = sList[i].Obj
-		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-		local path: string = obj:GetFullName()
-		local prompt: string = string.format(
-		"Analyze Roblox %s. Path: %s. Name: %s. Provide: 1) Likely Purpose, 2) Expected Parameters, 3) Attack Surface/Behavior.",
-		obj.ClassName, path, obj.Name
-		)
-
-		local analysis = requestNeuralLink(prompt, 250)
-		if analysis then
-		env.setclipboard(analysis)
-		print("--> [REMOTE_ANALYSIS]:\n" .. analysis)
-		if getgenv().DoNotif then getgenv().DoNotif("Analysis copied to clipboard", 2) end
-		end
-		end
-		end
-		end
-		})
-
-		context:Register("AI_TRACE_REMOTE", {
-		Name = "Find Remote Calls (AI)",
-		IconMap = Explorer.MiscIcons,
-		Icon = "Find",
-		OnClick = function()
-		local sList = selection.List
-		for i = 1, #sList do
-		local obj = sList[i].Obj
-		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-		local remoteName: string = obj.Name
-		local found: {string} = {}
-
-		local function searchScripts(instance: Instance)
-		if instance:IsA("LuaSourceContainer") then
-		local success, source = pcall(function() return instance.Source end)
-		if success and source:find(remoteName, 1, true) then
-		table.insert(found, instance:GetFullName())
-		end
-		end
-		for _, child in ipairs(instance:GetChildren()) do
-		searchScripts(child)
-		end
-		end
-
-		searchScripts(game)
-
-		if #found > 0 then
-		local result: string = string.format("[%s] referenced in:\n%s", remoteName, table.concat(found, "\n"))
-		env.setclipboard(result)
-		print("--> [TRACE]:\n" .. result)
-		else
-		print("--> [TRACE]: No static references found for " .. remoteName)
-		end
-		end
-		end
-		end
-		})
-
-		context:Register("AI_GENERATE_MOCK", {
-		Name = "Generate Mock Call (AI)",
-		IconMap = Explorer.MiscIcons,
-		Icon = "Play",
-		OnClick = function()
-		local sList = selection.List
-		for i = 1, #sList do
-		local obj = sList[i].Obj
-		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-		local prompt: string = string.format(
-		"Write a realistic Luau mock call for %s '%s'. Output RAW CODE ONLY. No explanation.",
-		obj.ClassName, obj.Name
-		)
-
-		local mockCode = requestNeuralLink(prompt, 300)
-		if mockCode then
-		env.setclipboard(mockCode)
-		print("--> [MOCK_GENERATED]:\n" .. mockCode)
-		if getgenv().DoNotif then getgenv().DoNotif("Mock logic copied", 2) end
-		end
-		end
-		end
-		end
-		})
-
-		context:Register("REMOTE_SECURITY_CHECK", {
-		Name = "Security Analysis (AI)",
-		IconMap = Explorer.MiscIcons,
-		Icon = "Delete",
-		OnClick = function()
-		local sList = selection.List
-		for i = 1, #sList do
-		local obj = sList[i].Obj
-		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-		local path: string = obj:GetFullName()
-		local risks: {string} = {}
-
-		if path:find("ReplicatedStorage") then table.insert(risks, "- Publicly accessible (ReplicatedStorage)") end
-		if obj.Name:lower():find("event") or obj.Name:lower():find("remote") then table.insert(risks, "- Generic/Predictable naming") end
-
-		local prompt: string = string.format(
-		"Security audit for Roblox Remote. Path: %s. Identified risks: %s. Recommend specific server-side mitigations.",
-		path, table.concat(risks, ", ")
-		)
-
-		local audit = requestNeuralLink(prompt, 300)
-		if audit then
-		local fullReport: string = string.format("[SECURITY REPORT: %s]\n\n%s", obj.Name, audit)
-		env.setclipboard(fullReport)
-		print("--> [AUDIT_COMPLETE]: Check F9 and Clipboard.")
-		end
-		end
-		end
-		end
-		})
-
-		context:Register("REMOTE_NETWORK_LOGGER", {
-		Name = "Network Logger (Toggle)",
-		IconMap = Explorer.MiscIcons,
-		Icon = "Play",
-		OnClick = function()
-		if not _G._remoteNetworkLogger then
-		_G._remoteNetworkLogger = {}
-		_G._loggerActive = true
-
-		local oldNamecall; oldNamecall = env.hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-		local method = getnamecallmethod()
-		if _G._loggerActive and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
-		if method == "FireServer" or method == "InvokeServer" then
-		local args = {...}
-		table.insert(_G._remoteNetworkLogger, {
-		time = tick(),
-		remote = self.Name,
-		path = self:GetFullName(),
-		method = method,
-		args = args
-		})
-		print(string.format("[NET_LOG] %s:%s | Args: %d", self.Name, method, #args))
-		end
-		end
-		return oldNamecall(self, ...)
-		end))
-
-		if getgenv().DoNotif then getgenv().DoNotif("Network Observer: ACTIVE", 2) end
-		else
-		_G._loggerActive = not _G._loggerActive
-		local state: string = _G._loggerActive and "RESUMED" or "PAUSED"
-		if getgenv().DoNotif then getgenv().DoNotif("Network Observer: " .. state, 2) end
-
-		if not _G._loggerActive then
-		local logOutput: string = "--- [ZUKA NETWORK LOG] ---\n"
-		for i, entry in ipairs(_G._remoteNetworkLogger) do
-		logOutput ..= string.format("[%d] %s -> %s (%s)\n", i, entry.method, entry.remote, entry.path)
-		end
-		env.setclipboard(logOutput)
-		end
-		end
-		end
-		})
-
-		context:Register("GENERATE_POISON_PATCH",{
-		Name = "[ZEX] Poison++ (Advanced)", 
-		IconMap = Explorer.MiscIcons, 
-		Icon = "CallFunction", 
-		OnClick = function()
-		local node = selection.List[1]
-		if not node or not node.Obj:IsA("ModuleScript") then 
-		if getgenv().DoNotif then 
-		getgenv().DoNotif("⚠ Select a ModuleScript first!", 2) 
-		end
-		return 
-		end
-
-		local module = node.Obj
-		local path = Explorer.GetInstancePath(module)
-		local success, result = pcall(require, module)
-
-
-		local detectedArch = "UNKNOWN"
-		local confidence = 0
-
-		local function detectArchitecture(tbl)
-		if type(tbl) ~= "table" then return end
-
-		local signatures = {
-		["1_ENGINE"] = {"BaseDamage", "FireRate", "AmmoPerMag", "HeadshotDamageMultiplier"},
-		["PRISON_LIFE"] = {"Damage", "FireRate", "MagSize", "Automatic"},
-		["ARSENAL"] = {"damagemin", "damagemax", "range", "penetration"},
-		["COUNTER_BLOX"] = {"damage", "firerate", "recoil", "accuracy"},
-		["GENERIC_FPS"] = {"Damage", "RPM", "Magazine", "Reload"},
-		["TOWER_DEFENSE"] = {"Cost", "Damage", "Range", "Cooldown"},
-		["SIMULATOR"] = {"Cost", "Multiplier", "Boost", "Rate"},
-		["STATS_MODULE"] = {"Health", "MaxHealth", "Speed", "WalkSpeed"},
-		["SHOP_MODULE"] = {"Price", "Cost", "Currency", "Gamepass"},
-		}
-
-		for archName, keys in pairs(signatures) do
-		local matches = 0
-		for _, key in ipairs(keys) do
-		if tbl[key] ~= nil then
-		matches = matches + 1
-		end
-		end
-
-		local matchPercent = (matches / #keys) * 100
-		if matchPercent > confidence then
-		confidence = matchPercent
-		detectedArch = archName
-		end
-		end
-		end
-
-		if success and type(result) == "table" then
-		detectArchitecture(result)
-		end
-
-		local function getPoisonValue(name, currentVal, architecture)
-		local n = tostring(name)
-		local lowerN = n:lower()
-		local typeV = type(currentVal)
-
-		-- TYPE-BASED UNIVERSAL PATTERNS
-		if typeV == "boolean" then
-		if lowerN:find("limit") or lowerN:find("restrict") or lowerN:find("enabled") or 
-		lowerN:find("lock") or lowerN:find("delay") then
-		return false
-		elseif lowerN:find("auto") or lowerN:find("infinite") or lowerN:find("unlimited") then
-		return true
-		end
-		end
-
-		-- NUMERICAL BOOST PATTERNS
-		if typeV == "number" then
-		-- Minimize (costs, recoil, spread) - TRUE ZEROS
-		if lowerN:find("cost") or lowerN:find("price") or 
-		lowerN:find("recoil") or lowerN:find("spread") then
-		return 0
-		end
-
-		-- Minimize timers but keep SMALL values to prevent breakage
-		if lowerN:find("reload") or lowerN:find("equip") then
-		return 0.05 -- 50ms minimum
-		end
-
-		-- DON'T touch FireRate/Cooldown here - handle per-architecture
-
-		-- Maximize (damage, speed, range, ammo)
-		if lowerN:find("damage") or lowerN:find("speed") or lowerN:find("range") or 
-		lowerN:find("ammo") or lowerN:find("mag") or lowerN:find("multi") or 
-		lowerN:find("boost") or lowerN:find("radius") or lowerN:find("health") then
-		return 999999
-		end
-		end
-
-
-
-		if architecture == "1_ENGINE" then
-		if n == "BaseDamage" or lowerN:find("damage") then return 999999
-		elseif n == "HeadshotDamageMultiplier" then return 100
-		elseif n == "FireRate" or n == "BurstRate" then return 0.01 -- CRITICAL FIX: minimum 10ms
-		elseif n == "ReloadTime" or n == "TacticalReloadTime" then return 0
-		elseif n == "EquipTime" or n == "UnequipTime" then return 0.01
-		elseif n == "AmmoPerMag" or n == "MagSize" then return 999999
-		elseif n == "Auto" or n == "Automatic" then return true
-		elseif n == "Recoil" or n == "Spread" or n == "HipFireSpread" then return 0
-		elseif n == "BulletSpeed" or n == "Range" or n == "MaxRange" then return 90000
-		elseif n == "BulletPerShot" then
-		-- Only boost if it's already > 1 (shotgun detection)
-		return currentVal > 1 and 15 or currentVal 
-		elseif n == "FriendlyFire" then return true
-		elseif lowerN:find("enabled") and lowerN:find("limit") then return false
-		elseif n == "Lifesteal" then return 99999
-		elseif n == "Knockback" then return 9999
-		elseif n == "ExplosionRadius" then return 9999
-		end
-
-		-- PRISON LIFE
-		elseif architecture == "PRISON_LIFE" then
-		if n == "Damage" then return 999999
-		elseif n == "FireRate" then return 0.01 -- FIXED
-		elseif n == "MagSize" then return 999999
-		elseif n == "Automatic" then return true
-		elseif n == "ReloadTime" then return 0.05 -- FIXED
-		end
-
-		-- ARSENAL
-		elseif architecture == "ARSENAL" then
-		if n == "damagemin" or n == "damagemax" then return 999999
-		elseif n == "firerate" then return 0.01 -- FIXED from 0.001
-		elseif n == "range" then return 99999
-		elseif n == "penetration" then return 99999
-		elseif n == "recoilx" or n == "recoily" then return 0
-		elseif n == "reloadtime" then return 0.05
-		end
-
-		-- COUNTER BLOX
-		elseif architecture == "COUNTER_BLOX" then
-		if n == "damage" then return 999999
-		elseif n == "firerate" then return 0.01 -- FIXED
-		elseif n == "recoil" then return 0
-		elseif n == "accuracy" then return 100
-		end
-
-		-- GENERIC FPS
-		elseif architecture == "GENERIC_FPS" then
-		if n == "Damage" then return 999999
-		elseif n == "RPM" then return 6000 -- 100 rounds/sec = safe max
-		elseif n == "Magazine" then return 999999
-		elseif n == "Reload" then return 0.05
-		end
-
-		-- TOWER DEFENSE GAMES
-		elseif architecture == "TOWER_DEFENSE" then
-		if n == "Cost" or n == "Price" then return 0
-		elseif n == "Damage" then return 999999
-		elseif n == "Range" then return 99999
-		elseif n == "Cooldown" or n == "FireRate" then return 0.01 -- FIXED
-		elseif n == "MaxLevel" then return 999
-		end
-
-		-- SIMULATOR GAMES
-		elseif architecture == "SIMULATOR" then
-		if n == "Cost" or n == "Price" then return 0
-		elseif n == "Multiplier" or n == "Boost" then return 999999
-		elseif n == "Rate" or n == "Speed" then return 999999
-		elseif n == "Cooldown" then return 0.01 -- FIXED
-		end
-
-		-- STATS MODULES
-		elseif architecture == "STATS_MODULE" then
-		if n == "Health" or n == "MaxHealth" then return 999999
-		end
-
-		-- SHOP MODULES
-		elseif architecture == "SHOP_MODULE" then
-		if n == "Price" or n == "Cost" then return 0
-		elseif n == "Gamepass" or n == "GamepassRequired" then return false
-		elseif n == "VIPOnly" or n == "PremiumOnly" then return false
-		end
-		end
-
-		return currentVal
-		end
-
-		-- ============================================================================
-		-- ADVANCED TYPE SERIALIZER
-		-- ============================================================================
-		local function serialize(v, depth)
-		depth = depth or 0
-		if depth > 5 then return "nil --[[MAX_DEPTH]]" end
-
-		local t = typeof(v)
-
-		if t == "string" then 
-		return '"' .. v:gsub('"', '\\"'):gsub("\n", "\\n") .. '"'
-		elseif t == "number" then 
-		if v == math.huge then return "math.huge"
-		elseif v == -math.huge then return "-math.huge"
-		elseif v ~= v then return "0/0 --[[NaN]]"
-		else return tostring(v) end
-		elseif t == "boolean" then 
-		return tostring(v)
-		elseif t == "nil" then 
-		return "nil"
-
-		-- Roblox Types
-		elseif t == "Vector3" then 
-		return string.format("Vector3.new(%.2f, %.2f, %.2f)", v.X, v.Y, v.Z)
-		elseif t == "Vector2" then 
-		return string.format("Vector2.new(%.2f, %.2f)", v.X, v.Y)
-		elseif t == "UDim2" then
-		return string.format("UDim2.new(%.3f, %d, %.3f, %d)", v.X.Scale, v.X.Offset, v.Y.Scale, v.Y.Offset)
-		elseif t == "CFrame" then 
-		local components = {v:GetComponents()}
-		return "CFrame.new(" .. table.concat(components, ", ") .. ")"
-		elseif t == "Color3" then 
-		return string.format("Color3.fromRGB(%d, %d, %d)", 
-		math.floor(v.R*255), math.floor(v.G*255), math.floor(v.B*255))
-		elseif t == "BrickColor" then
-		return 'BrickColor.new("' .. v.Name .. '")'
-		elseif t == "EnumItem" then 
-		return tostring(v)
-		elseif t == "NumberRange" then
-		return string.format("NumberRange.new(%.2f, %.2f)", v.Min, v.Max)
-		elseif t == "Rect" then
-		return string.format("Rect.new(%.2f, %.2f, %.2f, %.2f)", 
-		v.Min.X, v.Min.Y, v.Max.X, v.Max.Y)
-
-		-- Table serialization (shallow)
-		elseif t == "table" then
-		local items = {}
-		for k, val in pairs(v) do
-		if type(k) == "string" then
-		table.insert(items, '["' .. k .. '"] = ' .. serialize(val, depth + 1))
-		else
-		table.insert(items, '[' .. k .. '] = ' .. serialize(val, depth + 1))
-		end
-		end
-		return "{" .. table.concat(items, ", ") .. "}"
-		end
-
-		return "nil --[[UNSUPPORTED_TYPE:" .. t .. "]]"
-		end
-
-		-- ============================================================================
-		-- RECURSIVE TABLE PATCHER
-		-- ============================================================================
-		local patchedCount = 0
-		local skippedCount = 0
-
-		local function generatePatchCode(tbl, parentPath, depth)
-		depth = depth or 0
-		if depth > 3 then return "" end
-
-		local code = ""
-
-		for k, v in pairs(tbl) do
-		local keyPath = parentPath .. "." .. tostring(k)
-		local valueType = type(v)
-
-		if valueType == "table" then
-		code = code .. generatePatchCode(v, keyPath, depth + 1)
-
-		elseif valueType ~= "function" and valueType ~= "userdata" then
-		local pVal = getPoisonValue(tostring(k), v, detectedArch)
-
-		if pVal ~= v then
-		local pValSerialized = serialize(pVal)
-		code = code .. keyPath .. " = " .. pValSerialized .. " -- [PATCHED]\n"
-		patchedCount = patchedCount + 1
-		else
-		skippedCount = skippedCount + 1
-		end
-		end
-		end
-
-		return code
-		end
-
-		-- ============================================================================
-		-- OUTPUT GENERATION
-		-- ============================================================================
-		local output = ""
-		output = output .. "--[[\n"
-		output = output .. "    ╔═══════════════════════════════════════════════════════╗\n"
-		output = output .. "    ║      POISON++ ADVANCED MODULE PATCH                   ║\n"
-		output = output .. "    ╚═══════════════════════════════════════════════════════╝\n"
-		output = output .. "    \n"
-		output = output .. "    Target:        " .. module.Name .. "\n"
-		output = output .. "    Path:          " .. path .. "\n"
-		output = output .. "    Architecture:  " .. detectedArch .. " (" .. confidence .. "% confidence)\n"
-		output = output .. "    Generated:     " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n"
-		output = output .. "    Engine:        ZukaTech Poison++ v2.1 (Stability Fix)\n"
-		output = output .. "--]]\n\n"
-
-		if not success then
-		output = output .. "-- [ERROR]: Failed to require module\n"
-		output = output .. "-- Reason: " .. tostring(result) .. "\n"
-		output = output .. "-- This module may be server-sided or protected\n"
-
-		elseif type(result) ~= "table" then
-		output = output .. "-- [INFO]: Module returns " .. type(result) .. " instead of table\n"
-		output = output .. "-- Cannot generate patch for non-table modules\n"
-
-		else
-		output = output .. "local targetModule = require(" .. path .. ")\n"
-		output = output .. "assert(type(targetModule) == 'table', 'Module must return a table')\n\n"
-		output = output .. "-- Disable read-only protection\n"
-		output = output .. "if setreadonly then \n"
-		output = output .. "    pcall(setreadonly, targetModule, false)\n"
-		output = output .. "end\n\n"
-		output = output .. "-- Apply patches\n"
-
-		local patchCode = generatePatchCode(result, "targetModule", 0)
-		output = output .. patchCode
-
-		output = output .. "\n-- Re-enable read-only protection\n"
-		output = output .. "if setreadonly then \n"
-		output = output .. "    pcall(setreadonly, targetModule, true)\n"
-		output = output .. "end\n\n"
-		output = output .. "print('[Poison++] " .. module.Name .. " neutralized (" .. patchedCount .. " patches applied)')\n"
-		output = output .. "return targetModule\n"
-		end
-
-		-- ============================================================================
-		-- OUTPUT TO CONSOLE & CLIPBOARD
-		-- ============================================================================
-		print("\n" .. string.rep("=", 60))
-		print("[ZUKATECH POISON++]")
-		print(string.rep("=", 60))
-		print(output)
-		print(string.rep("=", 60))
-		print("Stats: " .. patchedCount .. " patched, " .. skippedCount .. " unchanged")
-		print(string.rep("=", 60) .. "\n")
-
-		-- Multi-environment clipboard support
-		local clipboardSuccess = false
-		local clipboardFunctions = {
-		function() setclipboard(output) end,
-		function() env.setclipboard(output) end,
-		function() getgenv().setclipboard(output) end,
-		function() syn.write_clipboard(output) end,
-		function() Clipboard.set(output) end,
-		}
-
-		for _, func in ipairs(clipboardFunctions) do
-		if pcall(func) then
-		clipboardSuccess = true
-		break
-		end
-		end
-
-		if getgenv().DoNotif then
-		if clipboardSuccess then
-		getgenv().DoNotif("✓ Poison++ patch copied! (" .. patchedCount .. " patches)", 3)
-		else
-		getgenv().DoNotif("⚠ Patch generated but clipboard failed", 3)
-		end
-		end
-		end
-		})
-
-		context:Register("GENERATE_UNIVERSAL_POISON",{
-		Name = "[ZEX] Universal Module Poison", 
-		IconMap = Explorer.MiscIcons, 
-		Icon = "Zap", 
-		OnClick = function()
-		local node = selection.List[1]
-		if not node or not node.Obj:IsA("ModuleScript") then 
-		if getgenv().DoNotif then 
-		getgenv().DoNotif("⚠ Select a ModuleScript first!", 2) 
-		end
-		return 
-		end
-
-		local module = node.Obj
-		local path = Explorer.GetInstancePath(module)
-		local success, result = pcall(require, module)
-
-		-- ============================================================================
-		-- UNIVERSAL MODULE TYPE DETECTION
-		-- ============================================================================
-		local detectedTypes = {} -- Can be multiple types
-		local confidence = {}
-
-		local function detectModuleTypes(tbl)
-		if type(tbl) ~= "table" then return end
-
-		local signatures = {
-		-- Economy
-		["SHOP"] = {"Price", "Cost", "Currency", "BuyPrice", "SellPrice"},
-		["CURRENCY"] = {"Coins", "Cash", "Money", "Gems", "Credits"},
-		["REWARDS"] = {"Reward", "Prize", "Loot", "Drop", "XP"},
-
-		-- Character/Player
-		["STATS"] = {"Health", "MaxHealth", "Speed", "WalkSpeed", "JumpPower"},
-		["ABILITIES"] = {"Cooldown", "ManaCost", "Duration", "Power"},
-		["INVENTORY"] = {"MaxSlots", "Capacity", "Weight", "Limit"},
-
-		-- Vehicles
-		["VEHICLE"] = {"Speed", "Acceleration", "Handling", "TopSpeed", "Fuel"},
-		["BOAT"] = {"MaxSpeed", "TurnSpeed", "Buoyancy"},
-		["AIRCRAFT"] = {"ThrustPower", "LiftForce", "MaxAltitude"},
-
-		-- Pets/Companions
-		["PET"] = {"Damage", "CollectionRadius", "SpawnRate", "Rarity", "Level"},
-		["COMPANION"] = {"FollowDistance", "AttackDamage", "Health"},
-
-		-- Building/Tycoon
-		["TYCOON"] = {"Income", "BuildTime", "UpgradeCost", "ProductionRate"},
-		["BUILDING"] = {"Cost", "BuildDuration", "Material", "Requirement"},
-
-		-- Farming/Simulator
-		["FARMING"] = {"GrowthTime", "YieldAmount", "WaterNeeded", "HarvestValue"},
-		["MINING"] = {"HardnessLevel", "OreValue", "RespawnTime", "Durability"},
-		["SIMULATOR"] = {"Multiplier", "Boost", "Rate", "ClickPower"},
-
-		-- Game Mechanics
-		["CRAFTING"] = {"CraftTime", "MaterialCost", "Recipe", "Ingredients"},
-		["REBIRTH"] = {"Requirement", "Multiplier", "ResetValue", "Level"},
-		["UPGRADE"] = {"Level", "MaxLevel", "UpgradeCost", "Effect"},
-		["TELEPORT"] = {"Cooldown", "Destination", "RequiredLevel", "Cost"},
-
-		-- Restrictions
-		["GAMEPASS"] = {"GamepassId", "GamepassRequired", "Premium", "VIP"},
-		["RESTRICTIONS"] = {"MinLevel", "MaxLevel", "RequiredItem", "Locked"},
-		["COOLDOWNS"] = {"GlobalCooldown", "ActionDelay", "RateLimit"},
-
-		-- Environmental
-		["ZONE"] = {"Radius", "DamagePerSecond", "SafeZone", "Boundary"},
-		["DOOR"] = {"Keycard", "AccessLevel", "Permission", "RequiredRank"},
-		["EVENT"] = {"SpawnRate", "Duration", "Frequency", "Chance"},
-		}
-
-		for moduleType, keys in pairs(signatures) do
-		local matches = 0
-		for _, key in ipairs(keys) do
-		if tbl[key] ~= nil then
-		matches = matches + 1
-		end
-		end
-
-		local matchPercent = (matches / #keys) * 100
-		if matchPercent >= 30 then -- 30% threshold for multi-detection
-		table.insert(detectedTypes, moduleType)
-		confidence[moduleType] = matchPercent
-		end
-		end
-
-		-- Sort by confidence
-		table.sort(detectedTypes, function(a, b)
-		return confidence[a] > confidence[b]
-		end)
-		end
-
-		if success and type(result) == "table" then
-		detectModuleTypes(result)
-		end
-
-		-- ============================================================================
-		-- UNIVERSAL POISON LOGIC
-		-- ============================================================================
-		local function getPoisonValue(name, currentVal, types)
-		local n = tostring(name)
-		local lowerN = n:lower()
-		local typeV = type(currentVal)
-
-		-- Skip if value is a table or function
-		if typeV == "table" or typeV == "function" or typeV == "userdata" then
-		return currentVal
-		end
-
-		-- ============================================================================
-		-- BOOLEAN PATTERNS
-		-- ============================================================================
-		if typeV == "boolean" then
-		-- Disable restrictions
-		if lowerN:find("lock") or lowerN:find("restrict") or lowerN:find("limit") or 
-		lowerN:find("required") or lowerN:find("enabled") or lowerN:find("disabled") or
-		lowerN:find("vip") or lowerN:find("premium") or lowerN:find("gamepass") then
-		return false
-		end
-
-		-- Enable beneficial features
-		if lowerN:find("auto") or lowerN:find("infinite") or lowerN:find("unlimited") or
-		lowerN:find("collect") or lowerN:find("free") then
-		return true
-		end
-		end
-
-		-- ============================================================================
-		-- NUMBER PATTERNS (MINIMIZE)
-		-- ============================================================================
-		if typeV == "number" then
-		-- Costs & Prices → 0
-		if lowerN:find("cost") or lowerN:find("price") or lowerN:find("expense") or
-		lowerN:find("fee") or lowerN:find("tax") then
-		return 0
-		end
-
-		-- Cooldowns & Delays → 0.01 (safe minimum)
-		if lowerN:find("cooldown") or lowerN:find("delay") or lowerN:find("wait") or
-		lowerN:find("ratelimit") then
-		return 0.01
-		end
-
-		-- Time-based (growth, craft, respawn) → 0.01
-		if lowerN:find("time") or lowerN:find("duration") or lowerN:find("respawn") or
-		lowerN:find("growth") or lowerN:find("craft") or lowerN:find("build") then
-		return 0.01
-		end
-
-		-- Requirements & Thresholds → 0
-		if lowerN:find("requirement") or lowerN:find("needed") or lowerN:find("minlevel") or
-		lowerN:find("threshold") then
-		return 0
-		end
-
-		-- Negative effects → 0
-		if lowerN:find("damage") and (lowerN:find("take") or lowerN:find("received")) then
-		return 0
-		end
-		if lowerN:find("decay") or lowerN:find("drain") or lowerN:find("loss") then
-		return 0
-		end
-		end
-
-		-- ============================================================================
-		-- NUMBER PATTERNS (MAXIMIZE)
-		-- ============================================================================
-		if typeV == "number" then
-		-- Damage output → 999999
-		if (lowerN:find("damage") and not lowerN:find("take")) or lowerN:find("attack") or
-		lowerN:find("power") or lowerN:find("strength") then
-		return 999999
-		end
-
-		-- Speed/Movement → 500 (sane cap to prevent physics breaks)
-		if lowerN:find("speed") or lowerN:find("velocity") or lowerN:find("acceleration") then
-		return 500
-		end
-
-		-- Ranges/Radius → 99999
-		if lowerN:find("range") or lowerN:find("radius") or lowerN:find("distance") or
-		lowerN:find("reach") then
-		return 99999
-		end
-
-		-- Health/Defense → 999999
-		if lowerN:find("health") or lowerN:find("hp") or lowerN:find("defense") or
-		lowerN:find("armor") or lowerN:find("shield") then
-		return 999999
-		end
-
-		-- Resources (ammo, capacity, slots) → 999999
-		if lowerN:find("ammo") or lowerN:find("mag") or lowerN:find("capacity") or
-		lowerN:find("slot") or lowerN:find("limit") or lowerN:find("max") then
-		return 999999
-		end
-
-		-- Multipliers/Boosts → 999999
-		if lowerN:find("multi") or lowerN:find("boost") or lowerN:find("bonus") or
-		lowerN:find("modifier") or lowerN:find("rate") then
-		return 999999
-		end
-
-		-- Income/Rewards → 999999
-		if lowerN:find("income") or lowerN:find("reward") or lowerN:find("yield") or
-		lowerN:find("value") or lowerN:find("worth") or lowerN:find("profit") then
-		return 999999
-		end
-
-		-- Chances/Probability → 100 (max probability)
-		if lowerN:find("chance") or lowerN:find("probability") or lowerN:find("rate") and
-		currentVal <= 1 then -- Only if it's a 0-1 probability
-		return 1
-		elseif lowerN:find("chance") or lowerN:find("drop") then
-		return 100
-		end
-		end
-
-		-- No match found - return original
-		return currentVal
-		end
-
-		-- ============================================================================
-		-- SERIALIZER (same as before)
-		-- ============================================================================
-		local function serialize(v, depth)
-		depth = depth or 0
-		if depth > 5 then return "nil --[[MAX_DEPTH]]" end
-
-		local t = typeof(v)
-
-		if t == "string" then 
-		return '"' .. v:gsub('"', '\\"'):gsub("\n", "\\n") .. '"'
-		elseif t == "number" then 
-		if v == math.huge then return "math.huge"
-		elseif v == -math.huge then return "-math.huge"
-		elseif v ~= v then return "0/0"
-		else return tostring(v) end
-		elseif t == "boolean" then 
-		return tostring(v)
-		elseif t == "nil" then 
-		return "nil"
-		elseif t == "Vector3" then 
-		return string.format("Vector3.new(%.2f, %.2f, %.2f)", v.X, v.Y, v.Z)
-		elseif t == "Vector2" then 
-		return string.format("Vector2.new(%.2f, %.2f)", v.X, v.Y)
-		elseif t == "Color3" then 
-		return string.format("Color3.fromRGB(%d, %d, %d)", 
-		math.floor(v.R*255), math.floor(v.G*255), math.floor(v.B*255))
-		elseif t == "CFrame" then 
-		local components = {v:GetComponents()}
-		return "CFrame.new(" .. table.concat(components, ", ") .. ")"
-		elseif t == "EnumItem" then 
-		return tostring(v)
-		elseif t == "table" then
-		local items = {}
-		for k, val in pairs(v) do
-		if type(k) == "string" then
-		table.insert(items, '["' .. k .. '"] = ' .. serialize(val, depth + 1))
-		else
-		table.insert(items, '[' .. k .. '] = ' .. serialize(val, depth + 1))
-		end
-		end
-		return "{" .. table.concat(items, ", ") .. "}"
-		end
-
-		return "nil --[[UNSUPPORTED:" .. t .. "]]"
-		end
-
-		-- ============================================================================
-		-- RECURSIVE PATCHER
-		-- ============================================================================
-		local patchedCount = 0
-		local skippedCount = 0
-		local patchDetails = {}
-
-		local function generatePatchCode(tbl, parentPath, depth)
-		depth = depth or 0
-		if depth > 4 then return "" end
-
-		local code = ""
-
-		for k, v in pairs(tbl) do
-		local keyPath = parentPath .. "." .. tostring(k)
-		local valueType = type(v)
-
-		if valueType == "table" then
-		code = code .. generatePatchCode(v, keyPath, depth + 1)
-
-		elseif valueType ~= "function" and valueType ~= "userdata" then
-		local pVal = getPoisonValue(tostring(k), v, detectedTypes)
-
-		if pVal ~= v then
-		local pValSerialized = serialize(pVal)
-		code = code .. keyPath .. " = " .. pValSerialized .. " -- " .. tostring(v) .. " → " .. tostring(pVal) .. "\n"
-		patchedCount = patchedCount + 1
-		table.insert(patchDetails, {key = k, old = v, new = pVal})
-		else
-		skippedCount = skippedCount + 1
-		end
-		end
-		end
-
-		return code
-		end
-
-		-- ============================================================================
-		-- OUTPUT GENERATION
-		-- ============================================================================
-		local typesList = #detectedTypes > 0 and table.concat(detectedTypes, ", ") or "GENERIC"
-
-		local output = ""
-		output = output .. "--[[\n"
-		output = output .. "    ╔═══════════════════════════════════════════════════════╗\n"
-		output = output .. "    ║      UNIVERSAL MODULE POISON                          ║\n"
-		output = output .. "    ╚═══════════════════════════════════════════════════════╝\n"
-		output = output .. "    \n"
-		output = output .. "    Target:        " .. module.Name .. "\n"
-		output = output .. "    Path:          " .. path .. "\n"
-		output = output .. "    Detected:      " .. typesList .. "\n"
-
-		if #detectedTypes > 0 then
-		for _, mType in ipairs(detectedTypes) do
-		output = output .. "                   - " .. mType .. " (" .. math.floor(confidence[mType]) .. "%)\n"
-		end
-		end
-
-		output = output .. "    Generated:     " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n"
-		output = output .. "    Engine:        ZukaTech Universal Poisoner v1.0\n"
-		output = output .. "--]]\n\n"
-
-		if not success then
-		output = output .. "-- [ERROR]: Failed to require module\n"
-		output = output .. "-- Reason: " .. tostring(result) .. "\n"
-
-		elseif type(result) ~= "table" then
-		output = output .. "-- [INFO]: Module returns " .. type(result) .. "\n"
-		output = output .. "-- Cannot poison non-table modules\n"
-
-		else
-		output = output .. "local targetModule = require(" .. path .. ")\n"
-		output = output .. "assert(type(targetModule) == 'table', 'Module must return a table')\n\n"
-
-		output = output .. "-- Disable protections\n"
-		output = output .. "if setreadonly then pcall(setreadonly, targetModule, false) end\n"
-		output = output .. "if make_writeable then pcall(make_writeable, targetModule) end\n\n"
-
-		output = output .. "-- Apply universal patches\n"
-		local patchCode = generatePatchCode(result, "targetModule", 0)
-		output = output .. patchCode
-
-		output = output .. "\n-- Re-enable protections\n"
-		output = output .. "if setreadonly then pcall(setreadonly, targetModule, true) end\n\n"
-		output = output .. "print('[Universal Poison] " .. module.Name .. " poisoned (" .. patchedCount .. " patches)')\n"
-		output = output .. "return targetModule\n"
-		end
-
-		-- ============================================================================
-		-- CONSOLE OUTPUT
-		-- ============================================================================
-		print("\n" .. string.rep("=", 70))
-		print("[ZUKATECH UNIVERSAL POISONER]")
-		print(string.rep("=", 70))
-		print("Module: " .. module.Name)
-		print("Types:  " .. typesList)
-		print(string.rep("-", 70))
-		print(output)
-		print(string.rep("=", 70))
-		print("Stats: " .. patchedCount .. " patched, " .. skippedCount .. " unchanged")
-		print(string.rep("=", 70) .. "\n")
-
-		-- Clipboard
-		local clipboardSuccess = false
-		local clipboardFuncs = {
-		function() setclipboard(output) end,
-		function() env.setclipboard(output) end,
-		function() getgenv().setclipboard(output) end,
-		function() syn.write_clipboard(output) end,
-		}
-
-		for _, func in ipairs(clipboardFuncs) do
-		if pcall(func) then
-		clipboardSuccess = true
-		break
-		end
-		end
-
-		if getgenv().DoNotif then
-		if clipboardSuccess then
-		getgenv().DoNotif("✓ Universal poison copied! (" .. patchedCount .. " patches)", 3)
-		else
-		getgenv().DoNotif("⚠ Generated but clipboard failed", 3)
-		end
-		end
-		end
-		})
-
-		context:Register("GENERATE_POISON_PATCH2",{Name = "[ZEX] Poison!", IconMap = Explorer.MiscIcons, Icon = "CallFunction", OnClick = function()
-		local node = selection.List[1]
-		if not node or not node.Obj:IsA("ModuleScript") then return end
-		local module = node.Obj
-
-		local path = Explorer.GetInstancePath(module)
-		local success, result = pcall(require, module)
-
-		-- Architecture-Specific Poison Logic (Optimized for "1" Engine)
-		local function getPoisonValue(name, currentVal)
-		local n = tostring(name)
-		local lowerN = n:lower()
-
-		-- Damage & Multipliers
-		if n == "BaseDamage" or lowerN:find("damage") then return 999999
-		elseif n == "HeadshotDamageMultiplier" or lowerN:find("headshot") then return 100
-
-		-- Fire Rate & Reloads
-		elseif n == "FireRate" or n == "BurstRate" or n == "ReloadTime" or n == "EquipTime" then return 0
-		elseif n == "TacticalReloadTime" or n == "SwitchTime" or lowerN:find("delay") then return 0
-
-		elseif n == "AmmoPerMag" then return 999999
-		elseif n == "Recoil" then return 0
-		elseif n == "BulletPerShot" then return 5
-		elseif n == "FriendlyFire" then return true
-		elseif n == "Lifesteal" then return 99999
-		elseif n == "ShotgunEnabled" then return true
-		elseif n == "Knockback" then return 9999999
-		elseif n == "DualFireEnabled" then return true
-		elseif n == "IcifyChance" then return 9999
-		elseif n == "FlamingBullet" then return true
-		elseif n == "IgniteChance" then return 9999
-		elseif n == "FreezingBullet" then return true
-		elseif n == "ChargedShotEnabled" then return false
-		elseif n == "ChargingTime" then return 0
-		elseif n == "HoldAndReleaseEnabled" then return false
-		elseif n == "DelayBeforeFiring" then return 0
-		elseif n == "Auto" then return true
-		elseif n == "CriticalDamageEnabled" then return 999999
-    elseif n == "SilenceEffect" then return true
-    elseif n == "HoldDownEnabled" then return false
-    elseif n == "RicochetAmount" then return 15
-    elseif n == "SuperRicochet" then return true
-    elseif n == "BulletLifetime" then return 10
-		elseif n == "Recoil" or n == "Spread" or n == "Accuracy" then return 0
-		elseif lowerN:find("angle") and (lowerN:find("min") or lowerN:find("max")) then return 0
-		elseif n == "BulletSpeed" or n == "Range" then return 90000
-
-		-- Mechanics
-		elseif n == "LimitedAmmoEnabled" or n == "DamageDropOffEnabled" then return false
-		elseif n == "WalkSpeedRedutionEnabled" then return false
-		elseif n == "WalkSpeedRedution" then return 0
-		end
-		return currentVal
-		end
-
-		-- Complex Type Serializer (Ensures generated code runs)
-		local function serialize(v)
-		local t = typeof(v)
-		if t == "string" then return '"' .. v .. '"'
-		elseif t == "number" or t == "boolean" then return tostring(v)
-		elseif t == "Vector3" then return "Vector3.new(" .. v.X .. ", " .. v.Y .. ", " .. v.Z .. ")"
-		elseif t == "Vector2" then return "Vector2.new(" .. v.X .. ", " .. v.Y .. ")"
-		elseif t == "CFrame" then return "CFrame.new(" .. tostring(v) .. ")"
-		elseif t == "Color3" then return "Color3.fromRGB(" .. math.floor(v.R*255) .. ", " .. math.floor(v.G*255) .. ", " .. math.floor(v.B*255) .. ")"
-		elseif t == "EnumItem" then return tostring(v)
-		end
-		return "nil"
-		end
-
-		local output = "\n--[[ \n\GENERATED PATCH: " .. module.Name .. "\n\tENGINE: Basic Weapon '1' Architecture\n\tARCHITECT: Made with - (ZukaTech v10)\n\tTARGET: " .. path .. "\n--]]\n\n"
-		output = output .. "local targetModule = require(" .. path .. ")\n"
-		output = output .. "if setreadonly then setreadonly(targetModule, false) end\n\n"
-
-		if not success then
-		output = output .. "-- [ERROR]: Require failed. Protected or Server-Side.\n"
-		elseif type(result) == "table" then
-		for k, v in pairs(result) do
-		if type(v) ~= "function" and type(v) ~= "table" then
-		local pVal = getPoisonValue(tostring(k), v)
-		local pValDisp = serialize(pVal)
-
-		if pVal ~= v then
-		output = output .. "targetModule." .. tostring(k) .. " = " .. pValDisp .. " -- [PATCHED]\n"
-		end
-		end
-		end
-		output = output .. "\nif setreadonly then setreadonly(targetModule, true) end\n"
-		output = output .. "print('--> [Poison]: " .. module.Name .. " has been neutralized.')"
-		else
-		output = output .. "-- [INFO]: Module returns a " .. type(result) .. " instead of a table."
-		end
-
-		-- OUTPUT TO CONSOLE
-		print("--- [ZUKATECH] ---")
-		print(output)
-		print("--- [ZUKATECH] ---")
-
-		-- COPY TO CLIPBOARD (Multiple fallback methods)
-		local clipboardSuccess = false
-		if setclipboard then
-		pcall(function() setclipboard(output) end)
-		clipboardSuccess = true
-		elseif env.setclipboard then
-		pcall(function() env.setclipboard(output) end)
-		clipboardSuccess = true
-		elseif getgenv().setclipboard then
-		pcall(function() getgenv().setclipboard(output) end)
-		clipboardSuccess = true
-		end
-
-		if clipboardSuccess then
-		if getgenv().DoNotif then getgenv().DoNotif("✓ Poison Patch copied to clipboard!", 3) end
-		else
-		if getgenv().DoNotif then getgenv().DoNotif("⚠ Failed to copy to clipboard", 3) end
-		end
-		end})
-
-		context:Register("SCREENGUI_TO_SCRIPT",{
-		Name = "Convert to Script (Deep)",
-		IconMap = Explorer.MiscIcons,
-		Icon = "Save",
-		OnClick = function()
-			local node = selection.List[1]
-			if not node or not node.Obj:IsA("ScreenGui") then return end
-			local gui = node.Obj
-
-			-- ── Serializer ───────────────────────────────────────────────────
-			local function serialize(v)
-				local t = typeof(v)
-				if t == "string" then
-					return string.format("%q", v)
-				elseif t == "number" then
-					-- avoid scientific notation for small/large numbers
-					if v == math.floor(v) then return tostring(math.floor(v)) end
-					return tostring(v)
-				elseif t == "boolean" then
-					return tostring(v)
-				elseif t == "nil" then
-					return "nil"
-				elseif t == "Vector3" then
-					return ("Vector3.new(%s, %s, %s)"):format(v.X, v.Y, v.Z)
-				elseif t == "Vector2" then
-					return ("Vector2.new(%s, %s)"):format(v.X, v.Y)
-				elseif t == "UDim2" then
-					return ("UDim2.new(%s, %s, %s, %s)"):format(
-						v.X.Scale, v.X.Offset, v.Y.Scale, v.Y.Offset)
-				elseif t == "UDim" then
-					return ("UDim.new(%s, %s)"):format(v.Scale, v.Offset)
-				elseif t == "CFrame" then
-					local c = {v:GetComponents()}
-					return "CFrame.new(" .. table.concat(c, ", ") .. ")"
-				elseif t == "Color3" then
-					return ("Color3.fromRGB(%d, %d, %d)"):format(
-						math.floor(v.R*255), math.floor(v.G*255), math.floor(v.B*255))
-				elseif t == "BrickColor" then
-					return ("BrickColor.new(%q)"):format(v.Name)
-				elseif t == "EnumItem" then
-					return tostring(v)
-				elseif t == "Rect" then
-					return ("Rect.new(%s, %s, %s, %s)"):format(
-						v.Min.X, v.Min.Y, v.Max.X, v.Max.Y)
-				elseif t == "FontFace" then
-					return ("Font.new(%q, Enum.FontWeight.%s, Enum.FontStyle.%s)"):format(
-						v.Family, v.Weight.Name, v.Style.Name)
-				elseif t == "NumberRange" then
-					return ("NumberRange.new(%s, %s)"):format(v.Min, v.Max)
-				elseif t == "NumberSequence" then
-					local kps = {}
-					for _, kp in ipairs(v.Keypoints) do
-						table.insert(kps, ("NumberSequenceKeypoint.new(%s, %s, %s)"):format(
-							kp.Time, kp.Value, kp.Envelope))
-					end
-					return "NumberSequence.new({" .. table.concat(kps, ", ") .. "})"
-				elseif t == "ColorSequence" then
-					local kps = {}
-					for _, kp in ipairs(v.Keypoints) do
-						table.insert(kps, ("ColorSequenceKeypoint.new(%s, Color3.fromRGB(%d,%d,%d))"):format(
-							kp.Time,
-							math.floor(kp.Value.R*255),
-							math.floor(kp.Value.G*255),
-							math.floor(kp.Value.B*255)))
-					end
-					return "ColorSequence.new({" .. table.concat(kps, ", ") .. "})"
-				end
-				return "nil"
-			end
-
-			-- ── Property map ─────────────────────────────────────────────────
-			-- Common props shared by most visible objects
-			local COMMON = {
-				"Name","Size","Position","AnchorPoint","Visible","ZIndex","LayoutOrder",
-				"BackgroundColor3","BackgroundTransparency","BorderColor3","BorderSizePixel",
-				"ClipsDescendants","Active","Selectable","Rotation","AutomaticSize",
-			}
-			local function merge(t, extra)
-				local r = {}
-				for _,v in ipairs(t) do r[#r+1]=v end
-				for _,v in ipairs(extra or {}) do r[#r+1]=v end
-				return r
-			end
-			local propertyMap = {
-				ScreenGui = {
-					"Name","Enabled","ResetOnSpawn","DisplayOrder","IgnoreGuiInset",
-					"ZIndexBehavior","ScreenInsets",
-				},
-				TextLabel = merge(COMMON, {
-					"Text","RichText","TextSize","Font","FontFace",
-					"TextColor3","TextTransparency","TextWrapped","TextScaled",
-					"TextXAlignment","TextYAlignment","TextTruncate",
-					"TextStrokeColor3","TextStrokeTransparency","LineHeight",
-					"MaxVisibleGraphemes","AutoLocalize",
-				}),
-				TextButton = merge(COMMON, {
-					"Text","RichText","TextSize","Font","FontFace",
-					"TextColor3","TextTransparency","TextWrapped","TextScaled",
-					"TextXAlignment","TextYAlignment","TextTruncate",
-					"TextStrokeColor3","TextStrokeTransparency","LineHeight",
-					"AutoButtonColor","Modal","Style",
-				}),
-				TextBox = merge(COMMON, {
-					"Text","RichText","TextSize","Font","FontFace",
-					"TextColor3","TextTransparency","TextWrapped","TextScaled",
-					"TextXAlignment","TextYAlignment","PlaceholderText","PlaceholderColor3",
-					"ClearTextOnFocus","MultiLine","TextEditable",
-				}),
-				Frame = merge(COMMON, {"Style"}),
-				ScrollingFrame = merge(COMMON, {
-					"CanvasSize","CanvasPosition","ScrollBarThickness",
-					"ScrollBarImageColor3","ScrollBarImageTransparency",
-					"ScrollingDirection","ScrollingEnabled",
-					"VerticalScrollBarInset","HorizontalScrollBarInset",
-					"BottomImage","MidImage","TopImage",
-				}),
-				ImageLabel = merge(COMMON, {
-					"Image","ImageColor3","ImageTransparency","ImageRectOffset",
-					"ImageRectSize","ResampleMode","ScaleType","SliceCenter","SliceScale",
-					"TileSize",
-				}),
-				ImageButton = merge(COMMON, {
-					"Image","ImageColor3","ImageTransparency","ImageRectOffset",
-					"ImageRectSize","ResampleMode","ScaleType","SliceCenter","SliceScale",
-					"TileSize","HoverImage","PressedImage","Style","AutoButtonColor","Modal",
-				}),
-				VideoFrame = merge(COMMON, {"Video","Looped","Playing","TimePosition","Volume"}),
-				ViewportFrame = merge(COMMON, {"Ambient","LightColor","LightDirection"}),
-				BillboardGui = {
-					"Name","Active","AlwaysOnTop","Brightness","ClipsDescendants",
-					"Enabled","LightInfluence","MaxDistance","Size","SizeOffset",
-					"StudsOffset","StudsOffsetWorldSpace","ZIndexBehavior",
-				},
-				SurfaceGui = {
-					"Name","Active","AlwaysOnTop","Brightness","ClipsDescendants",
-					"Enabled","LightInfluence","PixelsPerStud","SizingMode","ZIndexBehavior",
-				},
-				-- Layout / constraint objects
-				UICorner              = {"CornerRadius"},
-				UIStroke              = {"Color","Thickness","Transparency","LineJoinMode","ApplyStrokeMode","Enabled"},
-				UIGradient            = {"Color","Offset","Rotation","Transparency","Enabled"},
-				UIPadding             = {"PaddingLeft","PaddingRight","PaddingTop","PaddingBottom"},
-				UIListLayout          = {"Padding","FillDirection","HorizontalAlignment","VerticalAlignment","SortOrder","HorizontalFlex","VerticalFlex","ItemLineAlignment","Wraps"},
-				UIGridLayout          = {"CellPadding","CellSize","FillDirectionMaxCells","FillDirection","HorizontalAlignment","VerticalAlignment","SortOrder","StartCorner"},
-				UITableLayout         = {"FillEmptySpaceColumns","FillEmptySpaceRows","FillDirection","HorizontalAlignment","VerticalAlignment","MajorAxis","Padding","SortOrder"},
-				UIAspectRatioConstraint = {"AspectRatio","AspectType","DominantAxis"},
-				UISizeConstraint      = {"MinSize","MaxSize"},
-				UITextSizeConstraint  = {"MinTextSize","MaxTextSize"},
-				UIScale               = {"Scale"},
-				UIFlexItem            = {"FlexMode","GrowRatio","ShrinkRatio"},
-				UIPageLayout          = {"Animated","CircularEnabled","EasingDirection","EasingStyle","GamepadInputEnabled","Padding","ScrollWheelInputEnabled","SortOrder","TouchInputEnabled","TweenTime","FillDirection","HorizontalAlignment","VerticalAlignment"},
-			}
-			local function getProps(obj)
-				return propertyMap[obj.ClassName]
-					or merge(COMMON, {})
-			end
-
-			-- ── Script extraction (uses zukv2 bytecode path) ──────────────
-			local extractedScripts = {}
-			-- maps instance → variable name so parent refs are correct
-			local instanceToVar = {}
-
-			local function extractScript(scriptObj, parentVar)
-				local source = ""
-				-- Try zukv2 first
-				local zuk = env.ZukDecompile or getgenv()._ZUK_DECOMPILE
-				local okBC, bytecode = pcall(env.getscriptbytecode, scriptObj)
-				if zuk and okBC and bytecode and bytecode ~= "" then
-					local opts = {
-						DecompilerMode="disasm", DecompilerTimeout=15, CleanMode=true, CleanMode=true,
-						ReaderFloatPrecision=7, ShowDebugInformation=false,
-						ShowTrivialOperations=false, ShowInstructionLines=true,
-						ShowOperationIndex=true, ShowOperationNames=true,
-						ListUsedGlobals=true, UseTypeInfo=true,
-						EnabledRemarks={ColdRemark=false,InlineRemark=true},
-						ReturnElapsedTime=false,
-					}
-					local okD, result = pcall(zuk, bytecode, opts)
-					if okD and result then
-						local pp = getgenv()._ZUK_PRETTYPRINT
-						source = pp and pp(result) or result
-					end
-				end
-				-- fallback: Source property
-				if source == "" then
-					local ok2, src = pcall(function() return scriptObj.Source end)
-					if ok2 and src and src ~= "" then source = src end
-				end
-				-- fallback: env.decompile (Konstant)
-				if source == "" and env.decompile then
-					local ok3, res = pcall(env.decompile, scriptObj)
-					if ok3 and res then source = res end
-				end
-				if source == "" then
-					source = "-- [PROTECTED/EMPTY SCRIPT] Could not extract source\n"
-				end
-				local enabled = true
-				pcall(function() enabled = not scriptObj.Disabled end)
-				table.insert(extractedScripts, {
-					parent    = parentVar,
-					parentObj = instanceToVar,   -- unused, kept for debug
-					className = scriptObj.ClassName,
-					name      = scriptObj.Name,
-					source    = source,
-					enabled   = enabled,
-				})
-			end
-
-			-- ── Recursive GUI code generator ──────────────────────────────
-			local flatCounter = {n = 0}
-			local function newVar(base)
-				flatCounter.n += 1
-				-- sanitize name: strip non-identifier chars, prefix if needed
-				local safe = (base or "obj"):gsub("[^%w_]","_"):gsub("^(%d)","_%1")
-				return safe .. "_" .. flatCounter.n
-			end
-
-			local codeLines = {}
-			local function emit(s) codeLines[#codeLines+1] = s end
-
-			-- Default values we skip to keep output clean
-			local SKIP_DEFAULTS = {
-				Visible                 = true,
-				BackgroundTransparency  = 0,
-				TextTransparency        = 0,
-				ImageTransparency       = 0,
-				TextStrokeTransparency  = 1,
-				BorderSizePixel         = 1,
-				ZIndex                  = 1,
-				LayoutOrder             = 0,
-				Rotation                = 0,
-				AutomaticSize           = Enum.AutomaticSize.None,
-				AnchorPoint             = Vector2.new(0,0),
-				ClipsDescendants        = false,
-				Active                  = false,
-				Selectable              = false,
-				RichText                = false,
-				TextWrapped             = false,
-				TextScaled              = false,
-				TextXAlignment          = Enum.TextXAlignment.Center,
-				TextYAlignment          = Enum.TextYAlignment.Center,
-				AutoButtonColor         = true,
-				Enabled                 = true,
-				ResetOnSpawn            = true,
-				DisplayOrder            = 0,
-				IgnoreGuiInset          = false,
-			}
-			local function shouldSkip(propName, val)
-				local def = SKIP_DEFAULTS[propName]
-				if def == nil then return false end
-				if typeof(def) ~= typeof(val) then return false end
-				if typeof(val) == "Vector2" then
-					return val.X == def.X and val.Y == def.Y
-				end
-				return val == def
-			end
-
-			local function generateGuiCode(obj, parentVar)
-				local cls = obj.ClassName
-				-- Scripts handled separately
-				if cls == "LocalScript" or cls == "Script" or cls == "ModuleScript" then
-					extractScript(obj, parentVar)
-					return
-				end
-				local varName = newVar(obj.Name)
-				instanceToVar[obj] = varName
-				-- Create + parent immediately so constraints work
-				emit(("local %s = Instance.new(%q)"):format(varName, cls))
-				emit(("%s.Parent = %s"):format(varName, parentVar))
-				-- Properties
-				local props = getProps(obj)
-				for _, propName in ipairs(props) do
-					if propName == "Name" and obj.Name == cls then continue end
-					local ok, val = pcall(function() return obj[propName] end)
-					if ok and val ~= nil then
-						if not shouldSkip(propName, val) then
-							local s = serialize(val)
-							if s ~= "nil" then
-								emit(("%s.%s = %s"):format(varName, propName, s))
-							end
-						end
-					end
-				end
-				-- Recurse
-				for _, child in ipairs(obj:GetChildren()) do
-					generateGuiCode(child, varName)
-				end
-			end
-
-			-- ── Generate ─────────────────────────────────────────────────
-			-- Build the GUI structure
-			emit("local Players = game:GetService(\"Players\")")
-			emit("local player = Players.LocalPlayer")
-			emit("local playerGui = player:WaitForChild(\"PlayerGui\")")
-			emit("")
-			emit("-- ── GUI Structure ──────────────────────────────────────")
-			emit("local function createGui()")
-
-			-- Generate the ScreenGui itself
-			local sgVar = newVar(gui.Name)
-			instanceToVar[gui] = sgVar
-			emit(("\tlocal %s = Instance.new(\"ScreenGui\")"):format(sgVar))
-			local sgProps = getProps(gui)
-			for _, propName in ipairs(sgProps) do
-				local ok, val = pcall(function() return gui[propName] end)
-				if ok and val ~= nil then
-					if not shouldSkip(propName, val) then
-						local s = serialize(val)
-						if s ~= "nil" then
-							emit(("\t%s.%s = %s"):format(sgVar, propName, s))
-						end
-					end
-				end
-			end
-
-			-- Temporarily redirect emit to tab-indented
-			local savedLines = codeLines
-			codeLines = {}
-			for _, child in ipairs(gui:GetChildren()) do
-				generateGuiCode(child, sgVar)
-			end
-			local bodyLines = codeLines
-			codeLines = savedLines
-			for _, l in ipairs(bodyLines) do
-				emit("\t" .. l)
-			end
-
-			emit(("\t%s.Parent = playerGui"):format(sgVar))
-			emit(("\treturn %s"):format(sgVar))
-			emit("end")
-			emit("")
-
-			-- Scripts section
-			if #extractedScripts > 0 then
-				emit(("-- ── Extracted Scripts (%d found) ─────────────────────"):format(#extractedScripts))
-				for i, sd in ipairs(extractedScripts) do
-					emit(("-- Script %d: %s (%s)"):format(i, sd.name, sd.className))
-					emit(("local function runScript_%d(script_obj)"):format(i))
-					emit("\t-- NOTE: 'script' here refers to script_obj, not the original instance.")
-					emit("\tlocal script = script_obj")
-					for line in (sd.source .. "\n"):gmatch("[^\n]*\n") do
-						emit("\t" .. line:gsub("\n$",""))
-					end
-					emit("end")
-					emit("")
-				end
-			end
-
-			-- Init
-			emit("-- ── Init ────────────────────────────────────────────────")
-			emit("local gui = createGui()")
-			emit("")
-			if #extractedScripts > 0 then
-				for i, sd in ipairs(extractedScripts) do
-					-- Use the actual instance name for FindFirstChild so it works at runtime
-					local parentRef
-					if sd.parent == sgVar then
-						parentRef = "gui"
-					else
-						parentRef = ("gui:FindFirstChild(%q, true)"):format(
-							-- extract the real name from the varName prefix
-							sd.parent:match("^(.+)_%d+$") or sd.parent)
-					end
-					emit(("-- Run: %s"):format(sd.name))
-					emit("task.spawn(function()")
-					emit(("\tlocal parent = %s"):format(parentRef))
-					emit("\tif parent then")
-					emit(("\t\trunScript_%d(parent)"):format(i))
-					emit("\telse")
-					emit(("\t\twarn('[DeepGUI] Parent not found for script: %s')"):format(sd.name))
-					emit("\tend")
-					emit("end)")
-					emit("")
-				end
-			end
-
-			-- ── Assemble output ───────────────────────────────────────────
-			local header = table.concat({
-				"--[[",
-				"    ╔═══════════════════════════════════════════════════════╗",
-				"    ║         DEEP GUI CONVERTER  (zukv2)                   ║",
-				"    ╚═══════════════════════════════════════════════════════╝",
-				"    ScreenGui : " .. gui.Name,
-				"    Extracted : " .. os.date("%Y-%m-%d %H:%M:%S"),
-				"    Scripts   : " .. #extractedScripts,
-				"--]]",
-				"",
-			}, "\n")
-			local output = header .. table.concat(codeLines, "\n")
-
-			-- Show in Notepad
-			ScriptViewer.ViewRaw(output)
-
-			-- Copy to clipboard
-			local copied = false
-			if env.setclipboard then
-				copied = pcall(env.setclipboard, output)
-			end
-			if not copied then
-				pcall(setclipboard, output)
-			end
-
-			if getgenv().DoNotif then
-				getgenv().DoNotif(
-					("✓ GUI converted — %d element(s), %d script(s)"):format(
-						flatCounter.n, #extractedScripts), 4)
-			end
-		end
-		})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- SOUND
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("PLAY_SOUND", {Name = "Play Sound", IconMap = Explorer.MiscIcons, Icon = "Play", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Sound") then
-					pcall(function() obj:Play() end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("▶ Sound playing", 2) end
-		end})
-
-		context:Register("STOP_SOUND", {Name = "Stop Sound", IconMap = Explorer.MiscIcons, Icon = "Pause", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Sound") then
-					pcall(function() obj:Stop() end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("■ Sound stopped", 2) end
-		end})
-
-		context:Register("COPY_SOUND_ID", {Name = "Copy SoundId", IconMap = Explorer.MiscIcons, Icon = "Copy", OnClick = function()
-			local node = selection.List[1]
-			if node and node.Obj:IsA("Sound") then
-				local id = tostring(node.Obj.SoundId)
-				if env.setclipboard then env.setclipboard(id) end
-				if getgenv().DoNotif then getgenv().DoNotif("Copied: " .. id, 2) end
-			end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- HUMANOID
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("KILL_HUMANOID", {Name = "Kill", IconMap = Explorer.MiscIcons, Icon = "Delete", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Humanoid") then
-					pcall(function() obj.Health = 0 end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Humanoid killed", 2) end
-		end})
-
-		context:Register("SET_HUMANOID_HEALTH", {Name = "Set Health (max)", IconMap = Explorer.MiscIcons, Icon = "Play", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Humanoid") then
-					pcall(function() obj.Health = obj.MaxHealth end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Health set to max", 2) end
-		end})
-
-		context:Register("SET_WALKSPEED", {Name = "Set WalkSpeed (16)", IconMap = Explorer.MiscIcons, Icon = "SelectChildren", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Humanoid") then
-					pcall(function() obj.WalkSpeed = 16 end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("WalkSpeed reset to 16", 2) end
-		end})
-
-		context:Register("SET_JUMPPOWER", {Name = "Set JumpPower (50)", IconMap = Explorer.MiscIcons, Icon = "SelectChildren", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Humanoid") then
-					pcall(function() obj.JumpPower = 50 end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("JumpPower reset to 50", 2) end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- VALUE BASE
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("COPY_VALUE", {Name = "Copy Value", IconMap = Explorer.MiscIcons, Icon = "Copy", OnClick = function()
-			local node = selection.List[1]
-			if node then
-				local obj = node.Obj
-				local ok, val = pcall(function() return tostring(obj.Value) end)
-				if ok and env.setclipboard then
-					env.setclipboard(val)
-					if getgenv().DoNotif then getgenv().DoNotif("Copied: " .. val, 2) end
-				end
-			end
-		end})
-
-		context:Register("SET_VALUE", {Name = "Print Value to Console", IconMap = Explorer.MiscIcons, Icon = "Reference", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				local ok, val = pcall(function() return obj.Value end)
-				if ok then
-					print(string.format("[ValueBase] %s (%s) = %s", obj:GetFullName(), obj.ClassName, tostring(val)))
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Values printed to F9", 3) end
-		end})
-
-		context:Register("PRINT_VALUE", {Name = "Watch Value (print on change)", IconMap = Explorer.MiscIcons, Icon = "Play", OnClick = function()
-			local node = selection.List[1]
-			if not node then return end
-			local obj = node.Obj
-			local ok, conn = pcall(function()
-				return obj:GetPropertyChangedSignal("Value"):Connect(function()
-					print(string.format("[WATCH] %s = %s", obj:GetFullName(), tostring(obj.Value)))
-				end)
-			end)
-			if ok and conn then
-				if not _G._zexWatchConns then _G._zexWatchConns = {} end
-				table.insert(_G._zexWatchConns, conn)
-				if getgenv().DoNotif then getgenv().DoNotif("Watching: " .. obj.Name .. " (stored in _G._zexWatchConns)", 3) end
-			end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- JOINTS / WELDS
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("DESTROY_WELD", {Name = "Destroy Weld/Joint", IconMap = Explorer.MiscIcons, Icon = "Delete", OnClick = function()
-			local sList = selection.List
-			local count = 0
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("JointInstance") or obj:IsA("WeldConstraint") then
-					pcall(function() obj:Destroy() count = count + 1 end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Destroyed " .. count .. " joint(s)", 2) end
-		end})
-
-		context:Register("UNLOCK_JOINTS", {Name = "Unlock All Joints (model)", IconMap = Explorer.MiscIcons, Icon = "Ungroup", OnClick = function()
-			local sList = selection.List
-			local count = 0
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				for _, desc in ipairs(obj:GetDescendants()) do
-					if desc:IsA("JointInstance") or desc:IsA("WeldConstraint") then
-						pcall(function() desc:Destroy() count = count + 1 end)
-					end
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Removed " .. count .. " joint(s)", 2) end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- ATTACHMENT
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("COPY_ATTACHMENT_WORLDPOS", {Name = "Copy WorldPosition", IconMap = Explorer.MiscIcons, Icon = "Copy", OnClick = function()
-			local node = selection.List[1]
-			if node and node.Obj:IsA("Attachment") then
-				local wp = node.Obj.WorldPosition
-				local str = string.format("Vector3.new(%g, %g, %g)", wp.X, wp.Y, wp.Z)
-				if env.setclipboard then env.setclipboard(str) end
-				if getgenv().DoNotif then getgenv().DoNotif("Copied: " .. str, 3) end
-			end
-		end})
-
-		context:Register("TELEPORT_TO_ATTACHMENT", {Name = "Teleport To Attachment", IconMap = Explorer.MiscIcons, Icon = "TeleportTo", OnClick = function()
-			local node = selection.List[1]
-			if not node or not node.Obj:IsA("Attachment") then return end
-			local char = plr.Character
-			local root = char and char:FindFirstChild("HumanoidRootPart")
-			if root then
-				pcall(function() root.CFrame = CFrame.new(node.Obj.WorldPosition) end)
-				if getgenv().DoNotif then getgenv().DoNotif("Teleported to attachment", 2) end
-			end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- PARTICLE EMITTER
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("BURST_PARTICLE", {Name = "Burst Particles", IconMap = Explorer.MiscIcons, Icon = "Play", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("ParticleEmitter") then
-					pcall(function() obj:Emit(50) end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Burst emitted", 2) end
-		end})
-
-		context:Register("CLEAR_PARTICLES", {Name = "Clear Particles", IconMap = Explorer.MiscIcons, Icon = "Delete", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("ParticleEmitter") then
-					pcall(function() obj:Clear() end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Particles cleared", 2) end
-		end})
-
-		context:Register("TOGGLE_PARTICLE_ENABLED", {Name = "Toggle Enabled", IconMap = Explorer.MiscIcons, Icon = "Shuffle", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("ParticleEmitter") then
-					pcall(function() obj.Enabled = not obj.Enabled end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Particle toggled", 2) end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- BEAM
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("TOGGLE_BEAM_ENABLED", {Name = "Toggle Beam Enabled", IconMap = Explorer.MiscIcons, Icon = "Shuffle", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Beam") then
-					pcall(function() obj.Enabled = not obj.Enabled end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Beam toggled", 2) end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- CONSTRAINT
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("DESTROY_CONSTRAINT", {Name = "Destroy Constraint", IconMap = Explorer.MiscIcons, Icon = "Delete", OnClick = function()
-			local sList = selection.List
-			local count = 0
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Constraint") then
-					pcall(function() obj:Destroy() count = count + 1 end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Destroyed " .. count .. " constraint(s)", 2) end
-		end})
-
-		context:Register("TOGGLE_CONSTRAINT_ENABLED", {Name = "Toggle Constraint Enabled", IconMap = Explorer.MiscIcons, Icon = "Shuffle", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("Constraint") then
-					pcall(function() obj.Enabled = not obj.Enabled end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Constraint toggled", 2) end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- MESH / DECAL / TEXTURE IDs
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("COPY_MESH_ID", {Name = "Copy MeshId", IconMap = Explorer.MiscIcons, Icon = "Copy", OnClick = function()
-			local node = selection.List[1]
-			if node and node.Obj:IsA("SpecialMesh") then
-				local id = tostring(node.Obj.MeshId)
-				if env.setclipboard then env.setclipboard(id) end
-				if getgenv().DoNotif then getgenv().DoNotif("Copied: " .. id, 2) end
-			end
-		end})
-
-		context:Register("COPY_TEXTURE_ID", {Name = "Copy Texture/Decal Id", IconMap = Explorer.MiscIcons, Icon = "Copy", OnClick = function()
-			local node = selection.List[1]
-			if not node then return end
-			local obj = node.Obj
-			local id
-			if obj:IsA("Decal") then id = obj.Texture
-			elseif obj:IsA("Texture") then id = obj.Texture end
-			if id and env.setclipboard then
-				env.setclipboard(tostring(id))
-				if getgenv().DoNotif then getgenv().DoNotif("Copied: " .. tostring(id), 2) end
-			end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- SCRIPT / LOCALSCRIPT TOGGLE
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("TOGGLE_SCRIPT_ENABLED", {Name = "Toggle Script Enabled", IconMap = Explorer.MiscIcons, Icon = "Shuffle", OnClick = function()
-			local sList = selection.List
-			for i = 1, #sList do
-				local obj = sList[i].Obj
-				if obj:IsA("BaseScript") then
-					pcall(function() obj.Disabled = not obj.Disabled end)
-				end
-			end
-			if getgenv().DoNotif then getgenv().DoNotif("Script enabled state toggled", 2) end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- AUTO DECOMPILE MODULE
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("AUTO_DECOMPILE_MODULE", {Name = "Auto-Decompile Module", IconMap = Explorer.MiscIcons, Icon = "ViewScript", OnClick = function()
-			local node = selection.List[1]
-			if not node then return end
-			local obj = node.Obj
-			if not obj:IsA("ModuleScript") then return end
-
-			-- Strategy 1: find the loaded closure via getgc + getfenv
-			local found = nil
-			local getgcf = env.getgc or getgc or get_gc_objects
-			local getupvalues = (debug and debug.getupvalues) or getupvalues or getupvals
-			local getfenv_ = getfenv
-
-			if getgcf and getfenv_ then
-				local ok, gc = pcall(getgcf)
-				if ok and gc then
-					for _, fn in pairs(gc) do
-						if type(fn) == "function" then
-							local ok2, fenv = pcall(getfenv_, fn)
-							if ok2 and fenv and rawget(fenv, "script") == obj then
-								found = fn
-								break
-							end
-						end
-					end
-				end
-			end
-
-			local function zukDecompileObj(target)
-				local bytecode = env.getBytecode and env.getBytecode(target)
-				local okBC = bytecode ~= nil
-				if not (okBC and bytecode and bytecode ~= "") then return nil end
-				local opts = {
-					DecompilerMode="disasm", DecompilerTimeout=15, CleanMode=true, CleanMode=true,
-					ReaderFloatPrecision=7, ShowDebugInformation=false,
-					ShowTrivialOperations=false, ShowInstructionLines=true,
-					ShowOperationIndex=true, ShowOperationNames=true,
-					ListUsedGlobals=true, UseTypeInfo=true,
-					EnabledRemarks={ColdRemark=false,InlineRemark=true},
-					ReturnElapsedTime=false,
-				}
-				local okD, result = pcall(env.ZukDecompile or getgenv()._ZUK_DECOMPILE or function() end, bytecode, opts)
-				local out = (okD and result and #result > 0) and result or nil
-				return out and cleanOutput(prettyPrint(out)) or nil
-			end
-
-			local source
-			-- Strategy 1: decompile the loaded closure found via GC
-			if found then
-				local result = zukDecompileObj(found)
-				-- fallback: env.decompile on the closure
-				if not result and env.decompile then
-					local ok, res = pcall(env.decompile, found)
-					if ok and res and #res > 0 then result = res end
-				end
-				if result then
-					source = "-- [Auto-Decompile] Loaded closure found via GC\n"
-					source = source .. "-- Module: " .. Explorer.GetInstancePath(obj) .. "\n\n"
-					source = source .. result
-				end
-			end
-
-			-- Strategy 2: decompile the ModuleScript instance directly
-			if not source then
-				local result = zukDecompileObj(obj)
-				-- fallback: env.decompile on the instance
-				if not result and env.decompile then
-					local ok, res = pcall(env.decompile, obj)
-					if ok and res and #res > 0 then result = res end
-				end
-				if result then
-					source = "-- [Auto-Decompile] Decompiled ModuleScript instance\n"
-					source = source .. "-- Module: " .. Explorer.GetInstancePath(obj) .. "\n\n"
-					source = source .. result
-				end
-			end
-
-			-- Strategy 3: try reading Source property
-			if not source then
-				local ok, src = pcall(function() return obj.Source end)
-				if ok and src and #src > 0 then
-					source = "-- [Auto-Decompile] Source property (may be empty on live games)\n"
-					source = source .. "-- Module: " .. Explorer.GetInstancePath(obj) .. "\n\n"
-					source = source .. src
-				end
-			end
-
-			if not source then
-				source = "-- [Auto-Decompile] Failed: no loaded closure found and decompiler unavailable.\n"
-				source = source .. "-- Module: " .. Explorer.GetInstancePath(obj) .. "\n"
-				source = source .. "-- Tips:\n"
-				source = source .. "--   1. The module must have been required at least once in this session.\n"
-				source = source .. "--   2. Your executor needs 'decompile' + 'getgc' support.\n"
-			end
-
-			ScriptViewer.ViewRaw(source)
-			if getgenv().DoNotif then getgenv().DoNotif("Module decompiled: " .. obj.Name, 3) end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- VIEW METATABLE
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("VIEW_METATABLE", {Name = "View Metatable", IconMap = Explorer.MiscIcons, Icon = "ExploreData", OnClick = function()
-			local node = selection.List[1]
-			if not node then return end
-			local obj = node.Obj
-
-			local getrawmt = getrawmetatable or (debug and debug.getmetatable)
-			if not getrawmt then
-				if getgenv().DoNotif then getgenv().DoNotif("⚠ getrawmetatable not available", 3) end
-				return
-			end
-
-			local mt = getrawmt(obj)
-			if not mt then
-				if getgenv().DoNotif then getgenv().DoNotif("⚠ No metatable on: " .. obj.Name, 3) end
-				return
-			end
-
-			-- Build a human-readable dump
-			local lines = {}
-			local seen = {}
-			local getinfo = (debug and (debug.getinfo or debug.info)) or getinfo
-			local getupvalues = (debug and debug.getupvalues) or getupvalues or getupvals
-
-			local function safeToString(v)
-				local ok, s = pcall(tostring, v)
-				return ok and s or "<?>"
-			end
-
-			local function dumpValue(v, indent, visited)
-				local t = type(v)
-				if t == "function" then
-					local name = "?"
-					if getinfo then
-						local ok2, info = pcall(getinfo, v)
-						if ok2 and info then name = (info.name and info.name ~= "" and info.name) or "anonymous" end
-					end
-					local line = string.rep("  ", indent) .. "[function] " .. name
-					-- show upvalue count if available
-					if getupvalues then
-						local ok3, ups = pcall(getupvalues, v)
-						if ok3 and ups then line = line .. " (" .. #ups .. " upvalues)" end
-					end
-					return line
-				elseif t == "table" then
-					if visited[v] then return string.rep("  ", indent) .. "[table] (circular)" end
-					visited[v] = true
-					local out = string.rep("  ", indent) .. "[table] {"
-					local entries = {}
-					for k, val in pairs(v) do
-						local ks = safeToString(k)
-						local vs = dumpValue(val, 0, visited)
-						table.insert(entries, string.rep("  ", indent+1) .. ks .. " = " .. vs)
-					end
-					if #entries == 0 then
-						out = out .. "}"
-					else
-						out = out .. "\n" .. table.concat(entries, "\n") .. "\n" .. string.rep("  ", indent) .. "}"
-					end
-					visited[v] = nil
-					return out
-				else
-					return string.rep("  ", indent) .. "[" .. t .. "] " .. safeToString(v)
-				end
-			end
-
-			table.insert(lines, "-- Metatable Viewer")
-			table.insert(lines, "-- Object: " .. Explorer.GetInstancePath(obj))
-			table.insert(lines, "-- ClassName: " .. obj.ClassName)
-			table.insert(lines, "")
-
-			local metamethods = {
-				"__index","__newindex","__call","__len","__unm","__add","__sub","__mul","__div","__mod",
-				"__pow","__concat","__eq","__lt","__le","__tostring","__metatable","__mode","__gc","__namecall"
-			}
-
-			local foundAny = false
-			for _, mm in ipairs(metamethods) do
-				local ok, val = pcall(rawget, mt, mm)
-				if ok and val ~= nil then
-					foundAny = true
-					table.insert(lines, mm .. " =")
-					table.insert(lines, dumpValue(val, 1, {}))
-					table.insert(lines, "")
-				end
-			end
-
-			-- Catch any non-standard keys
-			local ok2, customKeys = pcall(function()
-				local keys = {}
-				for k, v in pairs(mt) do
-					if not table.find(metamethods, tostring(k)) then
-						table.insert(keys, {k, v})
-					end
-				end
-				return keys
-			end)
-			if ok2 and customKeys and #customKeys > 0 then
-				table.insert(lines, "-- Custom keys in metatable:")
-				for _, pair in ipairs(customKeys) do
-					foundAny = true
-					local ks = safeToString(pair[1])
-					table.insert(lines, ks .. " =")
-					table.insert(lines, dumpValue(pair[2], 1, {}))
-					table.insert(lines, "")
-				end
-			end
-
-			if not foundAny then
-				table.insert(lines, "-- Metatable exists but is empty or all entries are protected.")
-			end
-
-			ScriptViewer.ViewRaw(table.concat(lines, "\n"))
-			if getgenv().DoNotif then getgenv().DoNotif("Metatable loaded: " .. obj.Name, 3) end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- RE: CLOSURE INSPECTOR
-		-- Full static analysis of every closure belonging to a script:
-		-- function name, source line, upvalue names+values, constants
-		-- ══════════════════════════════════════════════════════════════════
-		context:Register("RE_CLOSURE_INSPECTOR", {Name = "Closure Inspector [RE]", IconMap = Explorer.MiscIcons, Icon = "ExploreData", OnClick = function()
-			local node = selection.List[1]
-			if not node then return end
-			local scr = node.Obj
-			if not scr:IsA("LuaSourceContainer") then return end
-
-			local getgcf      = env.getgc or getgc or get_gc_objects
-			local getupvalues = (debug and debug.getupvalues) or getupvalues or getupvals
-			local getconstants= (debug and debug.getconstants) or getconstants or getconsts
-			local getinfo     = (debug and (debug.getinfo or debug.info)) or getinfo
-			local getfenv_    = getfenv
-
-			if not getgcf then
-				if getgenv().DoNotif then getgenv().DoNotif("⚠ getgc not available", 2) end
-				return
-			end
-
-			local lines = {}
-			local function w(s) table.insert(lines, s) end
-
-			w("-- ╔══════════════════════════════════════════════════╗")
-			w("-- ║           CLOSURE INSPECTOR [RE]                ║")
-			w("-- ╚══════════════════════════════════════════════════╝")
-			w("-- Script: " .. Explorer.GetInstancePath(scr))
-			w("-- Generated: " .. os.date("%Y-%m-%d %H:%M:%S"))
-			w("")
-
-			local ok, gc = pcall(getgcf)
-			if not ok or not gc then
-				w("-- ERROR: getgc() failed: " .. tostring(gc))
-				ScriptViewer.ViewRaw(table.concat(lines, "\n"))
-				return
-			end
-
-			local closures = {}
-			for _, fn in pairs(gc) do
-				if type(fn) == "function" then
-					local ok2, fenv = pcall(getfenv_, fn)
-					if ok2 and fenv and rawget(fenv, "script") == scr then
-						table.insert(closures, fn)
-					end
-				end
-			end
-
-			if #closures == 0 then
-				w("-- No closures found for this script.")
-				w("-- The script may not have been executed yet this session.")
-				ScriptViewer.ViewRaw(table.concat(lines, "\n"))
-				return
-			end
-
-			w("-- Found " .. #closures .. " closure(s)\n")
-
-			local function safeVal(v)
-				local t = type(v)
-				if t == "string"  then return '"' .. v:sub(1,80):gsub('"','\\"'):gsub("\n","\\n") .. (v:len()>80 and '..."' or '"') end
-				if t == "number"  then return tostring(v) end
-				if t == "boolean" then return tostring(v) end
-				if t == "function" then
-					local n = "?"
-					if getinfo then local ok3,i = pcall(getinfo,v) if ok3 and i then n = (i.name ~= "" and i.name) or "anon" end end
-					return "[function:" .. n .. "]"
-				end
-				if t == "table"   then return "[table #" .. tostring(#v) .. "]" end
-				return "[" .. t .. "]"
-			end
-
-			for i, fn in ipairs(closures) do
-				local fnName, fnSrc, fnLine = "anonymous", "?", "?"
-				if getinfo then
-					local ok3, info = pcall(getinfo, fn)
-					if ok3 and info then
-						fnName = (info.name and info.name ~= "" and info.name) or "anonymous"
-						fnSrc  = info.short_src or info.source or "?"
-						fnLine = tostring(info.linedefined or "?")
-					end
-				end
-
-				w(string.rep("─", 60))
-				w("-- [" .. i .. "] " .. fnName)
-				w("--     Source : " .. fnSrc)
-				w("--     Line   : " .. fnLine)
-
-				-- Upvalues
-				if getupvalues then
-					local ok4, ups = pcall(getupvalues, fn)
-					if ok4 and ups then
-						local upCount = 0
-						for _, _ in pairs(ups) do upCount = upCount + 1 end
-						w("--     Upvalues (" .. upCount .. "):")
-						local idx = 0
-						for name, val in pairs(ups) do
-							idx = idx + 1
-							w("--       [" .. idx .. "] " .. tostring(name) .. " = " .. safeVal(val))
-							if idx >= 30 then w("--       ... (truncated)") break end
-						end
-					end
-				end
-
-				-- Constants
-				if getconstants then
-					local ok5, consts = pcall(getconstants, fn)
-					if ok5 and consts then
-						local cCount = 0
-						for _, _ in pairs(consts) do cCount = cCount + 1 end
-						w("--     Constants (" .. cCount .. "):")
-						local idx = 0
-						for k, v in pairs(consts) do
-							idx = idx + 1
-							w("--       [" .. tostring(k) .. "] " .. safeVal(v))
-							if idx >= 40 then w("--       ... (truncated)") break end
-						end
-					end
-				end
-				w("")
-			end
-
-			w(string.rep("─", 60))
-			w("-- END OF CLOSURE INSPECTOR REPORT")
-
-			ScriptViewer.ViewRaw(table.concat(lines, "\n"))
-			if getgenv().DoNotif then getgenv().DoNotif("Closure Inspector: " .. #closures .. " closures found", 3) end
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- RE: SIGNAL SPY
-		-- Hook all RBXScriptSignal connections on the selected instance.
-		-- Logs when they fire, what method triggered them, and the args.
-		-- ══════════════════════════════════════════════════════════════════
-		local _signalSpyConns = {}
-		local _signalSpyActive = {}
-		context:Register("RE_SIGNAL_SPY", {Name = "Signal Spy [RE] (Toggle)", IconMap = Explorer.MiscIcons, Icon = "Reference", OnClick = function()
-			local node = selection.List[1]
-			if not node then return end
-			local obj = node.Obj
-			local key = tostring(obj)
-
-			if _signalSpyActive[key] then
-				-- Stop spying
-				for _, conn in ipairs(_signalSpyConns[key] or {}) do
-					pcall(function() conn:Disconnect() end)
-				end
-				_signalSpyConns[key] = nil
-				_signalSpyActive[key] = nil
-				if getgenv().DoNotif then getgenv().DoNotif("Signal Spy OFF: " .. obj.Name, 2) end
-				return
-			end
-
-			-- Start spying: iterate all API properties looking for RBXScriptSignal
-			local conns = {}
-			local spied = 0
-
-			-- getconnections if available (shows existing connections)
-			local getconns = getconnections or (debug and debug.getconnections)
-
-			local function trySpySignal(signalName)
-				local ok, sig = pcall(function() return obj[signalName] end)
-				if not ok or type(sig) ~= "userdata" then return end
-				-- check it's connectable
-				local ok2, conn = pcall(function()
-					return sig:Connect(function(...)
-						local args = {...}
-						local argStrs = {}
-						for i, a in ipairs(args) do
-							argStrs[i] = tostring(a)
-						end
-						print(string.format("[SIGNAL SPY] %s.%s fired | args: %s",
-							obj.Name, signalName, #argStrs > 0 and table.concat(argStrs, ", ") or "(none)"))
-					end)
-				end)
-				if ok2 and conn then
-					table.insert(conns, conn)
-					spied = spied + 1
-				end
-			end
-
-			-- Spy on common signals plus any we can find via API
-			local commonSignals = {
-				"Changed", "ChildAdded", "ChildRemoved", "DescendantAdded", "DescendantRemoving",
-				"AncestryChanged", "AttributeChanged",
-				-- RemoteEvent / RemoteFunction
-				"OnClientEvent", "OnServerEvent", "OnClientInvoke", "OnServerInvoke",
-				-- BindableEvent/Function
-				"Event",
-				-- UI
-				"MouseButton1Click", "MouseButton2Click", "MouseEnter", "MouseLeave",
-				"InputBegan", "InputEnded", "InputChanged", "Focused", "FocusLost",
-				-- Character/Humanoid
-				"Touched", "TouchEnded", "Died", "FreeFalling", "HealthChanged",
-				"Running", "Swimming", "Climbing", "Jumping",
-				-- Physics
-				"Hit", "LocalSimulationTouched",
-				-- Sound
-				"Played", "Stopped", "Paused", "Resumed",
-				-- Tween
-				"Completed",
-				-- ProximityPrompt
-				"Triggered", "TriggerEnded", "PromptShown", "PromptHidden",
-			}
-
-			-- Also try every property from the API class hierarchy
-			local function tryClass(className)
-				local cls = API and API.Classes and API.Classes[className]
-				if not cls then return end
-				for _, member in ipairs(cls.Members or {}) do
-					if member.MemberType == "Event" then
-						trySpySignal(member.Name)
-					end
-				end
-				if cls.Superclass then tryClass(cls.Superclass) end
-			end
-			tryClass(obj.ClassName)
-
-			-- Fallback: always try the common list
-			for _, sig in ipairs(commonSignals) do trySpySignal(sig) end
-
-			if spied == 0 then
-				if getgenv().DoNotif then getgenv().DoNotif("⚠ No signals found to spy on: " .. obj.Name, 3) end
-				return
-			end
-
-			_signalSpyConns[key] = conns
-			_signalSpyActive[key] = true
-			if getgenv().DoNotif then getgenv().DoNotif("Signal Spy ON: " .. obj.Name .. " (" .. spied .. " signals)", 3) end
-			print(string.format("[SIGNAL SPY] Watching %d signals on %s. Check F9 console.", spied, obj:GetFullName()))
-		end})
-
-		-- ══════════════════════════════════════════════════════════════════
-		-- RE: ARG CAPTURE
-		-- Capture live args from a specific remote's next N firings.
-		-- Opens results in the Notepad as formatted Lua tables.
-		-- ══════════════════════════════════════════════════════════════════
-		local _argCaptureActive = {}
-		context:Register("RE_ARG_CAPTURE", {Name = "Capture Args [RE]", IconMap = Explorer.MiscIcons, Icon = "CallFunction", OnClick = function()
-			local node = selection.List[1]
-			if not node then return end
-			local obj = node.Obj
-			if not (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") or obj:IsA("UnreliableRemoteEvent")) then return end
-
-			local key = tostring(obj)
-			if _argCaptureActive[key] then
-				if getgenv().DoNotif then getgenv().DoNotif("⚠ Already capturing " .. obj.Name, 2) end
-				return
-			end
-
-			if not env.hookmetamethod then
-				if getgenv().DoNotif then getgenv().DoNotif("⚠ hookmetamethod not available", 2) end
-				return
-			end
-
-			_argCaptureActive[key] = true
-			local captureLimit = 10
-			local captured = {}
-			local captureCount = 0
-			local startTick = tick()
-
-			if getgenv().DoNotif then getgenv().DoNotif("Capturing args for: " .. obj.Name .. " (next " .. captureLimit .. " calls)", 3) end
-			print(string.format("[ARG CAPTURE] Watching %s — next %d calls", obj:GetFullName(), captureLimit))
-
-			-- Use a connection on the client-side event if available, else hook namecall
-			local function serializeArg(v, depth)
-				depth = depth or 0
-				if depth > 3 then return '"..."' end
-				local t = typeof(v)
-				if t == "string"  then return '"' .. v:sub(1,120):gsub('"','\\"'):gsub("\n","\\n") .. '"' end
-				if t == "number"  then return tostring(v) end
-				if t == "boolean" then return tostring(v) end
-				if t == "nil"     then return "nil" end
-				if t == "Vector3" then return string.format("Vector3.new(%g, %g, %g)", v.X, v.Y, v.Z) end
-				if t == "Vector2" then return string.format("Vector2.new(%g, %g)", v.X, v.Y) end
-				if t == "CFrame"  then local c={v:GetComponents()} return "CFrame.new("..table.concat(c,",")..")" end
-				if t == "Color3"  then return string.format("Color3.fromRGB(%d,%d,%d)", v.R*255, v.G*255, v.B*255) end
-				if t == "table"   then
-					local parts = {}
-					local i = 0
-					for k, val in pairs(v) do
-						i = i + 1
-						if i > 20 then table.insert(parts, "...") break end
-						local ks = type(k)=="string" and k or ("["..tostring(k).."]")
-						table.insert(parts, ks .. " = " .. serializeArg(val, depth+1))
-					end
-					return "{" .. table.concat(parts, ", ") .. "}"
-				end
-				if t == "Instance" then return '"' .. v:GetFullName() .. '"' end
-				return '"[' .. t .. ']"'
-			end
-
-			local function recordCapture(args, method)
-				captureCount = captureCount + 1
-				local entry = {
-					index = captureCount,
-					method = method,
-					time = string.format("%.3f", tick() - startTick),
-					args = args,
-				}
-				table.insert(captured, entry)
-
-				print(string.format("[ARG CAPTURE #%d] %s:%s | %d args", captureCount, obj.Name, method, #args))
-
-				if captureCount >= captureLimit then
-					_argCaptureActive[key] = nil
-					-- Build report
-					local lines = {}
-					local function w(s) table.insert(lines, s) end
-					w("-- ╔══════════════════════════════════════════════════╗")
-					w("-- ║          ARG CAPTURE REPORT [RE]                ║")
-					w("-- ╚══════════════════════════════════════════════════╝")
-					w("-- Remote : " .. obj:GetFullName())
-					w("-- Class  : " .. obj.ClassName)
-					w("-- Captured: " .. captureCount .. " calls")
-					w("")
-					for _, cap in ipairs(captured) do
-						w(string.rep("─", 50))
-						w("-- Call #" .. cap.index .. "  |  +" .. cap.time .. "s  |  " .. cap.method)
-						w("local args_" .. cap.index .. " = {")
-						for ai, av in ipairs(cap.args) do
-							w("    [" .. ai .. "] = " .. serializeArg(av) .. ",")
-						end
-						w("}")
-						w("")
-						-- Ready-to-fire snippet
-						if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
-							w("-- Fire snippet:")
-							local argList = {}
-							for ai, av in ipairs(cap.args) do argList[ai] = serializeArg(av) end
-							w(obj:GetFullName() .. ":FireServer(" .. table.concat(argList, ", ") .. ")")
-						else
-							w("-- Invoke snippet:")
-							local argList = {}
-							for ai, av in ipairs(cap.args) do argList[ai] = serializeArg(av) end
-							w(obj:GetFullName() .. ":InvokeServer(" .. table.concat(argList, ", ") .. ")")
-						end
-						w("")
-					end
-					w(string.rep("─", 50))
-					w("-- END OF ARG CAPTURE REPORT")
-
-					ScriptViewer.ViewRaw(table.concat(lines, "\n"))
-					if getgenv().DoNotif then getgenv().DoNotif("✓ Arg capture complete: " .. obj.Name, 3) end
-				end
-			end
-
-			-- Primary: connect to OnClientEvent / OnClientInvoke if available
-			local directConn = nil
-			if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
-				local ok, c = pcall(function()
-					return obj.OnClientEvent:Connect(function(...)
-						if not _argCaptureActive[key] then return end
-						recordCapture({...}, "OnClientEvent")
-					end)
-				end)
-				if ok then directConn = c end
-			end
-
-			-- Fallback / supplement: namecall hook for FireServer direction
-			if env.hookmetamethod and env.newcclosure then
-				local oldNamecall; oldNamecall = env.hookmetamethod(game, "__namecall", env.newcclosure(function(self, ...)
-					local method = getnamecallmethod()
-					if _argCaptureActive[key] and self == obj then
-						if method == "FireServer" or method == "InvokeServer" then
-							task.spawn(recordCapture, {...}, method)
-						end
-					end
-					return oldNamecall(self, ...)
-				end))
-			end
-		end})
-
-		Explorer.RightClickContext = context
-	end
-
-	Explorer.HideNilInstances = function()
-		table.clear(nilMap)
-
-		local disconnectCon = Instance.new("Folder").ChildAdded:Connect(function() end).Disconnect
-		for i,v in next,nilCons do
-			disconnectCon(v[1])
-			disconnectCon(v[2])
-		end
-		table.clear(nilCons)
-
-		for i = 1,#nilNode do
-			coroutine.wrap(removeObject)(nilNode[i].Obj)
-		end
-
-		Explorer.Update()
-		Explorer.Refresh()
-	end
-
-	Explorer.RefreshNilInstances = function()
-		if not env.getnilinstances then return end
-
-		local nilInsts = env.getnilinstances()
-		local game = game
-		local getDescs = game.GetDescendants
-
-		for i = 1,#nilInsts do
-			local obj = nilInsts[i]
-			if obj ~= game then
-				nilMap[obj] = true
-
-				local descs = getDescs(obj)
-				for j = 1,#descs do
-					nilMap[descs[j]] = true
-				end
-			end
-		end
-
-		for i = 1,#nilInsts do
-			local obj = nilInsts[i]
-			local node = nodes[obj]
-			if not node then coroutine.wrap(addObject)(obj) end
-		end
-
-		Explorer.Update()
-		Explorer.Refresh()
-	end
-
-	Explorer.GetInstancePath = function(obj)
-		local ffc = game.FindFirstChild
-		local getCh = game.GetChildren
-		local path = ""
-		local curObj = obj
-		local ts = tostring
-		local match = string.match
-		local gsub = string.gsub
-		local tableFind = table.find
-		local useGetCh = Settings.Explorer.CopyPathUseGetChildren
-		local formatLuaString = Lib.FormatLuaString
-
-		while curObj do
-			if curObj == game then
-				path = "game"..path
-				break
-			end
-
-			local className = curObj.ClassName
-			local curName = ts(curObj)
-			local indexName
-			if match(curName,"^[%a_][%w_]*$") then
-				indexName = "."..curName
-			else
-				local cleanName = formatLuaString(curName)
-				indexName = '["'..cleanName..'"]'
-			end
-
-			local parObj = curObj.Parent
-			if parObj then
-				local fc = ffc(parObj,curName)
-				if useGetCh and fc and fc ~= curObj then
-					local parCh = getCh(parObj)
-					local fcInd = tableFind(parCh,curObj)
-					indexName = ":GetChildren()["..fcInd.."]"
-				elseif parObj == game and API.Classes[className] and API.Classes[className].Tags.Service then
-					indexName = ':GetService("'..className..'")'
-				end
-			elseif parObj == nil then
-				local getnil = "local getNil = function(name, class) for _, v in next, getnilinstances() do if v.ClassName == class and v.Name == name then return v end end end"
-				local gotnil = "\n\ngetNil(\"%s\", \"%s\")"
-				indexName = getnil .. gotnil:format(curObj.Name, className)
-			end
-
-			path = indexName..path
-			curObj = parObj
-		end
-
-		return path
-	end
-
-	Explorer.DefaultProps = {
-		["BasePart"] = {
-			Position = function(Obj)
-				local Player = service.Players.LocalPlayer
-				if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-					Obj.Position = (Player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -10)).p
-				end
-				return Obj.Position
-			end,
-			Anchored = true
-		},
-		["GuiObject"] = {
-			Position = function(Obj) return (Obj.Parent:IsA("ScreenGui") and UDim2.new(0.5, 0, 0.5, 0)) or Obj.Position end,
-			Active = true
-		}
-	}
-
-	Explorer.InitInsertObject = function()
-		local context = Lib.ContextMenu.new()
-		context.SearchEnabled = true
-		context.MaxHeight = 400
-		context:ApplyTheme({
-			ContentColor = Settings.Theme.Main2,
-			OutlineColor = Settings.Theme.Outline1,
-			DividerColor = Settings.Theme.Outline1,
-			TextColor = Settings.Theme.Text,
-			HighlightColor = Settings.Theme.ButtonHover
-		})
-
-		local classes = {}
-		for i,class in next,API.Classes do
-			local tags = class.Tags
-			if not tags.NotCreatable and not tags.Service then
-				local rmdEntry = RMD.Classes[class.Name]
-				classes[#classes+1] = {class,rmdEntry and rmdEntry.ClassCategory or "Uncategorized"}
-			end
-		end
-		table.sort(classes,function(a,b)
-			if a[2] ~= b[2] then
-				return a[2] < b[2]
-			else
-				return a[1].Name < b[1].Name
-			end
-		end)
-
-		local function defaultProps(obj)
-			for class, props in pairs(Explorer.DefaultProps) do
-				if obj:IsA(class) then
-					for prop, value in pairs(props) do
-						obj[prop] = (type(value) == "function" and value(obj)) or value
-					end
-				end
-			end
-		end
-
-		local function onClick(className)
-			local sList = selection.List
-			local instNew = Instance.new
-			for i = 1,#sList do
-				local node = sList[i]
-				local obj = node.Obj
-				Explorer.MakeNodeVisible(node, true)
-				local success, obj = pcall(instNew, className, obj)
-				if success and obj then defaultProps(obj) end
-			end
-		end
-
-		local lastCategory = ""
-		for i = 1,#classes do
-			local class = classes[i][1]
-			local rmdEntry = RMD.Classes[class.Name]
-			local iconInd = rmdEntry and tonumber(rmdEntry.ExplorerImageIndex) or 0
-			local category = classes[i][2]
-
-			if lastCategory ~= category then
-				context:AddDivider(category)
-				lastCategory = category
-			end
-			
-			local icon
-			if iconData then
-				icon = iconData.Icons[class.Name] or iconData.Icons.Placeholder
-			else
-				icon = iconInd
-			end
-			context:Add({Name = class.Name, IconMap = Explorer.ClassIcons, Icon = icon, OnClick = onClick})
-		end
-
-		Explorer.InsertObjectContext = context
-	end
-
-	Explorer.SearchFilters = {
-		Comparison = {
-			["isa"] = function(argString)
-				local lower = string.lower
-				local find = string.find
-				local classQuery = string.split(argString)[1]
-				if not classQuery then return end
-				classQuery = lower(classQuery)
-
-				local className
-				for class,_ in pairs(API.Classes) do
-					local cName = lower(class)
-					if cName == classQuery then
-						className = class
-						break
-					elseif find(cName,classQuery,1,true) then
-						className = class
-					end
-				end
-				if not className then return end
-
-				return {
-					Headers = {"local isa = game.IsA"},
-					Predicate = "isa(obj,'"..className.."')"
-				}
-			end,
-			["remotes"] = function(argString)
-				return {
-					Headers = {"local isa = game.IsA"},
-					Predicate = "isa(obj,'RemoteEvent') or isa(obj,'RemoteFunction') or isa(obj,'UnreliableRemoteFunction')"
-				}
-			end,
-			["bindables"] = function(argString)
-				return {
-					Headers = {"local isa = game.IsA"},
-					Predicate = "isa(obj,'BindableEvent') or isa(obj,'BindableFunction')"
-				}
-			end,
-			["rad"] = function(argString)
-				local num = tonumber(argString)
-				if not num then return end
-
-				if not service.Players.LocalPlayer.Character or not service.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") or not service.Players.LocalPlayer.Character.HumanoidRootPart:IsA("BasePart") then return end
-
-				return {
-					Headers = {"local isa = game.IsA", "local hrp = service.Players.LocalPlayer.Character.HumanoidRootPart"},
-					Setups = {"local hrpPos = hrp.Position"},
-					ObjectDefs = {"local isBasePart = isa(obj,'BasePart')"},
-					Predicate = "(isBasePart and (obj.Position-hrpPos).Magnitude <= "..num..")"
-				}
-			end,
-		},
-		Specific = {
-			["players"] = function()
-				return function() return service.Players:GetPlayers() end
-			end,
-			["loadedmodules"] = function()
-				return env.getloadedmodules
-			end,
-		},
-		Default = function(argString,caseSensitive)
-			local cleanString = argString:gsub("\"","\\\""):gsub("\n","\\n")
-			if caseSensitive then
-				return {
-					Headers = {"local find = string.find"},
-					ObjectDefs = {"local objName = tostring(obj)"},
-					Predicate = "find(objName,\"" .. cleanString .. "\",1,true)"
-				}
-			else
-				return {
-					Headers = {"local lower = string.lower","local find = string.find","local tostring = tostring"},
-					ObjectDefs = {"local lowerName = lower(tostring(obj))"},
-					Predicate = "find(lowerName,\"" .. cleanString:lower() .. "\",1,true)"
-				}
-			end
-		end,
-		SpecificDefault = function(n)
-			return {
-				Headers = {},
-				ObjectDefs = {"local isSpec"..n.." = specResults["..n.."][node]"},
-				Predicate = "isSpec"..n
-			}
-		end,
-	}
-
-	Explorer.BuildSearchFunc = function(query)
-		local specFilterList,specMap = {},{}
-		local finalPredicate = ""
-		local rep = string.rep
-		local formatQuery = query:gsub("\\.","  "):gsub('".-"',function(str) return rep(" ",#str) end)
-		local headers = {}
-		local objectDefs = {}
-		local setups = {}
-		local find = string.find
-		local sub = string.sub
-		local lower = string.lower
-		local match = string.match
-		local ops = {
-			["("] = "(",
-			[")"] = ")",
-			["||"] = " or ",
-			["&&"] = " and "
-		}
-		local filterCount = 0
-		local compFilters = Explorer.SearchFilters.Comparison
-		local specFilters = Explorer.SearchFilters.Specific
-		local init = 1
-		local lastOp = nil
-
-		local function processFilter(dat)
-			if dat.Headers then
-				local t = dat.Headers
-				for i = 1,#t do
-					headers[t[i]] = true
-				end
-			end
-
-			if dat.ObjectDefs then
-				local t = dat.ObjectDefs
-				for i = 1,#t do
-					objectDefs[t[i]] = true
-				end
-			end
-
-			if dat.Setups then
-				local t = dat.Setups
-				for i = 1,#t do
-					setups[t[i]] = true
-				end
-			end
-
-			finalPredicate = finalPredicate..dat.Predicate
-		end
-
-		local found = {}
-		local foundData = {}
-		local find = string.find
-		local sub = string.sub
-
-		local function findAll(str,pattern)
-			local count = #found+1
-			local init = 1
-			local sz = #pattern
-			local x,y,extra = find(str,pattern,init,true)
-			while x do
-				found[count] = x
-				foundData[x] = {sz,pattern}
-
-				count = count+1
-				init = y+1
-				x,y,extra = find(str,pattern,init,true)
-			end
-		end
-		local start = tick()
-		findAll(formatQuery,'&&')
-		findAll(formatQuery,"||")
-		findAll(formatQuery,"(")
-		findAll(formatQuery,")")
-		table.sort(found)
-		table.insert(found,#formatQuery+1)
-
-		local function inQuotes(str)
-			local len = #str
-			if sub(str,1,1) == '"' and sub(str,len,len) == '"' then
-				return sub(str,2,len-1)
-			end
-		end
-
-		for i = 1,#found do
-			local nextInd = found[i]
-			local nextData = foundData[nextInd] or {1}
-			local op = ops[nextData[2]]
-			local term = sub(query,init,nextInd-1)
-			term = match(term,"^%s*(.-)%s*$") or ""
-
-			if #term > 0 then
-				if sub(term,1,1) == "!" then
-					term = sub(term,2)
-					finalPredicate = finalPredicate.."not "
-				end
-
-				local qTerm = inQuotes(term)
-				if qTerm then
-					processFilter(Explorer.SearchFilters.Default(qTerm,true))
-				else
-					local x,y = find(term,"%S+")
-					if x then
-						local first = sub(term,x,y)
-						local specifier = sub(first,1,1) == "/" and lower(sub(first,2))
-						local compFunc = specifier and compFilters[specifier]
-						local specFunc = specifier and specFilters[specifier]
-
-						if compFunc then
-							local argStr = sub(term,y+2)
-							local ret = compFunc(inQuotes(argStr) or argStr)
-							if ret then
-								processFilter(ret)
-							else
-								finalPredicate = finalPredicate.."false"
-							end
-						elseif specFunc then
-							local argStr = sub(term,y+2)
-							local ret = specFunc(inQuotes(argStr) or argStr)
-							if ret then
-								if not specMap[term] then
-									specFilterList[#specFilterList + 1] = ret
-									specMap[term] = #specFilterList
-								end
-								processFilter(Explorer.SearchFilters.SpecificDefault(specMap[term]))
-							else
-								finalPredicate = finalPredicate.."false"
-							end
-						else
-							processFilter(Explorer.SearchFilters.Default(term))
-						end
-					end
-				end
-			end
-
-			if op then
-				finalPredicate = finalPredicate..op
-				if op == "(" and (#term > 0 or lastOp == ")") then
-					return
-				else
-					lastOp = op
-				end
-			end
-			init = nextInd+nextData[1]
-		end
-
-		local finalSetups = ""
-		local finalHeaders = ""
-		local finalObjectDefs = ""
-
-		for setup,_ in next,setups do finalSetups = finalSetups..setup.."\n" end
-		for header,_ in next,headers do finalHeaders = finalHeaders..header.."\n" end
-		for oDef,_ in next,objectDefs do finalObjectDefs = finalObjectDefs..oDef.."\n" end
-
-		local template = [==[
-local searchResults = searchResults
-local nodes = nodes
-local expandTable = Explorer.SearchExpanded
-local specResults = specResults
-local service = service
-
-%s
-local function search(root)
-%s
-	
-	local expandedpar = false
-	for i = 1,#root do
-		local node = root[i]
-		local obj = node.Obj
-		
-%s
-		
-		if %s then
-			expandTable[node] = 0
-			searchResults[node] = true
-			if not expandedpar then
-				local parnode = node.Parent
-				while parnode and (not searchResults[parnode] or expandTable[parnode] == 0) do
-					expandTable[parnode] = true
-					searchResults[parnode] = true
-					parnode = parnode.Parent
-				end
-				expandedpar = true
-			end
-		end
-		
-		if #node > 0 then search(node) end
-	end
-end
-return search]==]
-
-		local funcStr = template:format(finalHeaders,finalSetups,finalObjectDefs,finalPredicate)
-		local s,func = pcall(loadstring,funcStr)
-		if not s or not func then return nil,specFilterList end
-
-		local env = setmetatable({["searchResults"] = searchResults, ["nodes"] = nodes, ["Explorer"] = Explorer, ["specResults"] = specResults,
-			["service"] = service},{__index = getfenv()})
-		setfenv(func,env)
-
-		return func(),specFilterList
-	end
-
-	Explorer.DoSearch = function(query)
-		table.clear(Explorer.SearchExpanded)
-		table.clear(searchResults)
-		expanded = (#query == 0 and Explorer.Expanded or Explorer.SearchExpanded)
-		searchFunc = nil
-
-		if #query > 0 then
-			local expandTable = Explorer.SearchExpanded
-			local specFilters
-
-			local lower = string.lower
-			local find = string.find
-			local tostring = tostring
-
-			local lowerQuery = lower(query)
-
-			local function defaultSearch(root)
-				local expandedpar = false
-				for i = 1,#root do
-					local node = root[i]
-					local obj = node.Obj
-
-					if find(lower(tostring(obj)),lowerQuery,1,true) then
-						expandTable[node] = 0
-						searchResults[node] = true
-						if not expandedpar then
-							local parnode = node.Parent
-							while parnode and (not searchResults[parnode] or expandTable[parnode] == 0) do
-								expanded[parnode] = true
-								searchResults[parnode] = true
-								parnode = parnode.Parent
-							end
-							expandedpar = true
-						end
-					end
-
-					if #node > 0 then defaultSearch(node) end
-				end
-			end
-
-			if Main.Elevated then
-				local start = tick()
-				searchFunc,specFilters = Explorer.BuildSearchFunc(query)
-
-			else
-				searchFunc = defaultSearch
-			end
-
-			if specFilters then
-				table.clear(specResults)
-				for i = 1,#specFilters do
-					local resMap = {}
-					specResults[i] = resMap
-					local objs = specFilters[i]()
-					for c = 1,#objs do
-						local node = nodes[objs[c]]
-						if node then
-							resMap[node] = true
-						end
-					end
-				end
-			end
-
-			if searchFunc then
-				local start = tick()
-				searchFunc(nodes[game])
-				searchFunc(nilNode)
-
-			end
-		end
-
-		Explorer.ForceUpdate()
-	end
-
-	Explorer.ClearSearch = function()
-		Explorer.GuiElems.SearchBar.Text = ""
-		expanded = Explorer.Expanded
-		searchFunc = nil
-	end
-
-	Explorer.InitSearch = function()
-		local searchBox = Explorer.GuiElems.ToolBar.SearchFrame.SearchBox
-		Explorer.GuiElems.SearchBar = searchBox
-
-		Lib.ViewportTextBox.convert(searchBox)
-
-		searchBox.FocusLost:Connect(function()
-			Explorer.DoSearch(searchBox.Text)
-		end)
-	end
-
-	Explorer.InitEntryTemplate = function()
-		entryTemplate = create({
-			{1,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0,0,0),BackgroundTransparency=1,BorderColor3=Color3.new(0,0,0),Font=3,Name="Entry",Position=UDim2.new(0,1,0,1),Size=UDim2.new(0,250,0,20),Text="",TextSize=14,}},
-			{2,"Frame",{BackgroundColor3=Color3.new(0.04313725605607,0.35294118523598,0.68627452850342),BackgroundTransparency=1,BorderColor3=Color3.new(0.33725491166115,0.49019610881805,0.73725491762161),BorderSizePixel=0,Name="Indent",Parent={1},Position=UDim2.new(0,20,0,0),Size=UDim2.new(1,-20,1,0),}},
-			{3,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="EntryName",Parent={2},Position=UDim2.new(0,26,0,0),Size=UDim2.new(1,-26,1,0),Text="Workspace",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-			{4,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,ClipsDescendants=true,Font=3,Name="Expand",Parent={2},Position=UDim2.new(0,-20,0,0),Size=UDim2.new(0,20,0,20),Text="",TextSize=14,}},
-			{5,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5642383285",ImageRectOffset=Vector2.new(144,16),ImageRectSize=Vector2.new(16,16),Name="Icon",Parent={4},Position=UDim2.new(0,2,0,2),ScaleType=4,Size=UDim2.new(0,16,0,16),}},
-			{6,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,ImageRectOffset=Vector2.new(304,0),ImageRectSize=Vector2.new(16,16),Name="Icon",Parent={2},Position=UDim2.new(0,4,0,2),ScaleType=4,Size=UDim2.new(0,16,0,16),}},
-		})
-
-		local sys = Lib.ClickSystem.new()
-		sys.AllowedButtons = {1,2}
-		sys.OnDown:Connect(function(item,combo,button)
-			local ind = table.find(listEntries,item)
-			if not ind then return end
-			local node = tree[ind + Explorer.Index]
-			if not node then return end
-
-			local entry = listEntries[ind]
-
-			if button == 1 then
-				if combo == 2 then
-					if node.Obj:IsA("LuaSourceContainer") then
-						ScriptViewer.ViewScript(node.Obj)
-					elseif #node > 0 and expanded[node] ~= 0 then
-						expanded[node] = not expanded[node]
-						Explorer.Update()
-					end
-				end
-
-				if Properties.SelectObject(node.Obj) then
-					sys.IsRenaming = false
-					return
-				end
-
-				sys.IsRenaming = selection.Map[node]
-
-				if Lib.IsShiftDown() then
-					if not selection.Piviot then return end
-
-					local fromIndex = table.find(tree,selection.Piviot)
-					local toIndex = table.find(tree,node)
-					if not fromIndex or not toIndex then return end
-					fromIndex,toIndex = math.min(fromIndex,toIndex),math.max(fromIndex,toIndex)
-
-					local sList = selection.List
-					for i = #sList,1,-1 do
-						local elem = sList[i]
-						if selection.ShiftSet[elem] then
-							selection.Map[elem] = nil
-							table.remove(sList,i)
-						end
-					end
-					selection.ShiftSet = {}
-					for i = fromIndex,toIndex do
-						local elem = tree[i]
-						if not selection.Map[elem] then
-							selection.ShiftSet[elem] = true
-							selection.Map[elem] = true
-							sList[#sList+1] = elem
-						end
-					end
-					selection.Changed:Fire()
-				elseif Lib.IsCtrlDown() then
-					selection.ShiftSet = {}
-					if selection.Map[node] then selection:Remove(node) else selection:Add(node) end
-					selection.Piviot = node
-					sys.IsRenaming = false
-				elseif not selection.Map[node] then
-					selection.ShiftSet = {}
-					selection:Set(node)
-					selection.Piviot = node
-				end
-			elseif button == 2 then
-				if Properties.SelectObject(node.Obj) then
-					return
-				end
-
-				if not Lib.IsCtrlDown() and not selection.Map[node] then
-					selection.ShiftSet = {}
-					selection:Set(node)
-					selection.Piviot = node
-					Explorer.Refresh()
-				end
-			end
-
-			Explorer.Refresh()
-		end)
-
-		sys.OnRelease:Connect(function(item,combo,button,position)
-			local ind = table.find(listEntries,item)
-			if not ind then return end
-			local node = tree[ind + Explorer.Index]
-			if not node then return end
-
-			if button == 1 then
-				if selection.Map[node] and not Lib.IsShiftDown() and not Lib.IsCtrlDown() then
-					selection.ShiftSet = {}
-					selection:Set(node)
-					selection.Piviot = node
-					Explorer.Refresh()
-				end
-
-				local id = sys.ClickId
-				Lib.FastWait(sys.ComboTime)
-				if combo == 1 and id == sys.ClickId and sys.IsRenaming and selection.Map[node] then
-					Explorer.SetRenamingNode(node)
-				end
-			elseif button == 2 then
-				Explorer.ShowRightClick(position)
-			end
-		end)
-		Explorer.ClickSystem = sys
-	end
-
-	Explorer.InitDelCleaner = function()
-		coroutine.wrap(function()
-			local fw = Lib.FastWait
-			while true do
-				local processed = false
-				local c = 0
-				for _,node in next,nodes do
-					if node.HasDel then
-						local delInd
-						for i = 1,#node do
-							if node[i].Del then
-								delInd = i
-								break
-							end
-						end
-						if delInd then
-							for i = delInd+1,#node do
-								local cn = node[i]
-								if not cn.Del then
-									node[delInd] = cn
-									delInd = delInd+1
-								end
-							end
-							for i = delInd,#node do
-								node[i] = nil
-							end
-						end
-						node.HasDel = false
-						processed = true
-						fw()
-					end
-					c = c + 1
-					if c > 10000 then
-						c = 0
-						fw()
-					end
-				end
-				if processed and not refreshDebounce then Explorer.PerformRefresh() end
-				fw(0.5)
-			end
-		end)()
-	end
-
-	Explorer.UpdateSelectionVisuals = function()
-		local holder = Explorer.SelectionVisualsHolder
-		local isa = game.IsA
-		local clone = game.Clone
-		if not holder then
-			holder = Instance.new("ScreenGui")
-			holder.Name = "ExplorerSelections"
-			holder.DisplayOrder = Main.DisplayOrders.Core
-			Lib.ShowGui(holder)
-			Explorer.SelectionVisualsHolder = holder
-			Explorer.SelectionVisualCons = {}
-
-			local guiTemplate = create({
-				{1,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Size=UDim2.new(0,100,0,100),}},
-				{2,"Frame",{BackgroundColor3=Color3.new(0.04313725605607,0.35294118523598,0.68627452850342),BorderSizePixel=0,Parent={1},Position=UDim2.new(0,-1,0,-1),Size=UDim2.new(1,2,0,1),}},
-				{3,"Frame",{BackgroundColor3=Color3.new(0.04313725605607,0.35294118523598,0.68627452850342),BorderSizePixel=0,Parent={1},Position=UDim2.new(0,-1,1,0),Size=UDim2.new(1,2,0,1),}},
-				{4,"Frame",{BackgroundColor3=Color3.new(0.04313725605607,0.35294118523598,0.68627452850342),BorderSizePixel=0,Parent={1},Position=UDim2.new(0,-1,0,0),Size=UDim2.new(0,1,1,0),}},
-				{5,"Frame",{BackgroundColor3=Color3.new(0.04313725605607,0.35294118523598,0.68627452850342),BorderSizePixel=0,Parent={1},Position=UDim2.new(1,0,0,0),Size=UDim2.new(0,1,1,0),}},
-			})
-			Explorer.SelectionVisualGui = guiTemplate
-
-			local boxTemplate = Instance.new("SelectionBox")
-			boxTemplate.LineThickness = 0.03
-			boxTemplate.Color3 = Color3.fromRGB(0, 170, 255)
-			Explorer.SelectionVisualBox = boxTemplate
-		end
-		holder:ClearAllChildren()
-
-		for i,v in pairs(Explorer.SelectionVisualGui:GetChildren()) do
-			v.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-		end
-
-		local attachCons = Explorer.SelectionVisualCons
-		for i = 1,#attachCons do
-			attachCons[i].Destroy()
-		end
-		table.clear(attachCons)
-
-		local partEnabled = Settings.Explorer.PartSelectionBox
-		local guiEnabled = Settings.Explorer.GuiSelectionBox
-		if not partEnabled and not guiEnabled then return end
-
-		local svg = Explorer.SelectionVisualGui
-		local svb = Explorer.SelectionVisualBox
-		local attachTo = Lib.AttachTo
-		local sList = selection.List
-		local count = 1
-		local boxCount = 0
-		local workspaceNode = nodes[workspace]
-		for i = 1,#sList do
-			if boxCount > 1000 then break end
-			local node = sList[i]
-			local obj = node.Obj
-
-			if node ~= workspaceNode then
-				if isa(obj,"GuiObject") and guiEnabled then
-					local newVisual = clone(svg)
-					attachCons[count] = attachTo(newVisual,{Target = obj, Resize = true})
-					count = count + 1
-					newVisual.Parent = holder
-					boxCount = boxCount + 1
-				elseif isa(obj,"PVInstance") and partEnabled then
-					local newBox = clone(svb)
-					newBox.Adornee = obj
-					newBox.Parent = holder
-					boxCount = boxCount + 1
-				end
-			end
-		end
-	end
-
-	Explorer.Init = function()
-		Explorer.LegacyClassIcons = Lib.IconMap.newLinear("rbxasset://textures/ClassImages.PNG", 16,16)
-		
-		if Settings.ClassIcon ~= nil and Settings.ClassIcon ~= "Old" then
-			iconData = Lib.IconMap.getIconDataFromName(Settings.ClassIcon)
-			
-			Explorer.ClassIcons = Lib.IconMap.new("rbxassetid://"..tostring(iconData.MapId), iconData.IconSize * iconData.Witdh, iconData.IconSize * iconData.Height,iconData.IconSize,iconData.IconSize)
-
-			local fixed = {}
-			for i,v in pairs(iconData.Icons) do
-				fixed[i] = v - 1
-			end
-			
-			iconData.Icons = fixed
-			Explorer.ClassIcons:SetDict(fixed)
-		else
-			Explorer.ClassIcons = Lib.IconMap.newLinear("rbxasset://textures/ClassImages.PNG", 16,16)
-		end
-		
-		Explorer.MiscIcons = Main.MiscIcons
-
-		clipboard = {}
-
-		selection = Lib.Set.new()
-		selection.ShiftSet = {}
-		selection.Changed:Connect(Properties.ShowExplorerProps)
-		Explorer.Selection = selection
-
-		Explorer.InitRightClick()
-		Explorer.InitInsertObject()
-		Explorer.SetSortingEnabled(Settings.Explorer.Sorting)
-		Explorer.Expanded = setmetatable({},{__mode = "k"})
-		Explorer.SearchExpanded = setmetatable({},{__mode = "k"})
-		expanded = Explorer.Expanded
-
-		nilNode.Obj.Name = "Nil Instances"
-		nilNode.Locked = true
-
-		local explorerItems = create({
-			{1,"Folder",{Name="ExplorerItems",}},
-			{2,"Frame",{BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderSizePixel=0,Name="ToolBar",Parent={1},Size=UDim2.new(1,0,0,22),}},
-			{3,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.1176470592618,0.1176470592618,0.1176470592618),BorderSizePixel=0,Name="SearchFrame",Parent={2},Position=UDim2.new(0,3,0,1),Size=UDim2.new(1,-6,0,18),}},
-			{4,"TextBox",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,ClearTextOnFocus=false,Font=3,Name="SearchBox",Parent={3},PlaceholderColor3=Color3.new(0.39215689897537,0.39215689897537,0.39215689897537),PlaceholderText="Search workspace",Position=UDim2.new(0,4,0,0),Size=UDim2.new(1,-24,0,18),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=0,}},
-			{5,"UICorner",{CornerRadius=UDim.new(0,2),Parent={3},}},
-			{6,"UIStroke",{Thickness=1.4,Parent={3},Color=Color3.fromRGB(42,42,42)}},
-			{7,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Reset",Parent={3},Position=UDim2.new(1,-17,0,1),Size=UDim2.new(0,16,0,16),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,}},
-			{8,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5034718129",ImageColor3=Color3.new(0.39215686917305,0.39215686917305,0.39215686917305),Parent={7},Size=UDim2.new(0,16,0,16),}},
-			{9,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Refresh",Parent={2},Position=UDim2.new(1,-20,0,1),Size=UDim2.new(0,18,0,18),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,Visible=false,}},
-			{10,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5642310344",Parent={9},Position=UDim2.new(0,3,0,3),Size=UDim2.new(0,12,0,12),}},
-			{11,"Frame",{BackgroundColor3=Color3.new(0.15686275064945,0.15686275064945,0.15686275064945),BorderSizePixel=0,Name="ScrollCorner",Parent={1},Position=UDim2.new(1,-16,1,-16),Size=UDim2.new(0,16,0,16),Visible=false,}},
-			{12,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,ClipsDescendants=true,Name="List",Parent={1},Position=UDim2.new(0,0,0,23),Size=UDim2.new(1,0,1,-23),}}
-		})
-
-		toolBar = explorerItems.ToolBar
-		treeFrame = explorerItems.List
-
-		Explorer.GuiElems.ToolBar = toolBar
-		Explorer.GuiElems.TreeFrame = treeFrame
-
-		scrollV = Lib.ScrollBar.new()
-		scrollV.WheelIncrement = 3
-		scrollV.Gui.Position = UDim2.new(1,-16,0,23)
-		scrollV:SetScrollFrame(treeFrame)
-		scrollV.Scrolled:Connect(function()
-			Explorer.Index = scrollV.Index
-			Explorer.Refresh()
-		end)
-
-		scrollH = Lib.ScrollBar.new(true)
-		scrollH.Increment = 5
-		scrollH.WheelIncrement = Explorer.EntryIndent
-		scrollH.Gui.Position = UDim2.new(0,0,1,-16)
-		scrollH.Scrolled:Connect(function()
-			Explorer.Refresh()
-		end)
-
-		local window = Lib.Window.new()
-		Explorer.Window = window
-		window:SetTitle("Explorer")
-		window.GuiElems.Line.Position = UDim2.new(0,0,0,22)
-
-		Explorer.InitEntryTemplate()
-		toolBar.Parent = window.GuiElems.Content
-		treeFrame.Parent = window.GuiElems.Content
-		explorerItems.ScrollCorner.Parent = window.GuiElems.Content
-		scrollV.Gui.Parent = window.GuiElems.Content
-		scrollH.Gui.Parent = window.GuiElems.Content
-
-		Explorer.InitRenameBox()
-		Explorer.InitSearch()
-		Explorer.InitDelCleaner()
-		selection.Changed:Connect(Explorer.UpdateSelectionVisuals)
-
-		window.GuiElems.Main:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-			if Explorer.Active then
-				Explorer.UpdateView()
-				Explorer.Refresh()
-			end
-		end)
-		window.OnActivate:Connect(function()
-			Explorer.Active = true
-			Explorer.UpdateView()
-			Explorer.Update()
-			Explorer.Refresh()
-		end)
-		window.OnRestore:Connect(function()
-			Explorer.Active = true
-			Explorer.UpdateView()
-			Explorer.Update()
-			Explorer.Refresh()
-		end)
-		window.OnDeactivate:Connect(function() Explorer.Active = false end)
-		window.OnMinimize:Connect(function() Explorer.Active = false end)
-
-		autoUpdateSearch = Settings.Explorer.AutoUpdateSearch
-
-		nodes[game] = {Obj = game}
-		expanded[nodes[game]] = true
-
-		if env.getnilinstances then
-			nodes[nilNode.Obj] = nilNode
-		end
-
-		Explorer.SetupConnections()
-
-		local insts = getDescendants(game)
-		if Main.Elevated then
-			for i = 1,#insts do
-				local obj = insts[i]
-				local par = nodes[ffa(obj,"Instance")]
-				if not par then continue end
-				local newNode = {
-					Obj = obj,
-					Parent = par,
-				}
-				nodes[obj] = newNode
-				par[#par+1] = newNode
-			end
-		else
-			for i = 1,#insts do
-				local obj = insts[i]
-				local s,parObj = pcall(ffa,obj,"Instance")
-				local par = nodes[parObj]
-				if not par then continue end
-				local newNode = {
-					Obj = obj,
-					Parent = par,
-				}
-				nodes[obj] = newNode
-				par[#par+1] = newNode
-			end
-		end
-	end
-
-	return Explorer
-end
-
-return {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
-end,
-["Lib"] = function()
-
-local Main,Lib,Apps,Settings
-local Explorer, Properties, ScriptViewer, Notebook
-local API,RMD,env,service,plr,create,createSimple
-
-local function initDeps(data)
-	Main = data.Main
-	Lib = data.Lib
-	Apps = data.Apps
-	Settings = data.Settings
-
-	API = data.API
-	RMD = data.RMD
-	env = data.env
-	service = data.service
-	plr = data.plr
-	create = data.create
-	createSimple = data.createSimple
-end
-
-local function initAfterMain()
-	Explorer = Apps.Explorer
-	Properties = Apps.Properties
-	ScriptViewer = Apps.ScriptViewer
-	Notebook = Apps.Notebook
-end
-
-local function main()
-	local Lib = {}
-
-	local renderStepped = service.RunService.RenderStepped
-	local signalWait = renderStepped.wait
-	local PH = newproxy()
-	local SIGNAL = newproxy()
-
-	local function initObj(props,mt)
-		local type = type
-		local function copy(t)
-			local res = {}
-			for i,v in pairs(t) do
-				if v == SIGNAL then
-					res[i] = Lib.Signal.new()
-				elseif type(v) == "table" then
-					res[i] = copy(v)
-				else
-					res[i] = v
-				end
-			end
-			return res
-		end
-
-		local newObj = copy(props)
-		return setmetatable(newObj,mt)
-	end
-
-	local function getGuiMT(props,funcs)
-		return {__index = function(self,ind) if not props[ind] then return funcs[ind] or self.Gui[ind] end end,
-		__newindex = function(self,ind,val) if not props[ind] then self.Gui[ind] = val else rawset(self,ind,val) end end}
-	end
-
-	Lib.FormatLuaString = (function()
-		local string = string
-		local gsub = string.gsub
-		local format = string.format
-		local char = string.char
-		local cleanTable = {['"'] = '\\"', ['\\'] = '\\\\'}
-		for i = 0,31 do
-			cleanTable[char(i)] = "\\"..format("%03d",i)
-		end
-		for i = 127,255 do
-			cleanTable[char(i)] = "\\"..format("%03d",i)
-		end
-
-		return function(str)
-			return gsub(str,"[\"\\\0-\31\127-\255]",cleanTable)
-		end
-	end)()
-
-	Lib.CheckMouseInGui = function(gui)
-		if gui == nil then return false end
-		local mouse = Main.Mouse
-		local guiPosition = gui.AbsolutePosition
-		local guiSize = gui.AbsoluteSize
-
-		return mouse.X >= guiPosition.X and mouse.X < guiPosition.X + guiSize.X and mouse.Y >= guiPosition.Y and mouse.Y < guiPosition.Y + guiSize.Y
-	end
-
-	Lib.IsShiftDown = function()
-		return service.UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or service.UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
-	end
-
-	Lib.IsCtrlDown = function()
-		return service.UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or service.UserInputService:IsKeyDown(Enum.KeyCode.RightControl)
-	end
-
-	Lib.CreateArrow = function(size,num,dir)
-		local max = num
-		local arrowFrame = createSimple("Frame",{
-			BackgroundTransparency = 1,
-			Name = "Arrow",
-			Size = UDim2.new(0,size,0,size)
-		})
-		if dir == "up" then
-			for i = 1,num do
-				local newLine = createSimple("Frame",{
-					BackgroundColor3 = Color3.new(220/255,220/255,220/255),
-					BorderSizePixel = 0,
-					Position = UDim2.new(0,math.floor(size/2)-(i-1),0,math.floor(size/2)+i-math.floor(max/2)-1),
-					Size = UDim2.new(0,i+(i-1),0,1),
-					Parent = arrowFrame
-				})
-			end
-			return arrowFrame
-		elseif dir == "down" then
-			for i = 1,num do
-				local newLine = createSimple("Frame",{
-					BackgroundColor3 = Color3.new(220/255,220/255,220/255),
-					BorderSizePixel = 0,
-					Position = UDim2.new(0,math.floor(size/2)-(i-1),0,math.floor(size/2)-i+math.floor(max/2)+1),
-					Size = UDim2.new(0,i+(i-1),0,1),
-					Parent = arrowFrame
-				})
-			end
-			return arrowFrame
-		elseif dir == "left" then
-			for i = 1,num do
-				local newLine = createSimple("Frame",{
-					BackgroundColor3 = Color3.new(220/255,220/255,220/255),
-					BorderSizePixel = 0,
-					Position = UDim2.new(0,math.floor(size/2)+i-math.floor(max/2)-1,0,math.floor(size/2)-(i-1)),
-					Size = UDim2.new(0,1,0,i+(i-1)),
-					Parent = arrowFrame
-				})
-			end
-			return arrowFrame
-		elseif dir == "right" then
-			for i = 1,num do
-				local newLine = createSimple("Frame",{
-					BackgroundColor3 = Color3.new(220/255,220/255,220/255),
-					BorderSizePixel = 0,
-					Position = UDim2.new(0,math.floor(size/2)-i+math.floor(max/2)+1,0,math.floor(size/2)-(i-1)),
-					Size = UDim2.new(0,1,0,i+(i-1)),
-					Parent = arrowFrame
-				})
-			end
-			return arrowFrame
-		end
-		error("r u ok")
-	end
-
-	Lib.ParseXML = (function()
-		local func = function()
-
-			local string, print, pairs = string, print, pairs
-
-			local trim = function(s)
-				local from = s:match"^%s*()"
-				return from > #s and "" or s:match(".*%S", from)
-			end
-
-			local gtchar = string.byte('>', 1)
-			local slashchar = string.byte('/', 1)
-			local D = string.byte('D', 1)
-			local E = string.byte('E', 1)
-
-			function parse(s, evalEntities)
-
-				s = s:gsub('<!%-%-(.-)%-%->', '')
-
-				local entities, tentities = {}
-
-				if evalEntities then
-					local pos = s:find('<[_%w]')
-					if pos then
-						s:sub(1, pos):gsub('<!ENTITY%s+([_%w]+)%s+(.)(.-)%2', function(name, q, entity)
-							entities[#entities+1] = {name=name, value=entity}
-						end)
-						tentities = createEntityTable(entities)
-						s = replaceEntities(s:sub(pos), tentities)
-					end
-				end
-
-				local t, l = {}, {}
-
-				local addtext = function(txt)
-					txt = txt:match'^%s*(.*%S)' or ''
-					if #txt ~= 0 then
-						t[#t+1] = {text=txt}
-					end
-				end
-
-				s:gsub('<([?!/]?)([-:_%w]+)%s*(/?>?)([^<]*)', function(type, name, closed, txt)
-
-					if #type == 0 then
-						local a = {}
-						if #closed == 0 then
-							local len = 0
-							for all,aname,_,value,starttxt in string.gmatch(txt, "(.-([-_%w]+)%s*=%s*(.)(.-)%3%s*(/?>?))") do
-								len = len + #all
-								a[aname] = value
-								if #starttxt ~= 0 then
-									txt = txt:sub(len+1)
-									closed = starttxt
-									break
-								end
-							end
-						end
-						t[#t+1] = {tag=name, attrs=a, children={}}
-
-						if closed:byte(1) ~= slashchar then
-							l[#l+1] = t
-							t = t[#t].children
-						end
-
-						addtext(txt)
-
-					elseif '/' == type then
-						t = l[#l]
-						l[#l] = nil
-
-						addtext(txt)
-
-					elseif '!' == type then
-						if E == name:byte(1) then
-							txt:gsub('([_%w]+)%s+(.)(.-)%2', function(name, q, entity)
-								entities[#entities+1] = {name=name, value=entity}
-							end, 1)
-						end
-
-					end
-				end)
-
-				return {children=t, entities=entities, tentities=tentities}
-			end
-
-			function parseText(txt)
-				return parse(txt)
-			end
-
-			function defaultEntityTable()
-				return { quot='"', apos='\'', lt='<', gt='>', amp='&', tab='\t', nbsp=' ', }
-			end
-
-			function replaceEntities(s, entities)
-				return s:gsub('&([^;]+);', entities)
-			end
-
-			function createEntityTable(docEntities, resultEntities)
-				entities = resultEntities or defaultEntityTable()
-				for _,e in pairs(docEntities) do
-					e.value = replaceEntities(e.value, entities)
-					entities[e.name] = e.value
-				end
-				return entities
-			end
-
-			return parseText
-		end
-		local newEnv = setmetatable({},{__index = getfenv()})
-		setfenv(func,newEnv)
-		return func()
-	end)()
-
-	Lib.FastWait = function(s)
-		if not s then return signalWait(renderStepped) end
-		local start = tick()
-		while tick() - start < s do signalWait(renderStepped) end
-	end
-
-	Lib.ButtonAnim = function(button,data)
-		local holding = false
-		local disabled = false
-		local mode = data and data.Mode or 1
-		local control = {}
-
-		if mode == 2 then
-			local lerpTo = data.LerpTo or Color3.new(0,0,0)
-			local delta = data.LerpDelta or 0.2
-			control.StartColor = data.StartColor or button.BackgroundColor3
-			control.PressColor = data.PressColor or control.StartColor:lerp(lerpTo,delta)
-			control.HoverColor = data.HoverColor or control.StartColor:lerp(control.PressColor,0.6)
-			control.OutlineColor = data.OutlineColor
-		end
-
-		button.InputBegan:Connect(function(input)
-			if disabled then return end
-
-			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-				if not holding then
-					if mode == 1 then
-						button.BackgroundTransparency = 0.4
-					elseif mode == 2 then
-						button.BackgroundColor3 = control.HoverColor
-					end
-				end
-			elseif input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				holding = true
-				if mode == 1 then
-					button.BackgroundTransparency = 0
-				elseif mode == 2 then
-					button.BackgroundColor3 = control.PressColor
-					if control.OutlineColor then button.BorderColor3 = control.PressColor end
-				end
-			end
-		end)
-
-		button.InputEnded:Connect(function(input)
-			if disabled then return end
-
-			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-				if not holding then
-					if mode == 1 then
-						button.BackgroundTransparency = 1
-					elseif mode == 2 then
-						button.BackgroundColor3 = control.StartColor
-					end
-				end
-			elseif input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				holding = false
-				if mode == 1 then
-					button.BackgroundTransparency = Lib.CheckMouseInGui(button) and 0.4 or 1
-				elseif mode == 2 then
-					button.BackgroundColor3 = Lib.CheckMouseInGui(button) and control.HoverColor or control.StartColor
-					if control.OutlineColor then button.BorderColor3 = control.OutlineColor end
-				end
-			end
-		end)
-
-		control.Disable = function()
-			disabled = true
-			holding = false
-
-			if mode == 1 then
-				button.BackgroundTransparency = 1
-			elseif mode == 2 then
-				button.BackgroundColor3 = control.StartColor
-			end
-		end
-
-		control.Enable = function()
-			disabled = false
-		end
-
-		return control
-	end
-
-	Lib.FindAndRemove = function(t,item)
-		local pos = table.find(t,item)
-		if pos then table.remove(t,pos) end
-	end
-
-	Lib.AttachTo = function(obj,data)
-		local target,posOffX,posOffY,sizeOffX,sizeOffY,resize,con
-		local disabled = false
-
-		local function update()
-			if not obj or not target then return end
-
-			local targetPos = target.AbsolutePosition
-			local targetSize = target.AbsoluteSize
-			obj.Position = UDim2.new(0,targetPos.X + posOffX,0,targetPos.Y + posOffY)
-			if resize then obj.Size = UDim2.new(0,targetSize.X + sizeOffX,0,targetSize.Y + sizeOffY) end
-		end
-
-		local function setup(o,data)
-			obj = o
-			data = data or {}
-			target = data.Target
-			posOffX = data.PosOffX or 0
-			posOffY = data.PosOffY or 0
-			sizeOffX = data.SizeOffX or 0
-			sizeOffY = data.SizeOffY or 0
-			resize = data.Resize or false
-
-			if con then con:Disconnect() con = nil end
-			if target then
-				con = target.Changed:Connect(function(prop)
-					if not disabled and prop == "AbsolutePosition" or prop == "AbsoluteSize" then
-						update()
-					end
-				end)
-			end
-
-			update()
-		end
-		setup(obj,data)
-
-		return {
-			SetData = function(obj,data)
-				setup(obj,data)
-			end,
-			Enable = function()
-				disabled = false
-				update()
-			end,
-			Disable = function()
-				disabled = true
-			end,
-			Destroy = function()
-				con:Disconnect()
-				con = nil
-			end,
-		}
-	end
-
-	Lib.ProtectedGuis = {}
-
-	Lib.ShowGui = Main.SecureGui
-
-	Lib.ColorToBytes = function(col)
-		local round = math.round
-		return string.format("%d, %d, %d",round(col.r*255),round(col.g*255),round(col.b*255))
-	end
-
-	Lib.ReadFile = function(filename)
-		if not env.readfile then return end
-
-		local s,contents = pcall(env.readfile,filename)
-		if s and contents then return contents end
-	end
-
-	Lib.DeferFunc = function(f,...)
-		signalWait(renderStepped)
-		return f(...)
-	end
-
-	Lib.LoadCustomAsset = function(filepath)
-		if not env.getcustomasset or not env.isfile or not env.isfile(filepath) then return end
-
-		return env.getcustomasset(filepath)
-	end
-
-	Lib.FetchCustomAsset = function(url,filepath)
-		if not env.writefile then return end
-
-		local s,data = pcall(oldgame.HttpGet,game,url)
-		if not s then return end
-
-		env.writefile(filepath,data)
-		return Lib.LoadCustomAsset(filepath)
-	end
-	
-	local currentfilename, currentextension, currentclickhandler
-	currentclickhandler = function() end
-	Lib.SaveAsPrompt = function(filename, codeToSave, ext)
-		local win = ScriptViewer.SaveAsWindow
-		if not win then
-			win = Lib.Window.new()
-			win.Alignable = false
-			win.Resizable = false
-			win:SetTitle("Save As")
-			win:SetSize(300,95)
-
-			local saveButton = Lib.Button.new()
-			local nameLabel = Lib.Label.new()
-			nameLabel.Text = "Name"
-			nameLabel.Position = UDim2.new(0,30,0,10)
-			nameLabel.Size = UDim2.new(0,40,0,20)
-			win:Add(nameLabel)
-
-			local nameBox = Lib.ViewportTextBox.new()
-			nameBox.Position = UDim2.new(0,75,0,10)
-			nameBox.Size = UDim2.new(0,220,0,20)
-			win:Add(nameBox,"NameBox")
-
-			nameBox.TextBox:GetPropertyChangedSignal("Text"):Connect(function()
-				saveButton:SetDisabled(#nameBox:GetText() == 0)
-			end)
-
-			local errorLabel = Lib.Label.new()
-			errorLabel.Text = ""
-			errorLabel.Position = UDim2.new(0,5,1,-45)
-			errorLabel.Size = UDim2.new(1,-10,0,20)
-			errorLabel.TextColor3 = Settings.Theme.Important
-			win.ErrorLabel = errorLabel
-			win:Add(errorLabel,"Error")
-
-			local cancelButton = Lib.Button.new()
-			cancelButton.AnchorPoint = Vector2.new(1,1)
-			cancelButton.Text = "Cancel"
-			cancelButton.Position = UDim2.new(1,-5,1,-5)
-			cancelButton.Size = UDim2.new(0.5,-10,0,20)
-			cancelButton.OnClick:Connect(function()
-				win:Close()
-			end)
-			win:Add(cancelButton)
-
-			saveButton.Text = "Save"
-			saveButton.AnchorPoint = Vector2.new(0,1)
-			saveButton.Position = UDim2.new(0,5,1,-5)
-			saveButton.Size = UDim2.new(0.5,-5,0,20)
-			saveButton.OnClick:Connect(function()
-				currentclickhandler()
-			end)
-
-			win:Add(saveButton,"SaveButton")
-
-			ScriptViewer.SaveAsWindow = win
-		end
-
-		currentclickhandler = function()
-			if type(codeToSave) == "string" then
-				filename = (win.Elements.NameBox.TextBox.Text ~= "" and win.Elements.NameBox.TextBox.Text) or filename
-				currentextension = ext or filename:match("%.([^%.]+)$") or "txt"
-				filename = filename:gsub("%.[^.]+$", "") .. "." .. currentextension
-
-				local codeText = codeToSave or ""
-				if env.writefile then
-					local s, msg = pcall(env.writefile, filename, codeText)
-					if not s then
-						win.Elements.Error.Text = "Error: " .. msg
-						task.spawn(error, msg)
-						task.wait(1)
-					end
-				else
-					win.Elements.Error.Text = "Your executor does not support 'writefile'"
-					task.wait(1)
-				end
-			elseif type(codeToSave) == "function" then
-				filename = (win.Elements.NameBox.TextBox.Text ~= "" and win.Elements.NameBox.TextBox.Text) or filename
-				currentextension = ext or filename:match("%.([^%.]+)$") or "txt"
-				filename = filename:gsub("%.[^.]+$", "") .. "." .. currentextension
-
-				local s, msg = pcall(codeToSave,filename)
-				if not s then
-					win.Elements.Error.Text = "Error: " .. msg
-					task.spawn(error, msg)
-					Lib.FastWait(1)
-				end
-			end
-			win:Close()
-		end
-
-		win:SetTitle("Save As")
-		win.Elements.Error.Text = ""
-		win.Elements.NameBox:SetText(filename or "")
-		
-		win.Elements.SaveButton:SetDisabled(win.Elements.NameBox:GetText() == 0)
-		
-		win:Show()
-	end
-
-	Lib.Signal = (function()
-		local funcs = {}
-
-		local disconnect = function(con)
-			local pos = table.find(con.Signal.Connections,con)
-			if pos then table.remove(con.Signal.Connections,pos) end
-		end
-
-		funcs.Connect = function(self,func)
-			if type(func) ~= "function" then error("Attempt to connect a non-function") end
-			local con = {
-				Signal = self,
-				Func = func,
-				Disconnect = disconnect
-			}
-			self.Connections[#self.Connections+1] = con
-			return con
-		end
-
-		funcs.Fire = function(self,...)
-			for i,v in next,self.Connections do
-				xpcall(coroutine.wrap(v.Func),function(e) warn(e.."\n"..debug.traceback()) end,...)
-			end
-		end
-
-		local mt = {
-			__index = funcs,
-			__tostring = function(self)
-				return "Signal: " .. tostring(#self.Connections) .. " Connections"
-			end
-		}
-
-		local function new()
-			local obj = {}
-			obj.Connections = {}
-
-			return setmetatable(obj,mt)
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.Set = (function()
-		local funcs = {}
-
-		funcs.Add = function(self,obj)
-			if self.Map[obj] then return end
-
-			local list = self.List
-			list[#list+1] = obj
-			self.Map[obj] = true
-			self.Changed:Fire()
-		end
-
-		funcs.AddTable = function(self,t)
-			local changed
-			local list,map = self.List,self.Map
-			for i = 1,#t do
-				local elem = t[i]
-				if not map[elem] then
-					list[#list+1] = elem
-					map[elem] = true
-					changed = true
-				end
-			end
-			if changed then self.Changed:Fire() end
-		end
-
-		funcs.Remove = function(self,obj)
-			if not self.Map[obj] then return end
-
-			local list = self.List
-			local pos = table.find(list,obj)
-			if pos then table.remove(list,pos) end
-			self.Map[obj] = nil
-			self.Changed:Fire()
-		end
-
-		funcs.RemoveTable = function(self,t)
-			local changed
-			local list,map = self.List,self.Map
-			local removeSet = {}
-			for i = 1,#t do
-				local elem = t[i]
-				map[elem] = nil
-				removeSet[elem] = true
-			end
-
-			for i = #list,1,-1 do
-				local elem = list[i]
-				if removeSet[elem] then
-					table.remove(list,i)
-					changed = true
-				end
-			end
-			if changed then self.Changed:Fire() end
-		end
-
-		funcs.Set = function(self,obj)
-			if #self.List == 1 and self.List[1] == obj then return end
-
-			self.List = {obj}
-			self.Map = {[obj] = true}
-			self.Changed:Fire()
-		end
-
-		funcs.SetTable = function(self,t)
-			local newList,newMap = {},{}
-			self.List,self.Map = newList,newMap
-			table.move(t,1,#t,1,newList)
-			for i = 1,#t do
-				newMap[t[i]] = true
-			end
-			self.Changed:Fire()
-		end
-
-		funcs.Clear = function(self)
-			if #self.List == 0 then return end
-			self.List = {}
-			self.Map = {}
-			self.Changed:Fire()
-		end
-
-		local mt = {__index = funcs}
-
-		local function new()
-			local obj = setmetatable({
-				List = {},
-				Map = {},
-				Changed = Lib.Signal.new()
-			},mt)
-
-			return obj
-		end
-
-		return {new = new}
-	end)()
-	
-	Lib.IconMap = (function()
-		local funcs = {}
-		local IconList = {
-			Old = {
-				MapId = 483448923,
-				IconSize = 16,
-				Witdh = 16,
-				Height = 16,
-				Icons = {
-					["Accessory"] = 32;
-					["Accoutrement"] = 32;
-					["AdService"] = 73;
-					["Animation"] = 60;
-					["AnimationController"] = 60;
-					["AnimationTrack"] = 60;
-					["Animator"] = 60;
-					["ArcHandles"] = 56;
-					["AssetService"] = 72;
-					["Attachment"] = 34;
-					["Backpack"] = 20;
-					["BadgeService"] = 75;
-					["BallSocketConstraint"] = 89;
-					["BillboardGui"] = 64;
-					["BinaryStringValue"] = 4;
-					["BindableEvent"] = 67;
-					["BindableFunction"] = 66;
-					["BlockMesh"] = 8;
-					["BloomEffect"] = 90;
-					["BlurEffect"] = 90;
-					["BodyAngularVelocity"] = 14;
-					["BodyForce"] = 14;
-					["BodyGyro"] = 14;
-					["BodyPosition"] = 14;
-					["BodyThrust"] = 14;
-					["BodyVelocity"] = 14;
-					["BoolValue"] = 4;
-					["BoxHandleAdornment"] = 54;
-					["BrickColorValue"] = 4;
-					["Camera"] = 5;
-					["CFrameValue"] = 4;
-					["CharacterMesh"] = 60;
-					["Chat"] = 33;
-					["ClickDetector"] = 41;
-					["CollectionService"] = 30;
-					["Color3Value"] = 4;
-					["ColorCorrectionEffect"] = 90;
-					["ConeHandleAdornment"] = 54;
-					["Configuration"] = 58;
-					["ContentProvider"] = 72;
-					["ContextActionService"] = 41;
-					["CoreGui"] = 46;
-					["CoreScript"] = 18;
-					["CornerWedgePart"] = 1;
-					["CustomEvent"] = 4;
-					["CustomEventReceiver"] = 4;
-					["CylinderHandleAdornment"] = 54;
-					["CylinderMesh"] = 8;
-					["CylindricalConstraint"] = 89;
-					["Debris"] = 30;
-					["Decal"] = 7;
-					["Dialog"] = 62;
-					["DialogChoice"] = 63;
-					["DoubleConstrainedValue"] = 4;
-					["Explosion"] = 36;
-					["FileMesh"] = 8;
-					["Fire"] = 61;
-					["Flag"] = 38;
-					["FlagStand"] = 39;
-					["FloorWire"] = 4;
-					["Folder"] = 70;
-					["ForceField"] = 37;
-					["Frame"] = 48;
-					["GamePassService"] = 19;
-					["Glue"] = 34;
-					["GuiButton"] = 52;
-					["GuiMain"] = 47;
-					["GuiService"] = 47;
-					["Handles"] = 53;
-					["HapticService"] = 84;
-					["Hat"] = 45;
-					["HingeConstraint"] = 89;
-					["Hint"] = 33;
-					["HopperBin"] = 22;
-					["HttpService"] = 76;
-					["Humanoid"] = 9;
-					["ImageButton"] = 52;
-					["ImageLabel"] = 49;
-					["InsertService"] = 72;
-					["IntConstrainedValue"] = 4;
-					["IntValue"] = 4;
-					["JointInstance"] = 34;
-					["JointsService"] = 34;
-					["Keyframe"] = 60;
-					["KeyframeSequence"] = 60;
-					["KeyframeSequenceProvider"] = 60;
-					["Lighting"] = 13;
-					["LineHandleAdornment"] = 54;
-					["LocalScript"] = 18;
-					["LogService"] = 87;
-					["MarketplaceService"] = 46;
-					["Message"] = 33;
-					["Model"] = 2;
-					["ModuleScript"] = 71;
-					["Motor"] = 34;
-					["Motor6D"] = 34;
-					["MoveToConstraint"] = 89;
-					["NegateOperation"] = 78;
-					["NetworkClient"] = 16;
-					["NetworkReplicator"] = 29;
-					["NetworkServer"] = 15;
-					["NumberValue"] = 4;
-					["ObjectValue"] = 4;
-					["Pants"] = 44;
-					["ParallelRampPart"] = 1;
-					["Part"] = 1;
-					["ParticleEmitter"] = 69;
-					["PartPairLasso"] = 57;
-					["PathfindingService"] = 37;
-					["Platform"] = 35;
-					["Player"] = 12;
-					["PlayerGui"] = 46;
-					["Players"] = 21;
-					["PlayerScripts"] = 82;
-					["PointLight"] = 13;
-					["PointsService"] = 83;
-					["Pose"] = 60;
-					["PrismaticConstraint"] = 89;
-					["PrismPart"] = 1;
-					["PyramidPart"] = 1;
-					["RayValue"] = 4;
-					["ReflectionMetadata"] = 86;
-					["ReflectionMetadataCallbacks"] = 86;
-					["ReflectionMetadataClass"] = 86;
-					["ReflectionMetadataClasses"] = 86;
-					["ReflectionMetadataEnum"] = 86;
-					["ReflectionMetadataEnumItem"] = 86;
-					["ReflectionMetadataEnums"] = 86;
-					["ReflectionMetadataEvents"] = 86;
-					["ReflectionMetadataFunctions"] = 86;
-					["ReflectionMetadataMember"] = 86;
-					["ReflectionMetadataProperties"] = 86;
-					["ReflectionMetadataYieldFunctions"] = 86;
-					["RemoteEvent"] = 80;
-					["RemoteFunction"] = 79;
-					["ReplicatedFirst"] = 72;
-					["ReplicatedStorage"] = 72;
-					["RightAngleRampPart"] = 1;
-					["RocketPropulsion"] = 14;
-					["RodConstraint"] = 89;
-					["RopeConstraint"] = 89;
-					["Rotate"] = 34;
-					["RotateP"] = 34;
-					["RotateV"] = 34;
-					["RunService"] = 66;
-					["ScreenGui"] = 47;
-					["Script"] = 6;
-					["ScrollingFrame"] = 48;
-					["Seat"] = 35;
-					["Selection"] = 55;
-					["SelectionBox"] = 54;
-					["SelectionPartLasso"] = 57;
-					["SelectionPointLasso"] = 57;
-					["SelectionSphere"] = 54;
-					["ServerScriptService"] = 0;
-					["ServerStorage"] = 74;
-					["Shirt"] = 43;
-					["ShirtGraphic"] = 40;
-					["SkateboardPlatform"] = 35;
-					["Sky"] = 28;
-					["SlidingBallConstraint"] = 89;
-					["Smoke"] = 59;
-					["Snap"] = 34;
-					["Sound"] = 11;
-					["SoundService"] = 31;
-					["Sparkles"] = 42;
-					["SpawnLocation"] = 25;
-					["SpecialMesh"] = 8;
-					["SphereHandleAdornment"] = 54;
-					["SpotLight"] = 13;
-					["SpringConstraint"] = 89;
-					["StarterCharacterScripts"] = 82;
-					["StarterGear"] = 20;
-					["StarterGui"] = 46;
-					["StarterPack"] = 20;
-					["StarterPlayer"] = 88;
-					["StarterPlayerScripts"] = 82;
-					["Status"] = 2;
-					["StringValue"] = 4;
-					["SunRaysEffect"] = 90;
-					["SurfaceGui"] = 64;
-					["SurfaceLight"] = 13;
-					["SurfaceSelection"] = 55;
-					["Team"] = 24;
-					["Teams"] = 23;
-					["TeleportService"] = 81;
-					["Terrain"] = 65;
-					["TerrainRegion"] = 65;
-					["TestService"] = 68;
-					["TextBox"] = 51;
-					["TextButton"] = 51;
-					["TextLabel"] = 50;
-					["Texture"] = 10;
-					["TextureTrail"] = 4;
-					["Tool"] = 17;
-					["TouchTransmitter"] = 37;
-					["TrussPart"] = 1;
-					["UnionOperation"] = 77;
-					["UserInputService"] = 84;
-					["Vector3Value"] = 4;
-					["VehicleSeat"] = 35;
-					["VelocityMotor"] = 34;
-					["WedgePart"] = 1;
-					["Weld"] = 34;
-					["Workspace"] = 19;
-
-				}
-			},
-			Vanilla3 = {
-				MapId = (114851699900089),
-				IconSize = 32,
-				Witdh = 25,
-				Height = 25,
-				Icons = {
-					Accessory = 1,
-					Accoutrement = 2,
-					Actor = 3,
-					AdGui = 4,
-					AdPortal = 5,
-					AdService = 6,
-					AdvancedDragger = 7,
-					AirController = 8,
-					AlignOrientation = 9,
-					AlignPosition = 10,
-					AnalysticsService = 11,
-					AnalysticsSettings = 12,
-					AnalyticsService = 13,
-					AngularVelocity = 14,
-					Animation = 15,
-					AnimationClip = 16,
-					AnimationClipProvider = 17,
-					AnimationController = 18,
-					AnimationFromVideoCreatorService = 19,
-					AnimationFromVideoCreatorStudioService = 20,
-					AnimationRigData = 21,
-					AnimationStreamTrack = 22,
-					AnimationTrack = 23,
-					Animator = 24,
-					AppStorageService = 25,
-					AppUpdateService = 26,
-					ArcHandles = 27,
-					AssetCounterService = 28,
-					AssetDeliveryProxy = 29,
-					AssetImportService = 30,
-					AssetImportSession = 31,
-					AssetManagerService = 32,
-					AssetService = 33,
-					AssetSoundEffect = 34,
-					Atmosphere = 35,
-					Attachment = 36,
-					AvatarEditorService = 37,
-					AvatarImportService = 38,
-					Backpack = 39,
-					BackpackItem = 40,
-					BadgeService = 41,
-					BallSocketConstraint = 42,
-					BasePart = 43,
-					BasePlayerGui = 44,
-					BaseScript = 45,
-					BaseWrap = 46,
-					Beam = 47,
-					BevelMesh = 48,
-					BillboardGui = 49,
-					BinaryStringValue = 50,
-					BindableEvent = 51,
-					BindableFunction = 52,
-					BlockMesh = 53,
-					BloomEffect = 54,
-					BlurEffect = 55,
-					BodyAngularVelocity = 56,
-					BodyColors = 57,
-					BodyForce = 58,
-					BodyGyro = 59,
-					BodyMover = 60,
-					BodyPosition = 61,
-					BodyThrust = 62,
-					BodyVelocity = 63,
-					Bone = 64,
-					BoolValue = 65,
-					BoxHandleAdornment = 66,
-					Breakpoint = 67,
-					BreakpointManager = 68,
-					BrickColorValue = 69,
-					BrowserService = 70,
-					BubbleChatConfiguration = 71,
-					BulkImportService = 72,
-					CacheableContentProvider = 73,
-					CalloutService = 74,
-					Camera = 75,
-					CanvasGroup = 76,
-					CatalogPages = 77,
-					CFrameValue = 78,
-					ChangeHistoryService = 79,
-					ChannelSelectorSoundEffect = 80,
-					CharacterAppearance = 81,
-					CharacterMesh = 82,
-					Chat = 83,
-					ChatInputBarConfiguration = 84,
-					ChatWindowConfiguration = 85,
-					ChorusSoundEffect = 86,
-					ClickDetector = 87,
-					ClientReplicator = 88,
-					ClimbController = 89,
-					Clothing = 90,
-					Clouds = 91,
-					ClusterPacketCache = 92,
-					CollectionService = 93,
-					Color3Value = 94,
-					ColorCorrectionEffect = 95,
-					CommandInstance = 96,
-					CommandService = 97,
-					CompressorSoundEffect = 98,
-					ConeHandleAdornment = 99,
-					Configuration = 100,
-					ConfigureServerService = 101,
-					Constraint = 102,
-					ContentProvider = 103,
-					ContextActionService = 104,
-					Controller = 105,
-					ControllerBase = 106,
-					ControllerManager = 107,
-					ControllerService = 108,
-					CookiesService = 109,
-					CoreGui = 110,
-					CorePackages = 111,
-					CoreScript = 112,
-					CoreScriptSyncService = 113,
-					CornerWedgePart = 114,
-					CrossDMScriptChangeListener = 115,
-					CSGDictionaryService = 116,
-					CurveAnimation = 117,
-					CustomEvent = 118,
-					CustomEventReceiver = 119,
-					CustomSoundEffect = 120,
-					CylinderHandleAdornment = 121,
-					CylinderMesh = 122,
-					CylindricalConstraint = 123,
-					DataModel = 124,
-					DataModelMesh = 125,
-					DataModelPatchService = 126,
-					DataModelSession = 127,
-					DataStore = 128,
-					DataStoreIncrementOptions = 129,
-					DataStoreInfo = 130,
-					DataStoreKey = 131,
-					DataStoreKeyInfo = 132,
-					DataStoreKeyPages = 133,
-					DataStoreListingPages = 134,
-					DataStoreObjectVersionInfo = 135,
-					DataStoreOptions = 136,
-					DataStorePages = 137,
-					DataStoreService = 138,
-					DataStoreSetOptions = 139,
-					DataStoreVersionPages = 140,
-					Debris = 141,
-					DebuggablePluginWatcher = 142,
-					DebuggerBreakpoint = 143,
-					DebuggerConnection = 144,
-					DebuggerConnectionManager = 145,
-					DebuggerLuaResponse = 146,
-					DebuggerManager = 147,
-					DebuggerUIService = 148,
-					DebuggerVariable = 149,
-					DebuggerWatch = 150,
-					DebugSettings = 151,
-					Decal = 152,
-					DepthOfFieldEffect = 153,
-					DeviceIdService = 154,
-					Dialog = 155,
-					DialogChoice = 156,
-					DistortionSoundEffect = 157,
-					DockWidgetPluginGui = 158,
-					DoubleConstrainedValue = 159,
-					DraftsService = 160,
-					Dragger = 161,
-					DraggerService = 162,
-					DynamicRotate = 163,
-					EchoSoundEffect = 164,
-					EmotesPages = 165,
-					EqualizerSoundEffect = 166,
-					EulerRotationCurve = 167,
-					EventIngestService = 168,
-					Explosion = 169,
-					FaceAnimatorService = 170,
-					FaceControls = 171,
-					FaceInstance = 172,
-					FacialAnimationRecordingService = 173,
-					FacialAnimationStreamingService = 174,
-					Feature = 175,
-					File = 176,
-					FileMesh = 177,
-					Fire = 178,
-					Flag = 179,
-					FlagStand = 180,
-					FlagStandService = 181,
-					FlangeSoundEffect = 182,
-					FloatCurve = 183,
-					FloorWire = 184,
-					FlyweightService = 185,
-					Folder = 186,
-					ForceField = 187,
-					FormFactorPart = 188,
-					Frame = 189,
-					FriendPages = 190,
-					FriendService = 191,
-					FunctionalTest = 192,
-					GamepadService = 193,
-					GamePassService = 194,
-					GameSettings = 195,
-					GenericSettings = 196,
-					Geometry = 197,
-					GetTextBoundsParams = 198,
-					GlobalDataStore = 199,
-					GlobalSettings = 200,
-					Glue = 201,
-					GoogleAnalyticsConfiguration = 202,
-					GroundController = 203,
-					GroupService = 204,
-					GuiBase = 205,
-					GuiBase2d = 206,
-					GuiBase3d = 207,
-					GuiButton = 208,
-					GuidRegistryService = 209,
-					GuiLabel = 210,
-					GuiMain = 211,
-					GuiObject = 212,
-					GuiService = 213,
-					HandleAdornment = 214,
-					Handles = 215,
-					HandlesBase = 216,
-					HapticService = 217,
-					Hat = 218,
-					HeightmapImporterService = 219,
-					HiddenSurfaceRemovalAsset = 220,
-					Highlight = 221,
-					HingeConstraint = 222,
-					Hint = 223,
-					Hole = 224,
-					Hopper = 225,
-					HopperBin = 226,
-					HSRDataContentProvider = 227,
-					HttpRbxApiService = 228,
-					HttpRequest = 229,
-					HttpService = 230,
-					Humanoid = 231,
-					HumanoidController = 232,
-					HumanoidDescription = 233,
-					IKControl = 234,
-					ILegacyStudioBridge = 235,
-					ImageButton = 236,
-					ImageHandleAdornment = 237,
-					ImageLabel = 238,
-					ImporterAnimationSettings = 239,
-					ImporterBaseSettings = 240,
-					ImporterFacsSettings = 241,
-					ImporterGroupSettings = 242,
-					ImporterJointSettings = 243,
-					ImporterMaterialSettings = 244,
-					ImporterMeshSettings = 245,
-					ImporterRootSettings = 246,
-					IncrementalPatchBuilder = 247,
-					InputObject = 248,
-					InsertService = 249,
-					Instance = 250,
-					InstanceAdornment = 251,
-					IntConstrainedValue = 252,
-					IntValue = 253,
-					InventoryPages = 254,
-					IXPService = 255,
-					JointInstance = 256,
-					JointsService = 257,
-					KeyboardService = 258,
-					Keyframe = 259,
-					KeyframeMarker = 260,
-					KeyframeSequence = 261,
-					KeyframeSequenceProvider = 262,
-					LanguageService = 263,
-					LayerCollector = 264,
-					LegacyStudioBridge = 265,
-					Light = 266,
-					Lighting = 267,
-					LinearVelocity = 268,
-					LineForce = 269,
-					LineHandleAdornment = 270,
-					LocalDebuggerConnection = 271,
-					LocalizationService = 272,
-					LocalizationTable = 273,
-					LocalScript = 274,
-					LocalStorageService = 275,
-					LodDataEntity = 276,
-					LodDataService = 277,
-					LoginService = 278,
-					LogService = 279,
-					LSPFileSyncService = 280,
-					LuaSettings = 281,
-					LuaSourceContainer = 282,
-					LuauScriptAnalyzerService = 283,
-					LuaWebService = 284,
-					ManualGlue = 285,
-					ManualSurfaceJointInstance = 286,
-					ManualWeld = 287,
-					MarkerCurve = 288,
-					MarketplaceService = 289,
-					MaterialService = 290,
-					MaterialVariant = 291,
-					MemoryStoreQueue = 292,
-					MemoryStoreService = 293,
-					MemoryStoreSortedMap = 294,
-					MemStorageConnection = 295,
-					MemStorageService = 296,
-					MeshContentProvider = 297,
-					MeshPart = 298,
-					Message = 299,
-					MessageBusConnection = 300,
-					MessageBusService = 301,
-					MessagingService = 302,
-					MetaBreakpoint = 303,
-					MetaBreakpointContext = 304,
-					MetaBreakpointManager = 305,
-					Model = 306,
-					ModuleScript = 307,
-					Motor = 308,
-					Motor6D = 309,
-					MotorFeature = 310,
-					Mouse = 311,
-					MouseService = 312,
-					MultipleDocumentInterfaceInstance = 313,
-					NegateOperation = 314,
-					NetworkClient = 315,
-					NetworkMarker = 316,
-					NetworkPeer = 317,
-					NetworkReplicator = 318,
-					NetworkServer = 319,
-					NetworkSettings = 320,
-					NoCollisionConstraint = 321,
-					NonReplicatedCSGDictionaryService = 322,
-					NotificationService = 323,
-					NumberPose = 324,
-					NumberValue = 325,
-					ObjectValue = 326,
-					OrderedDataStore = 327,
-					OutfitPages = 328,
-					PackageLink = 329,
-					PackageService = 330,
-					PackageUIService = 331,
-					Pages = 332,
-					Pants = 333,
-					ParabolaAdornment = 334,
-					Part = 335,
-					PartAdornment = 336,
-					ParticleEmitter = 337,
-					PartOperation = 338,
-					PartOperationAsset = 339,
-					PatchMapping = 340,
-					Path = 341,
-					PathfindingLink = 342,
-					PathfindingModifier = 343,
-					PathfindingService = 344,
-					PausedState = 345,
-					PausedStateBreakpoint = 346,
-					PausedStateException = 347,
-					PermissionsService = 348,
-					PhysicsService = 349,
-					PhysicsSettings = 350,
-					PitchShiftSoundEffect = 351,
-					Plane = 352,
-					PlaneConstraint = 353,
-					Platform = 354,
-					Player = 355,
-					PlayerEmulatorService = 356,
-					PlayerGui = 357,
-					PlayerMouse = 358,
-					Players = 359,
-					PlayerScripts = 360,
-					Plugin = 361,
-					PluginAction = 362,
-					PluginDebugService = 363,
-					PluginDragEvent = 364,
-					PluginGui = 365,
-					PluginGuiService = 366,
-					PluginManagementService = 367,
-					PluginManager = 368,
-					PluginManagerInterface = 369,
-					PluginMenu = 370,
-					PluginMouse = 371,
-					PluginPolicyService = 372,
-					PluginToolbar = 373,
-					PluginToolbarButton = 374,
-					PointLight = 375,
-					PointsService = 376,
-					PolicyService = 377,
-					Pose = 378,
-					PoseBase = 379,
-					PostEffect = 380,
-					PrismaticConstraint = 381,
-					ProcessInstancePhysicsService = 382,
-					ProximityPrompt = 383,
-					ProximityPromptService = 384,
-					PublishService = 385,
-					PVAdornment = 386,
-					PVInstance = 387,
-					QWidgetPluginGui = 388,
-					RayValue = 389,
-					RbxAnalyticsService = 390,
-					ReflectionMetadata = 391,
-					ReflectionMetadataCallbacks = 392,
-					ReflectionMetadataClass = 393,
-					ReflectionMetadataClasses = 394,
-					ReflectionMetadataEnum = 395,
-					ReflectionMetadataEnumItem = 396,
-					ReflectionMetadataEnums = 397,
-					ReflectionMetadataEvents = 398,
-					ReflectionMetadataFunctions = 399,
-					ReflectionMetadataItem = 400,
-					ReflectionMetadataMember = 401,
-					ReflectionMetadataProperties = 402,
-					ReflectionMetadataYieldFunctions = 403,
-					RemoteDebuggerServer = 404,
-					RemoteEvent = 405,
-					RemoteFunction = 406,
-					RenderingTest = 407,
-					RenderSettings = 408,
-					ReplicatedFirst = 409,
-					ReplicatedStorage = 410,
-					ReverbSoundEffect = 411,
-					RigidConstraint = 412,
-					RobloxPluginGuiService = 413,
-					RobloxReplicatedStorage = 414,
-					RocketPropulsion = 415,
-					RodConstraint = 416,
-					RopeConstraint = 417,
-					Rotate = 418,
-					RotateP = 419,
-					RotateV = 420,
-					RotationCurve = 421,
-					RtMessagingService = 422,
-					RunningAverageItemDouble = 423,
-					RunningAverageItemInt = 424,
-					RunningAverageTimeIntervalItem = 425,
-					RunService = 426,
-					RuntimeScriptService = 427,
-					ScreenGui = 428,
-					ScreenshotHud = 429,
-					Script = 430,
-					ScriptChangeService = 431,
-					ScriptCloneWatcher = 432,
-					ScriptCloneWatcherHelper = 433,
-					ScriptContext = 434,
-					ScriptDebugger = 435,
-					ScriptDocument = 436,
-					ScriptEditorService = 437,
-					ScriptRegistrationService = 438,
-					ScriptService = 439,
-					ScrollingFrame = 440,
-					Seat = 441,
-					Selection = 442,
-					SelectionBox = 443,
-					SelectionLasso = 444,
-					SelectionPartLasso = 445,
-					SelectionPointLasso = 446,
-					SelectionSphere = 447,
-					ServerReplicator = 448,
-					ServerScriptService = 449,
-					ServerStorage = 450,
-					ServiceProvider = 451,
-					SessionService = 452,
-					Shirt = 453,
-					ShirtGraphic = 454,
-					SkateboardController = 455,
-					SkateboardPlatform = 456,
-					Skin = 457,
-					Sky = 458,
-					SlidingBallConstraint = 459,
-					Smoke = 460,
-					Snap = 461,
-					SnippetService = 462,
-					SocialService = 463,
-					SolidModelContentProvider = 464,
-					Sound = 465,
-					SoundEffect = 466,
-					SoundGroup = 467,
-					SoundService = 468,
-					Sparkles = 469,
-					SpawnerService = 470,
-					SpawnLocation = 471,
-					Speaker = 472,
-					SpecialMesh = 473,
-					SphereHandleAdornment = 474,
-					SpotLight = 475,
-					SpringConstraint = 476,
-					StackFrame = 477,
-					StandalonePluginScripts = 478,
-					StandardPages = 479,
-					StarterCharacterScripts = 480,
-					StarterGear = 481,
-					StarterGui = 482,
-					StarterPack = 483,
-					StarterPlayer = 484,
-					StarterPlayerScripts = 485,
-					Stats = 486,
-					StatsItem = 487,
-					Status = 488,
-					StopWatchReporter = 489,
-					StringValue = 490,
-					Studio = 491,
-					StudioAssetService = 492,
-					StudioData = 493,
-					StudioDeviceEmulatorService = 494,
-					StudioHighDpiService = 495,
-					StudioPublishService = 496,
-					StudioScriptDebugEventListener = 497,
-					StudioService = 498,
-					StudioTheme = 499,
-					SunRaysEffect = 500,
-					SurfaceAppearance = 501,
-					SurfaceGui = 502,
-					SurfaceGuiBase = 503,
-					SurfaceLight = 504,
-					SurfaceSelection = 505,
-					SwimController = 506,
-					TaskScheduler = 507,
-					Team = 508,
-					TeamCreateService = 509,
-					Teams = 510,
-					TeleportAsyncResult = 511,
-					TeleportOptions = 512,
-					TeleportService = 513,
-					TemporaryCageMeshProvider = 514,
-					TemporaryScriptService = 515,
-					Terrain = 516,
-					TerrainDetail = 517,
-					TerrainRegion = 518,
-					TestService = 519,
-					TextBox = 520,
-					TextBoxService = 521,
-					TextButton = 522,
-					TextChannel = 523,
-					TextChatCommand = 524,
-					TextChatConfigurations = 525,
-					TextChatMessage = 526,
-					TextChatMessageProperties = 527,
-					TextChatService = 528,
-					TextFilterResult = 529,
-					TextLabel = 530,
-					TextService = 531,
-					TextSource = 532,
-					Texture = 533,
-					ThirdPartyUserService = 534,
-					ThreadState = 535,
-					TimerService = 536,
-					ToastNotificationService = 537,
-					Tool = 538,
-					ToolboxService = 539,
-					Torque = 540,
-					TorsionSpringConstraint = 541,
-					TotalCountTimeIntervalItem = 542,
-					TouchInputService = 543,
-					TouchTransmitter = 544,
-					TracerService = 545,
-					TrackerStreamAnimation = 546,
-					Trail = 547,
-					Translator = 548,
-					TremoloSoundEffect = 549,
-					TriangleMeshPart = 550,
-					TrussPart = 551,
-					Tween = 552,
-					TweenBase = 553,
-					TweenService = 554,
-					UGCValidationService = 555,
-					UIAspectRatioConstraint = 556,
-					UIBase = 557,
-					UIComponent = 558,
-					UIConstraint = 559,
-					UICorner = 560,
-					UIGradient = 561,
-					UIGridLayout = 562,
-					UIGridStyleLayout = 563,
-					UILayout = 564,
-					UIListLayout = 565,
-					UIPadding = 566,
-					UIPageLayout = 567,
-					UIScale = 568,
-					UISizeConstraint = 569,
-					UIStroke = 570,
-					UITableLayout = 571,
-					UITextSizeConstraint = 572,
-					UnionOperation = 573,
-					UniversalConstraint = 574,
-					UnvalidatedAssetService = 575,
-					UserGameSettings = 576,
-					UserInputService = 577,
-					UserService = 578,
-					UserSettings = 579,
-					UserStorageService = 580,
-					ValueBase = 581,
-					Vector3Curve = 582,
-					Vector3Value = 583,
-					VectorForce = 584,
-					VehicleController = 585,
-					VehicleSeat = 586,
-					VelocityMotor = 587,
-					VersionControlService = 588,
-					VideoCaptureService = 589,
-					VideoFrame = 590,
-					ViewportFrame = 591,
-					VirtualInputManager = 592,
-					VirtualUser = 593,
-					VisibilityService = 594,
-					Visit = 595,
-					VoiceChannel = 596,
-					VoiceChatInternal = 597,
-					VoiceChatService = 598,
-					VoiceSource = 599,
-					VRService = 600,
-					WedgePart = 601,
-					Weld = 602,
-					WeldConstraint = 603,
-					WireframeHandleAdornment = 604,
-					Workspace = 605,
-					WorldModel = 606,
-					WorldRoot = 607,
-					WrapLayer = 608,
-					WrapTarget = 609,
-
-				}
-			},
-			NewDark = {
-				MapId = 135148380892747,
-				Icons = {
-					Accessory = 1,
-					Actor = 2,
-					AdGui = 3,
-					AdPortal = 4,
-					AirController = 5,
-					AlignOrientation = 6,
-					AlignPosition = 7,
-					AngularVelocity = 8,
-					Animation = 9,
-					AnimationConstraint = 10,
-					AnimationController = 11,
-					AnimationFromVideoCreatorService = 12,
-					Animator = 13,
-					ArcHandles = 14,
-					Atmosphere = 15,
-					Attachment = 16,
-					AudioAnalyzer = 17,
-					AudioChannelMixer = 18,
-					AudioChannelSplitter = 19,
-					AudioChorus = 20,
-					AudioCompressor = 21,
-					AudioDeviceInput = 22,
-					AudioDeviceOutput = 23,
-					AudioDistortion = 24,
-					AudioEcho = 25,
-					AudioEmitter = 26,
-					AudioEqualizer = 27,
-					AudioFader = 28,
-					AudioFilter = 29,
-					AudioFlanger = 30,
-					AudioGate = 31,
-					AudioLimiter = 32,
-					AudioListener = 33,
-					AudioPitchShifter = 34,
-					AudioPlayer = 35,
-					AudioRecorder = 36,
-					AudioReverb = 37,
-					AudioTextToSpeech = 38,
-					AuroraScript = 39,
-					AvatarEditorService = 40,
-					AvatarSettings = 41,
-					Backpack = 42,
-					BallSocketConstraint = 43,
-					BasePlate = 44,
-					Beam = 45,
-					BillboardGui = 46,
-					BindableEvent = 47,
-					BindableFunction = 48,
-					BlockMesh = 49,
-					BloomEffect = 50,
-					BlurEffect = 51,
-					BodyAngularVelocity = 52,
-					BodyColors = 53,
-					BodyForce = 54,
-					BodyGyro = 55,
-					BodyPosition = 56,
-					BodyThrust = 57,
-					BodyVelocity = 58,
-					Bone = 59,
-					BoolValue = 60,
-					BoxHandleAdornment = 61,
-					Breakpoint = 62,
-					BrickColorValue = 63,
-					BubbleChatConfiguration = 64,
-					Buggaroo = 65,
-					Camera = 66,
-					CanvasGroup = 67,
-					CFrameValue = 68,
-					ChannelTabsConfiguration = 69,
-					CharacterControllerManager = 70,
-					CharacterMesh = 71,
-					Chat = 72,
-					ChatInputBarConfiguration = 73,
-					ChatWindowConfiguration = 74,
-					ChorusSoundEffect = 75,
-					Class = 76,
-					Cleanup = 77,
-					ClickDetector = 78,
-					ClientReplicator = 79,
-					ClimbController = 80,
-					Clouds = 81,
-					Color = 82,
-					ColorCorrectionEffect = 83,
-					CompressorSoundEffect = 84,
-					ConeHandleAdornment = 85,
-					Configuration = 86,
-					Constant = 87,
-					Constructor = 88,
-					Controller = 89,
-					CoreGui = 90,
-					CornerWedgePart = 91,
-					CylinderHandleAdornment = 92,
-					CylindricalConstraint = 93,
-					Decal = 94,
-					DepthOfFieldEffect = 95,
-					Dialog = 96,
-					DialogChoice = 97,
-					DistortionSoundEffect = 98,
-					DragDetector = 99,
-					EchoSoundEffect = 100,
-					EditableImage = 101,
-					EditableMesh = 102,
-					Enum = 103,
-					EnumMember = 104,
-					EqualizerSoundEffect = 105,
-					Event = 106,
-					Explosion = 107,
-					FaceControls = 108,
-					Field = 109,
-					File = 110,
-					Fire = 111,
-					FlangeSoundEffect = 112,
-					Folder = 113,
-					ForceField = 114,
-					Frame = 115,
-					Function = 116,
-					GameSettings = 117,
-					GroundController = 118,
-					Handles = 119,
-					HapticEffect = 120,
-					HapticService = 121,
-					HeightmapImporterService = 122,
-					Highlight = 123,
-					HingeConstraint = 124,
-					Humanoid = 125,
-					HumanoidDescription = 126,
-					IKControl = 127,
-					ImageButton = 128,
-					ImageHandleAdornment = 129,
-					ImageLabel = 130,
-					InputAction = 131,
-					InputBinding = 132,
-					InputContext = 133,
-					Interface = 134,
-					IntersectOperation = 135,
-					Keyword = 136,
-					Lighting = 137,
-					LinearVelocity = 138,
-					LineForce = 139,
-					LineHandleAdornment = 140,
-					LocalFile = 141,
-					LocalizationService = 142,
-					LocalizationTable = 143,
-					LocalScript = 144,
-					MaterialService = 145,
-					MaterialVariant = 146,
-					MemoryStoreService = 147,
-					MeshPart = 148,
-					Meshparts = 149,
-					MessagingService = 150,
-					Method = 151,
-					Model = 152,
-					Modelgroups = 153,
-					Module = 154,
-					ModuleScript = 155,
-					Motor6D = 156,
-					NegateOperation = 157,
-					NetworkClient = 158,
-					NoCollisionConstraint = 159,
-					Operator = 160,
-					PackageLink = 161,
-					Pants = 162,
-					Part = 163,
-					ParticleEmitter = 164,
-					Path2D = 165,
-					PathfindingLink = 166,
-					PathfindingModifier = 167,
-					PathfindingService = 168,
-					PitchShiftSoundEffect = 169,
-					Place = 170,
-					Placeholder = 171,
-					Plane = 172,
-					PlaneConstraint = 173,
-					Player = 174,
-					Players = 175,
-					PluginGuiService = 176,
-					PointLight = 177,
-					PrismaticConstraint = 178,
-					Property = 179,
-					ProximityPrompt = 180,
-					PublishService = 181,
-					Reference = 182,
-					RemoteEvent = 183,
-					RemoteFunction = 184,
-					RenderingTest = 185,
-					ReplicatedFirst = 186,
-					ReplicatedScriptService = 187,
-					ReplicatedStorage = 188,
-					ReverbSoundEffect = 189,
-					RigidConstraint = 190,
-					RobloxPluginGuiService = 191,
-					RocketPropulsion = 192,
-					RodConstraint = 193,
-					RopeConstraint = 194,
-					Rotate = 195,
-					ScreenGui = 196,
-					Script = 197,
-					ScrollingFrame = 198,
-					Seat = 199,
-					Selected_Workspace = 200,
-					SelectionBox = 201,
-					SelectionSphere = 202,
-					ServerScriptService = 203,
-					ServerStorage = 204,
-					Service = 205,
-					Shirt = 206,
-					ShirtGraphic = 207,
-					SkinnedMeshPart = 208,
-					Sky = 209,
-					Smoke = 210,
-					Snap = 211,
-					Snippet = 212,
-					SocialService = 213,
-					Sound = 214,
-					SoundEffect = 215,
-					SoundGroup = 216,
-					SoundService = 217,
-					Sparkles = 218,
-					SpawnLocation = 219,
-					SpecialMesh = 220,
-					SphereHandleAdornment = 221,
-					SpotLight = 222,
-					SpringConstraint = 223,
-					StandalonePluginScripts = 224,
-					StarterCharacterScripts = 225,
-					StarterGui = 226,
-					StarterPack = 227,
-					StarterPlayer = 228,
-					StarterPlayerScripts = 229,
-					Struct = 230,
-					StyleDerive = 231,
-					StyleLink = 232,
-					StyleRule = 233,
-					StyleSheet = 234,
-					SunRaysEffect = 235,
-					SurfaceAppearance = 236,
-					SurfaceGui = 237,
-					SurfaceLight = 238,
-					SurfaceSelection = 239,
-					SwimController = 240,
-					TaskScheduler = 241,
-					Team = 242,
-					Teams = 243,
-					Terrain = 244,
-					TerrainDetail = 245,
-					TestService = 246,
-					TextBox = 247,
-					TextBoxService = 248,
-					TextButton = 249,
-					TextChannel = 250,
-					TextChatCommand = 251,
-					TextChatService = 252,
-					TextLabel = 253,
-					TextString = 254,
-					Texture = 255,
-					Tool = 256,
-					Torque = 257,
-					TorsionSpringConstraint = 258,
-					Trail = 259,
-					TremoloSoundEffect = 260,
-					TrussPart = 261,
-					TypeParameter = 262,
-					UGCValidationService = 263,
-					UIAspectRatioConstraint = 264,
-					UICorner = 265,
-					UIDragDetector = 266,
-					UIFlexItem = 267,
-					UIGradient = 268,
-					UIGridLayout = 269,
-					UIListLayout = 270,
-					UIPadding = 271,
-					UIPageLayout = 272,
-					UIScale = 273,
-					UISizeConstraint = 274,
-					UIStroke = 275,
-					UITableLayout = 276,
-					UITextSizeConstraint = 277,
-					UnionOperation = 278,
-					Unit = 279,
-					UniversalConstraint = 280,
-					UnreliableRemoteEvent = 281,
-					UpdateAvailable = 282,
-					UserService = 283,
-					Value = 284,
-					Variable = 285,
-					VectorForce = 286,
-					VehicleSeat = 287,
-					VideoDisplay = 288,
-					VideoFrame = 289,
-					VideoPlayer = 290,
-					ViewportFrame = 291,
-					VirtualUser = 292,
-					VoiceChannel = 293,
-					Voicechat = 294,
-					VoiceChatService = 295,
-					VRService = 296,
-					WedgePart = 297,
-					Weld = 298,
-					WeldConstraint = 299,
-					Wire = 300,
-					WireframeHandleAdornment = 301,
-					Workspace = 302,
-					WorldModel = 303,
-					WrapDeformer = 304,
-					WrapLayer = 305,
-					WrapTarget = 306,
-					
-					Color3Value = 284,
-					IntValue = 284,
-					NumberValue = 284,
-					ObjectValue = 284,
-					RayValue = 284,
-					StringValue = 284,
-					Vector3Value = 284,
-				},
-				IconSize = 32,
-				Witdh = 18,
-				Height = 18,
-			},
-			NewLight = {
-				MapId = "",
-				Icons = {
-					Class = "rbxasset://studio_svg_textures/Shared/InsertableObjects/Light/Standard/",
-				},
-				IconSize = 16,
-				Witdh = 18,
-				Height = 18,
-			}
-		}
-		if Settings.ClassIcon and IconList[Settings.ClassIcon] then
-			funcs.ExplorerIcons = {
-				["MapId"] = IconList[Settings.ClassIcon].MapId,
-				["Icons"] = IconList[Settings.ClassIcon].Icons,
-				["IconSize"] = IconList[Settings.ClassIcon].IconSize,
-				["Witdh"] = IconList[Settings.ClassIcon].Witdh,
-				["Height"] = IconList[Settings.ClassIcon].Height}
-		else
-			funcs.ExplorerIcons = { ["MapId"] = IconList.Old.MapId, ["Icons"] = IconList.Old.Icons, ["IconSize"] = IconList.Old.IconSize }
-		end
-
-		funcs.GetLabel = function(self)
-			local label = Instance.new("ImageLabel")
-			self:SetupLabel(label)
-			return label
-		end
-
-		funcs.SetupLabel = function(self,obj)
-			obj.BackgroundTransparency = 1
-			obj.ImageRectOffset = Vector2.new(0, 0)
-			obj.ImageRectSize = Vector2.new(self.IconSizeX, self.IconSizeY)
-			obj.ScaleType = Enum.ScaleType.Crop
-			obj.Size = UDim2.new(0, self.IconSizeX, 0, self.IconSizeY)
-		end
-
-		funcs.Display = function(self,obj,index)
-			obj.Image = self.MapId
-			obj.ImageRectSize = Vector2.new(self.IconSizeX, self.IconSizeY)
-			if not self.NumX then
-				obj.ImageRectOffset = Vector2.new(self.IconSizeX*index, 0)
-			else
-				obj.ImageRectOffset = Vector2.new(self.IconSizeX*(index % self.NumX), self.IconSizeY*math.floor(index / self.NumX))
-			end
-		end
-
-		funcs.DisplayByKey = function(self, obj, key)
-			if self.IndexDict[key] then
-				self:Display(obj, self.IndexDict[key])
-			else
-				local rmdEntry = RMD.Classes[obj.ClassName]
-				Explorer.ClassIcons:Display(obj, rmdEntry and rmdEntry.ExplorerImageIndex or 0)
-			end
-		end
-
-		funcs.IconDehash = function(self, _id)
-			return math.floor(_id / 14 % 14), math.floor(_id % 14)
-		end
-		
-		local ClassNameNoImage = {}
-		funcs.GetExplorerIcon = function(self, obj, index)
-			if Settings.ClassIcon == "Vanilla3" then
-				obj.Size = UDim2.fromOffset(16, 16)
-
-				index = (self.ExplorerIcons.Icons[index] or 250) - 1
-				obj.ImageRectOffset = Vector2.new(funcs.ExplorerIcons.IconSize * (index % funcs.ExplorerIcons.Height), funcs.ExplorerIcons.IconSize * math.floor(index / funcs.ExplorerIcons.Height))
-				obj.ImageRectSize = Vector2.new(funcs.ExplorerIcons.IconSize, funcs.ExplorerIcons.IconSize)
-			elseif Settings.ClassIcon == "Old" then
-				index = (self.ExplorerIcons.Icons[index] or 0)
-				local row, col = self:IconDehash(index)
-				local MapSize = Vector2.new(256, 256)
-				local pad, border = 2, 1
-
-				obj.Position = UDim2.new(-col - (pad * (col + 1) + border) / funcs.ExplorerIcons.IconSize, 0, -row - (pad * (row + 1) + border) / funcs.ExplorerIcons.IconSize, 0)
-				obj.Size = UDim2.new(MapSize.X / funcs.ExplorerIcons.IconSize, 0, MapSize.Y / funcs.ExplorerIcons.IconSize, 0)
-			elseif Settings.ClassIcon == "NewLight" or Settings.ClassIcon == "NewDark" then
-				local isService = string.find(index, "Service") and game:GetService(index)
-				
-				obj.Size = UDim2.fromOffset(16, 16)
-				index = (self.ExplorerIcons.Icons[index] or (isService and self.ExplorerIcons.Icons.Service) or self.ExplorerIcons.Icons.Placeholder) - 1
-				obj.ImageRectOffset = Vector2.new(funcs.ExplorerIcons.IconSize * (index % funcs.ExplorerIcons.Height), funcs.ExplorerIcons.IconSize * math.floor(index / funcs.ExplorerIcons.Height))
-				obj.ImageRectSize = Vector2.new(funcs.ExplorerIcons.IconSize, funcs.ExplorerIcons.IconSize)
-			else
-				index = (self.ExplorerIcons.Icons[index] or 0)
-				local row, col = self:IconDehash(index)
-				local MapSize = Vector2.new(256, 256)
-				local pad, border = 2, 1
-
-				obj.Position = UDim2.new(-col - (pad * (col + 1) + border) / funcs.ExplorerIcons.IconSize, 0, -row - (pad * (row + 1) + border) / funcs.ExplorerIcons.IconSize, 0)
-				obj.Size = UDim2.new(MapSize.X / funcs.ExplorerIcons.IconSize, 0, MapSize.Y / funcs.ExplorerIcons.IconSize, 0)
-			end
-			
-		end
-
-		funcs.DisplayExplorerIcons = function(self, Frame, index)
-			if Frame:FindFirstChild("IconMap") then
-				self:GetExplorerIcon(Frame.IconMap, index)
-			else
-				Frame.ClipsDescendants = true
-
-				local obj = Instance.new("ImageLabel", Frame)
-				obj.BackgroundTransparency = 1
-				obj.Image = ("http://www.roblox.com/asset/?id=" .. (self.ExplorerIcons.MapId))
-				obj.Name = "IconMap"
-				self:GetExplorerIcon(obj, index)
-			end
-		end
-
-		funcs.SetDict = function(self,dict)
-			self.IndexDict = dict
-		end
-
-		local mt = {}
-		mt.__index = funcs
-
-		local function new(mapId,mapSizeX,mapSizeY,iconSizeX,iconSizeY)
-			local obj = setmetatable({
-				MapId = mapId,
-				MapSizeX = mapSizeX,
-				MapSizeY = mapSizeY,
-				IconSizeX = iconSizeX,
-				IconSizeY = iconSizeY,
-				NumX = mapSizeX/iconSizeX,
-				IndexDict = {}
-			}, mt)
-			return obj
-		end
-
-		local function newLinear(mapId,iconSizeX,iconSizeY)
-			local obj = setmetatable({
-				MapId = mapId,
-				IconSizeX = iconSizeX,
-				IconSizeY = iconSizeY,
-				IndexDict = {}
-			},mt)
-			return obj
-		end
-		
-		local function getIconDataFromName(name)
-			return IconList[name] or error("Name not found")
-		end
-
-		return {new = new, newLinear = newLinear, getIconDataFromName = getIconDataFromName}
-	end)()
-
-	Lib.ScrollBar = (function()
-		local funcs = {}
-		local user = service.UserInputService
-		local mouse = plr:GetMouse()
-		local checkMouseInGui = Lib.CheckMouseInGui
-		local createArrow = Lib.CreateArrow
-
-		local function drawThumb(self)
-			local total = self.TotalSpace
-			local visible = self.VisibleSpace
-			local index = self.Index
-			local scrollThumb = self.GuiElems.ScrollThumb
-			local scrollThumbFrame = self.GuiElems.ScrollThumbFrame
-
-			if not (self:CanScrollUp()	or self:CanScrollDown()) then
-				scrollThumb.Visible = false
-			else
-				scrollThumb.Visible = true
-			end
-
-			if self.Horizontal then
-				scrollThumb.Size = UDim2.new(visible/total,0,1,0)
-				if scrollThumb.AbsoluteSize.X < 16 then
-					scrollThumb.Size = UDim2.new(0,16,1,0)
-				end
-				local fs = scrollThumbFrame.AbsoluteSize.X
-				local bs = scrollThumb.AbsoluteSize.X
-				scrollThumb.Position = UDim2.new(self:GetScrollPercent()*(fs-bs)/fs,0,0,0)
-			else
-				scrollThumb.Size = UDim2.new(1,0,visible/total,0)
-				if scrollThumb.AbsoluteSize.Y < 16 then
-					scrollThumb.Size = UDim2.new(1,0,0,16)
-				end
-				local fs = scrollThumbFrame.AbsoluteSize.Y
-				local bs = scrollThumb.AbsoluteSize.Y
-				scrollThumb.Position = UDim2.new(0,0,self:GetScrollPercent()*(fs-bs)/fs,0)
-			end
-		end
-
-		local function createFrame(self)
-			local newFrame = createSimple("Frame",{Style=0,Active=true,AnchorPoint=Vector2.new(0,0),BackgroundColor3=Color3.new(0.35294118523598,0.35294118523598,0.35294118523598),BackgroundTransparency=0,BorderColor3=Color3.new(0.10588236153126,0.16470588743687,0.20784315466881),BorderSizePixel=0,ClipsDescendants=false,Draggable=false,Position=UDim2.new(1,-16,0,0),Rotation=0,Selectable=false,Size=UDim2.new(0,16,1,0),SizeConstraint=0,Visible=true,ZIndex=1,Name="ScrollBar",})
-			local button1, button2
-
-			if self.Horizontal then
-				newFrame.Size = UDim2.new(1,0,0,16)
-				button1 = createSimple("ImageButton",{
-					Parent = newFrame,
-					Name = "Left",
-					Size = UDim2.new(0,16,0,16),
-					BackgroundTransparency = 1,
-					BorderSizePixel = 0,
-					AutoButtonColor = false
-				})
-				createArrow(16,4,"left").Parent = button1
-				button2 = createSimple("ImageButton",{
-					Parent = newFrame,
-					Name = "Right",
-					Position = UDim2.new(1,-16,0,0),
-					Size = UDim2.new(0,16,0,16),
-					BackgroundTransparency = 1,
-					BorderSizePixel = 0,
-					AutoButtonColor = false
-				})
-				createArrow(16,4,"right").Parent = button2
-			else
-				newFrame.Size = UDim2.new(0,16,1,0)
-				button1 = createSimple("ImageButton",{
-					Parent = newFrame,
-					Name = "Up",
-					Size = UDim2.new(0,16,0,16),
-					BackgroundTransparency = 1,
-					BorderSizePixel = 0,
-					AutoButtonColor = false
-				})
-				createArrow(16,4,"up").Parent = button1
-				button2 = createSimple("ImageButton",{
-					Parent = newFrame,
-					Name = "Down",
-					Position = UDim2.new(0,0,1,-16),
-					Size = UDim2.new(0,16,0,16),
-					BackgroundTransparency = 1,
-					BorderSizePixel = 0,
-					AutoButtonColor = false
-				})
-				createArrow(16,4,"down").Parent = button2
-			end
-
-			local scrollThumbFrame = createSimple("ImageButton", {
-				BackgroundTransparency = 1,
-				Parent = newFrame
-			})
-			if self.Horizontal then
-				scrollThumbFrame.Position = UDim2.new(0,16,0,0)
-				scrollThumbFrame.Size = UDim2.new(1,-32,1,0)
-			else
-				scrollThumbFrame.Position = UDim2.new(0,0,0,16)
-				scrollThumbFrame.Size = UDim2.new(1,0,1,-32)
-			end
-
-			local scrollThumb = createSimple("Frame", {
-				BackgroundColor3 = Color3.new(120/255, 120/255, 120/255),
-				BorderSizePixel = 0,
-				Parent = scrollThumbFrame
-			})
-
-			local markerFrame = createSimple("Frame", {
-				BackgroundTransparency = 1,
-				Name = "Markers",
-				Size = UDim2.new(1, 0, 1, 0),
-				Parent = scrollThumbFrame
-			})
-
-			local buttonPress = false
-			local thumbPress = false
-			local thumbFramePress = false
-
-			local function handleButtonPress(button, scrollDirection)
-				if self:CanScroll(scrollDirection) then
-					button.BackgroundTransparency = 0.5
-					self:ScrollToDirection(scrollDirection)
-					self.Scrolled:Fire()
-					local buttonTick = tick()
-					local releaseEvent
-					releaseEvent = user.InputEnded:Connect(function(input)
-						if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-							releaseEvent:Disconnect()
-							button.BackgroundTransparency = checkMouseInGui(button) and 0.8 or 1
-							buttonPress = false
-						end
-					end)
-					while buttonPress do
-						if tick() - buttonTick >= 0.25 and self:CanScroll(scrollDirection) then
-							self:ScrollToDirection(scrollDirection)
-							self.Scrolled:Fire()
-						end
-						task.wait()
-					end
-				end
-			end
-
-			button1.MouseButton1Down:Connect(function(input)
-				buttonPress = true
-				handleButtonPress(button1, "Up")
-			end)
-
-			button1.InputEnded:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					button1.BackgroundTransparency = 1
-				end
-			end)
-
-			button2.MouseButton1Down:Connect(function(input)
-				buttonPress = true
-				handleButtonPress(button2, "Down")
-			end)
-
-			button2.InputEnded:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					button2.BackgroundTransparency = 1
-				end
-			end)
-
-			scrollThumb.InputBegan:Connect(function(input)
-				if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-					local dir = self.Horizontal and "X" or "Y"
-					local lastThumbPos = nil
-					thumbPress = true
-					scrollThumb.BackgroundTransparency = 0
-					local mouseOffset = mouse[dir] - scrollThumb.AbsolutePosition[dir]
-					local releaseEvent
-					local mouseEvent
-
-					releaseEvent = user.InputEnded:Connect(function(input)
-						if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-							releaseEvent:Disconnect()
-							if mouseEvent then mouseEvent:Disconnect() end
-							scrollThumb.BackgroundTransparency = 0.2
-							thumbPress = false
-						end
-					end)
-
-					mouseEvent = user.InputChanged:Connect(function(input)
-						if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and thumbPress then
-							local thumbFrameSize = scrollThumbFrame.AbsoluteSize[dir] - scrollThumb.AbsoluteSize[dir]
-							local pos = mouse[dir] - scrollThumbFrame.AbsolutePosition[dir] - mouseOffset
-							if pos > thumbFrameSize then pos = thumbFrameSize
-							elseif pos < 0 then pos = 0 end
-							if lastThumbPos ~= pos then
-								lastThumbPos = pos
-								self:ScrollTo(math.floor(0.5 + pos / thumbFrameSize * (self.TotalSpace - self.VisibleSpace)))
-							end
-						end
-					end)
-				end
-			end)
-
-			scrollThumb.InputEnded:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-					scrollThumb.BackgroundTransparency = 0
-				end
-			end)
-
-			scrollThumbFrame.InputBegan:Connect(function(input)
-				if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not checkMouseInGui(scrollThumb) then
-					local dir = self.Horizontal and "X" or "Y"
-					local scrollDir = (mouse[dir] >= scrollThumb.AbsolutePosition[dir] + scrollThumb.AbsoluteSize[dir]) and 1 or 0
-					local function doTick()
-						local scrollSize = self.VisibleSpace - 1
-						if scrollDir == 0 and mouse[dir] < scrollThumb.AbsolutePosition[dir] then
-							self:ScrollTo(self.Index - scrollSize)
-						elseif scrollDir == 1 and mouse[dir] >= scrollThumb.AbsolutePosition[dir] + scrollThumb.AbsoluteSize[dir] then
-							self:ScrollTo(self.Index + scrollSize)
-						end
-					end
-
-					thumbPress = false
-					thumbFramePress = true
-					doTick()
-					local thumbFrameTick = tick()
-					local releaseEvent
-					releaseEvent = user.InputEnded:Connect(function(input)
-						if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-							releaseEvent:Disconnect()
-							thumbFramePress = false
-						end
-					end)
-
-					while thumbFramePress do
-						if tick() - thumbFrameTick >= 0.3 and checkMouseInGui(scrollThumbFrame) then
-							doTick()
-						end
-						task.wait()
-					end
-				end
-			end)
-
-			newFrame.MouseWheelForward:Connect(function()
-				self:ScrollTo(self.Index - self.WheelIncrement)
-			end)
-
-			newFrame.MouseWheelBackward:Connect(function()
-				self:ScrollTo(self.Index + self.WheelIncrement)
-			end)
-
-			self.GuiElems.ScrollThumb = scrollThumb
-			self.GuiElems.ScrollThumbFrame = scrollThumbFrame
-			self.GuiElems.Button1 = button1
-			self.GuiElems.Button2 = button2
-			self.GuiElems.MarkerFrame = markerFrame
-
-			return newFrame
-		end
-
-		funcs.Update = function(self,nocallback)
-			local total = self.TotalSpace
-			local visible = self.VisibleSpace
-			local index = self.Index
-			local button1 = self.GuiElems.Button1
-			local button2 = self.GuiElems.Button2
-
-			self.Index = math.clamp(self.Index, 0, math.max(0, total - visible))
-
-			if self.LastTotalSpace ~= self.TotalSpace then
-				self.LastTotalSpace = self.TotalSpace
-				self:UpdateMarkers()
-			end
-
-			if self:CanScrollUp() then
-				for i,v in pairs(button1.Arrow:GetChildren()) do
-					v.BackgroundTransparency = 0
-				end
-			else
-				button1.BackgroundTransparency = 1
-				for i,v in pairs(button1.Arrow:GetChildren()) do
-					v.BackgroundTransparency = 0.5
-				end
-			end
-			if self:CanScrollDown() then
-				for i,v in pairs(button2.Arrow:GetChildren()) do
-					v.BackgroundTransparency = 0
-				end
-			else
-				button2.BackgroundTransparency = 1
-				for i,v in pairs(button2.Arrow:GetChildren()) do
-					v.BackgroundTransparency = 0.5
-				end
-			end
-
-			drawThumb(self)
-		end
-
-		funcs.UpdateMarkers = function(self)
-			local markerFrame = self.GuiElems.MarkerFrame
-			markerFrame:ClearAllChildren()
-
-			for i,v in pairs(self.Markers) do
-				if i < self.TotalSpace then
-					createSimple("Frame", {
-						BackgroundTransparency = 0,
-						BackgroundColor3 = v,
-						BorderSizePixel = 0,
-						Position = self.Horizontal and UDim2.new(i/self.TotalSpace,0,1,-6) or UDim2.new(1,-6,i/self.TotalSpace,0),
-						Size = self.Horizontal and UDim2.new(0,1,0,6) or UDim2.new(0,6,0,1),
-						Name = "Marker"..tostring(i),
-						Parent = markerFrame
-					})
-				end
-			end
-		end
-
-		funcs.AddMarker = function(self,ind,color)
-			self.Markers[ind] = color or Color3.new(0,0,0)
-		end
-		funcs.ScrollTo = function(self, ind, nocallback)
-			self.Index = ind
-			self:Update()
-			if not nocallback then
-				self.Scrolled:Fire()
-			end
-		end
-		funcs.ScrollUp = function(self)
-			self.Index = self.Index - self.Increment
-			self:Update()
-		end
-		funcs.CanScroll = function(self, direction)
-			if direction == "Up" then
-				return self:CanScrollUp()
-			elseif direction == "Down" then
-				return self:CanScrollDown()
-			end
-			return false
-		end
-		funcs.ScrollDown = function(self)
-			self.Index = self.Index + self.Increment
-			self:Update()
-		end
-		funcs.CanScrollUp = function(self)
-			return self.Index > 0
-		end
-		funcs.CanScrollDown = function(self)
-			return self.Index + self.VisibleSpace < self.TotalSpace
-		end
-		funcs.GetScrollPercent = function(self)
-			return self.Index/(self.TotalSpace-self.VisibleSpace)
-		end
-		funcs.SetScrollPercent = function(self,perc)
-			self.Index = math.floor(perc*(self.TotalSpace-self.VisibleSpace))
-			self:Update()
-		end
-		funcs.ScrollToDirection = function(self, Direaction)
-			if Direaction == "Up" then
-				self:ScrollUp()
-			elseif Direaction == "Down" then
-				self:ScrollDown()
-			end
-		end
-
-		funcs.Texture = function(self,data)
-			self.ThumbColor = data.ThumbColor or Color3.new(0,0,0)
-			self.ThumbSelectColor = data.ThumbSelectColor or Color3.new(0,0,0)
-			self.GuiElems.ScrollThumb.BackgroundColor3 = data.ThumbColor or Color3.new(0,0,0)
-			self.Gui.BackgroundColor3 = data.FrameColor or Color3.new(0,0,0)
-			self.GuiElems.Button1.BackgroundColor3 = data.ButtonColor or Color3.new(0,0,0)
-			self.GuiElems.Button2.BackgroundColor3 = data.ButtonColor or Color3.new(0,0,0)
-			for i,v in pairs(self.GuiElems.Button1.Arrow:GetChildren()) do
-				v.BackgroundColor3 = data.ArrowColor or Color3.new(0,0,0)
-			end
-			for i,v in pairs(self.GuiElems.Button2.Arrow:GetChildren()) do
-				v.BackgroundColor3 = data.ArrowColor or Color3.new(0,0,0)
-			end
-		end
-
-		funcs.SetScrollFrame = function(self,frame)
-			if self.ScrollUpEvent then self.ScrollUpEvent:Disconnect() self.ScrollUpEvent = nil end
-			if self.ScrollDownEvent then self.ScrollDownEvent:Disconnect() self.ScrollDownEvent = nil end
-			self.ScrollUpEvent = frame.MouseWheelForward:Connect(function() self:ScrollTo(self.Index - self.WheelIncrement) end)
-			self.ScrollDownEvent = frame.MouseWheelBackward:Connect(function() self:ScrollTo(self.Index + self.WheelIncrement) end)
-		end
-
-		local mt = {}
-		mt.__index = funcs
-
-		local function new(hor)
-			local obj = setmetatable({
-				Index = 0,
-				VisibleSpace = 0,
-				TotalSpace = 0,
-				Increment = 1,
-				WheelIncrement = 1,
-				Markers = {},
-				GuiElems = {},
-				Horizontal = hor,
-				LastTotalSpace = 0,
-				Scrolled = Lib.Signal.new()
-			},mt)
-			obj.Gui = createFrame(obj)
-			obj:Texture({
-				ThumbColor = Color3.fromRGB(60,60,60),
-				ThumbSelectColor = Color3.fromRGB(75,75,75),
-				ArrowColor = Color3.new(1,1,1),
-				FrameColor = Color3.fromRGB(40,40,40),
-				ButtonColor = Color3.fromRGB(75,75,75)
-			})
-			return obj
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.Window = (function()
-		local funcs = {}
-		local static = {MinWidth = 200, FreeWidth = 200}
-		local mouse = plr:GetMouse()
-		local sidesGui,alignIndicator
-		local visibleWindows = {}
-		local leftSide = {Width = 300, Windows = {}, ResizeCons = {}, Hidden = true}
-		local rightSide = {Width = 300, Windows = {}, ResizeCons = {}, Hidden = true}
-
-		local displayOrderStart
-		local sideDisplayOrder
-		local sideTweenInfo = TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-		local tweens = {}
-		local isA = game.IsA
-
-		local theme = {
-			MainColor1 = Color3.fromRGB(52,52,52),
-			MainColor2 = Color3.fromRGB(45,45,45),
-			Button = Color3.fromRGB(60,60,60)
-		}
-
-		local function stopTweens()
-			for i = 1,#tweens do
-				tweens[i]:Cancel()
-			end
-			tweens = {}
-		end
-
-		local function resizeHook(self,resizer,dir)
-			local pressing = false
-			
-			local guiMain = self.GuiElems.Main
-			
-			resizer.MouseEnter:Connect(function() resizer.BackgroundTransparency = 0.5 end)
-			resizer.MouseButton1Down:Connect(function() pressing = true resizer.BackgroundTransparency = 0.5 end)
-			resizer.MouseButton1Up:Connect(function() pressing = false resizer.BackgroundTransparency = 1 end)
-
-			resizer.InputBegan:Connect(function(input)
-				if not self.Dragging and not self.Resizing and self.Resizable and self.ResizableInternal and pressing then
-					local isH = dir:find("[WE]") and true
-					local isV = dir:find("[NS]") and true
-					local signX = dir:find("W",1,true) and -1 or 1
-					local signY = dir:find("N",1,true) and -1 or 1
-
-					if self.Minimized and isV then return end
-					
-					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-						
-						local releaseEvent, mouseEvent
-
-						local offX = input.Position.X - resizer.AbsolutePosition.X
-						local offY = input.Position.Y - resizer.AbsolutePosition.Y
-
-						self.Resizing = resizer
-						
-						releaseEvent = service.UserInputService.InputEnded:Connect(function(input)
-							if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-								releaseEvent:Disconnect()
-								if mouseEvent then mouseEvent:Disconnect() end
-								self.Resizing = false
-								resizer.BackgroundTransparency = 1
-							end
-						end)
-
-						mouseEvent = service.UserInputService.InputChanged:Connect(function(input)
-							if self.Resizable and self.ResizableInternal and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-								self:StopTweens()
-								local deltaX = input.Position.X - resizer.AbsolutePosition.X - offX
-								local deltaY = input.Position.Y - resizer.AbsolutePosition.Y - offY
-
-								if guiMain.AbsoluteSize.X + deltaX * signX < self.MinX then deltaX = signX * (self.MinX - guiMain.AbsoluteSize.X) end
-								if guiMain.AbsoluteSize.Y + deltaY * signY < self.MinY then deltaY = signY * (self.MinY - guiMain.AbsoluteSize.Y) end
-								if signY < 0 and guiMain.AbsolutePosition.Y + deltaY < 0 then deltaY = -guiMain.AbsolutePosition.Y end
-
-								guiMain.Position = guiMain.Position + UDim2.new(0, (signX < 0 and deltaX or 0), 0, (signY < 0 and deltaY or 0))
-								self.SizeX = self.SizeX + (isH and deltaX * signX or 0)
-								self.SizeY = self.SizeY + (isV and deltaY * signY or 0)
-								guiMain.Size = UDim2.new(0, self.SizeX, 0, self.Minimized and 20 or self.SizeY)
-							end
-						end)
-					end
-				end
-			end)
-
-			resizer.InputEnded:Connect(function(input)
-
-				if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and self.Resizing ~= resizer then
-					resizer.BackgroundTransparency = 1
-				end
-			end)
-		end
-
-		local updateWindows
-
-		local function moveToTop(window)
-			local found = table.find(visibleWindows,window)
-			if found then
-				table.remove(visibleWindows,found)
-				table.insert(visibleWindows,1,window)
-				updateWindows()
-			end
-		end
-
-		local function sideHasRoom(side,neededSize)
-			local maxY = sidesGui.AbsoluteSize.Y - (math.max(0,#side.Windows - 1) * 4)
-			local inc = 0
-			for i,v in pairs(side.Windows) do
-				inc = inc + (v.MinY or 100)
-				if inc > maxY - neededSize then return false end
-			end
-
-			return true
-		end
-
-		local function getSideInsertPos(side,curY)
-			local pos = #side.Windows + 1
-			local range = {0,sidesGui.AbsoluteSize.Y}
-
-			for i,v in pairs(side.Windows) do
-				local midPos = v.PosY + v.SizeY/2
-				if curY <= midPos then
-					pos = i
-					range[2] = midPos
-					break
-				else
-					range[1] = midPos
-				end
-			end
-
-			return pos,range
-		end
-
-		local function focusInput(self,obj)
-			if isA(obj,"GuiButton") then
-				obj.MouseButton1Down:Connect(function()
-					moveToTop(self)
-				end)
-			elseif isA(obj,"TextBox") then
-				obj.Focused:Connect(function()
-					moveToTop(self)
-				end)
-			end
-		end
-
-		local createGui = function(self)
-			local gui = create({
-				{1,"ScreenGui",{Name="Window",}},
-				{2,"Frame",{Active=true,BackgroundColor3=Color3.new(50,50,50),BackgroundTransparency=0.5,BorderSizePixel=0,Name="Main",Parent={1},Position=UDim2.new(0.40000000596046,0,0.40000000596046,0),Size=UDim2.new(0,300,0,300),}},
-					{3,"Frame",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderSizePixel=0,Name="Content",Parent={2},Position=UDim2.new(0,0,0,20),Size=UDim2.new(1,0,1,-20),ClipsDescendants=true}},
-				{4,"Frame",{BackgroundColor3=Color3.fromRGB(33,33,33),BorderSizePixel=0,Name="Line",Parent={3},Size=UDim2.new(1,0,0,1),}},
-				{5,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderSizePixel=0,Name="TopBar",Parent={2},Size=UDim2.new(1,0,0,20),Text = ""}},
-				{6,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={5},Position=UDim2.new(0,5,0,0),Size=UDim2.new(1,-10,0,20),Text="Window",TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=0}},
-				{7,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Close",Parent={5},Position=UDim2.new(1,-18,0,2),Size=UDim2.new(0,16,0,16),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,}},
-				{8,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5054663650",Parent={7},Position=UDim2.new(0,3,0,3),Size=UDim2.new(0,10,0,10),}},
-				{9,"UICorner",{CornerRadius=UDim.new(0,4),Parent={7},}},
-					{9,"UICorner",{CornerRadius=UDim.new(0,4),Parent={2},}},
-				{10,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Minimize",Parent={5},Position=UDim2.new(1,-36,0,2),Size=UDim2.new(0,16,0,16),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,}},
-				{11,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5034768003",Parent={10},Position=UDim2.new(0,3,0,3),Size=UDim2.new(0,10,0,10),}},
-				{12,"UICorner",{CornerRadius=UDim.new(0,4),Parent={10},}},
-				{13,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Image="rbxassetid://1427967925",Name="Outlines",Parent={2},Position=UDim2.new(0,-5,0,-5),ScaleType=1,Size=UDim2.new(1,10,1,10),SliceCenter=Rect.new(6,6,25,25),TileSize=UDim2.new(0,20,0,20),}},
-				{14,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Name="ResizeControls",Parent={2},Position=UDim2.new(0,-5,0,-5),Size=UDim2.new(1,10,1,10),}},
-				{15,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.27450981736183,0.27450981736183,0.27450981736183),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="North",Parent={14},Position=UDim2.new(0,5,0,0),Size=UDim2.new(1,-10,0,5),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{16,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.27450981736183,0.27450981736183,0.27450981736183),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="South",Parent={14},Position=UDim2.new(0,5,1,-5),Size=UDim2.new(1,-10,0,5),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{17,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.27450981736183,0.27450981736183,0.27450981736183),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="NorthEast",Parent={14},Position=UDim2.new(1,-5,0,0),Size=UDim2.new(0,5,0,5),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{18,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.27450981736183,0.27450981736183,0.27450981736183),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="East",Parent={14},Position=UDim2.new(1,-5,0,5),Size=UDim2.new(0,5,1,-10),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{19,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.27450981736183,0.27450981736183,0.27450981736183),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="West",Parent={14},Position=UDim2.new(0,0,0,5),Size=UDim2.new(0,5,1,-10),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{20,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.27450981736183,0.27450981736183,0.27450981736183),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="SouthEast",Parent={14},Position=UDim2.new(1,-5,1,-5),Size=UDim2.new(0,5,0,5),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{21,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.27450981736183,0.27450981736183,0.27450981736183),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="NorthWest",Parent={14},Size=UDim2.new(0,5,0,5),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{22,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.27450981736183,0.27450981736183,0.27450981736183),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="SouthWest",Parent={14},Position=UDim2.new(0,0,1,-5),Size=UDim2.new(0,5,0,5),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-			})
-
-			local guiMain = gui.Main
-			local guiTopBar = guiMain.TopBar
-			local guiResizeControls = guiMain.ResizeControls
-
-			self.GuiElems.Main = guiMain
-			self.GuiElems.TopBar = guiMain.TopBar
-			self.GuiElems.Content = guiMain.Content
-			self.GuiElems.Line = guiMain.Content.Line
-			self.GuiElems.Outlines = guiMain.Outlines
-			self.GuiElems.Title = guiTopBar.Title
-			self.GuiElems.Close = guiTopBar.Close
-			self.GuiElems.Minimize = guiTopBar.Minimize
-			self.GuiElems.ResizeControls = guiResizeControls
-			self.ContentPane = guiMain.Content
-
-			local ButtonDown = false
-			guiTopBar.MouseButton1Down:Connect(function() ButtonDown = true end)
-			guiTopBar.MouseButton1Up:Connect(function() ButtonDown = false end)
-
-			if Settings.Window.TitleOnMiddle then
-				self.GuiElems.Title.TextXAlignment = 2
-				self.GuiElems.Title.Size = UDim2.new(1,-20,0,20)
-			end
-
-			if Settings.Window.Transparency then
-				self.GuiElems.Content.BackgroundTransparency = Settings.Window.Transparency
-
-			end
-
-			guiTopBar.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					if self.Draggable then
-						local releaseEvent, mouseEvent
-
-						local maxX = sidesGui.AbsoluteSize.X
-						local initX = guiMain.AbsolutePosition.X
-						local initY = guiMain.AbsolutePosition.Y
-						local offX = input.Position.X - initX
-						local offY = input.Position.Y - initY
-
-						local alignInsertPos, alignInsertSide
-
-						guiDragging = true
-
-						releaseEvent = service.UserInputService.InputEnded:Connect(function(input)
-							if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-								releaseEvent:Disconnect()
-								if mouseEvent then mouseEvent:Disconnect() end
-								guiDragging = false
-								alignIndicator.Parent = nil
-								if alignInsertSide then
-									local targetSide = (alignInsertSide == "left" and leftSide) or (alignInsertSide == "right" and rightSide)
-									self:AlignTo(targetSide, alignInsertPos)
-								end
-							end
-						end)
-
-						mouseEvent = service.UserInputService.InputChanged:Connect(function(input)
-							if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and self.Draggable and not self.Closed and ButtonDown then
-								if self.Aligned then
-									if leftSide.Resizing or rightSide.Resizing then return end
-									local posX, posY = input.Position.X - offX, input.Position.Y - offY
-									local delta = math.sqrt((posX - initX)^2 + (posY - initY)^2)
-									if delta >= 5 then
-										self:SetAligned(false)
-									end
-								else
-									local inputX, inputY = input.Position.X, input.Position.Y
-									local posX, posY = inputX - offX, inputY - offY
-									if posY < 0 then posY = 0 end
-									guiMain.Position = UDim2.new(0, posX, 0, posY)
-
-									if self.Resizable and self.Alignable then
-										if inputX < 25 then
-											if sideHasRoom(leftSide, self.MinY or 100) then
-												local insertPos, range = getSideInsertPos(leftSide, inputY)
-												alignIndicator.Indicator.Position = UDim2.new(0, -15, 0, range[1])
-												alignIndicator.Indicator.Size = UDim2.new(0, 40, 0, range[2] - range[1])
-												Lib.ShowGui(alignIndicator)
-												alignInsertPos = insertPos
-												alignInsertSide = "left"
-												return
-											end
-										elseif inputX >= maxX - 25 then
-											if sideHasRoom(rightSide, self.MinY or 100) then
-												local insertPos, range = getSideInsertPos(rightSide, inputY)
-												alignIndicator.Indicator.Position = UDim2.new(0, maxX - 25, 0, range[1])
-												alignIndicator.Indicator.Size = UDim2.new(0, 40, 0, range[2] - range[1])
-												Lib.ShowGui(alignIndicator)
-												alignInsertPos = insertPos
-												alignInsertSide = "right"
-												return
-											end
-										end
-									end
-									alignIndicator.Parent = nil
-									alignInsertPos = nil
-									alignInsertSide = nil
-								end
-							end
-						end)
-					end
-				end
-			end)
-
-			guiTopBar.Close.MouseButton1Click:Connect(function()
-				if self.Closed then return end
-				self:Close()
-			end)
-
-			guiTopBar.Minimize.MouseButton1Click:Connect(function()
-				if self.Closed then return end
-				if self.Aligned then
-					self:SetAligned(false)
-				else
-					self:SetMinimized()
-				end
-			end)
-
-			guiTopBar.Minimize.MouseButton2Click:Connect(function()
-				if self.Closed then return end
-				if not self.Aligned then
-					self:SetMinimized(nil,2)
-					guiTopBar.Minimize.BackgroundTransparency = 1
-				end
-			end)
-
-			guiMain.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch and not self.Aligned and not self.Closed then
-					moveToTop(self)
-				end
-			end)
-
-			guiMain:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
-				local absPos = guiMain.AbsolutePosition
-				self.PosX = absPos.X
-				self.PosY = absPos.Y
-			end)
-
-			resizeHook(self,guiResizeControls.North,"N")
-			resizeHook(self,guiResizeControls.NorthEast,"NE")
-			resizeHook(self,guiResizeControls.East,"E")
-			resizeHook(self,guiResizeControls.SouthEast,"SE")
-			resizeHook(self,guiResizeControls.South,"S")
-			resizeHook(self,guiResizeControls.SouthWest,"SW")
-			resizeHook(self,guiResizeControls.West,"W")
-			resizeHook(self,guiResizeControls.NorthWest,"NW")
-
-			guiMain.Size = UDim2.new(0,self.SizeX,0,self.SizeY)
-
-			gui.DescendantAdded:Connect(function(obj) focusInput(self,obj) end)
-			local descs = gui:GetDescendants()
-			for i = 1,#descs do
-				focusInput(self,descs[i])
-			end
-
-			self.MinimizeAnim = Lib.ButtonAnim(guiTopBar.Minimize)
-			self.CloseAnim = Lib.ButtonAnim(guiTopBar.Close)
-
-			return gui
-		end
-
-		local function updateSideFrames(noTween)
-			stopTweens()
-			leftSide.Frame.Size = UDim2.new(0,leftSide.Width,1,0)
-			rightSide.Frame.Size = UDim2.new(0,rightSide.Width,1,0)
-			leftSide.Frame.Resizer.Position = UDim2.new(0,leftSide.Width,0,0)
-			rightSide.Frame.Resizer.Position = UDim2.new(0,-5,0,0)
-
-			local leftHidden = #leftSide.Windows == 0 or leftSide.Hidden
-			local rightHidden = #rightSide.Windows == 0 or rightSide.Hidden
-			local leftPos = (leftHidden and UDim2.new(0,-leftSide.Width-10,0,0) or UDim2.new(0,0,0,0))
-			local rightPos = (rightHidden and UDim2.new(1,10,0,0) or UDim2.new(1,-rightSide.Width,0,0))
-
-			sidesGui.LeftToggle.Text = leftHidden and " " or " "
-			sidesGui.RightToggle.Text = rightHidden and " " or " "
-
-			if not noTween then
-				local function insertTween(...)
-					local tween = service.TweenService:Create(...)
-					tweens[#tweens+1] = tween
-					tween:Play()
-				end
-				insertTween(leftSide.Frame,sideTweenInfo,{Position = leftPos})
-				insertTween(rightSide.Frame,sideTweenInfo,{Position = rightPos})
-				insertTween(sidesGui.LeftToggle,sideTweenInfo,{Position = UDim2.new(0,#leftSide.Windows == 0 and -16 or 0,0,-36)})
-				insertTween(sidesGui.RightToggle,sideTweenInfo,{Position = UDim2.new(1,#rightSide.Windows == 0 and 0 or -16,0,-36)})
-			else
-				leftSide.Frame.Position = leftPos
-				rightSide.Frame.Position = rightPos
-				sidesGui.LeftToggle.Position = UDim2.new(0,#leftSide.Windows == 0 and -16 or 0,0,-36)
-				sidesGui.RightToggle.Position = UDim2.new(1,#rightSide.Windows == 0 and 0 or -16,0,-36)
-			end
-		end
-
-		local function getSideFramePos(side)
-			local leftHidden = #leftSide.Windows == 0 or leftSide.Hidden
-			local rightHidden = #rightSide.Windows == 0 or rightSide.Hidden
-			if side == leftSide then
-				return (leftHidden and UDim2.new(0,-leftSide.Width-10,0,0) or UDim2.new(0,0,0,0))
-			else
-				return (rightHidden and UDim2.new(1,10,0,0) or UDim2.new(1,-rightSide.Width,0,0))
-			end
-		end
-
-		local function sideResized(side)
-			local currentPos = 0
-			local sideFramePos = getSideFramePos(side)
-			for i,v in pairs(side.Windows) do
-				v.SizeX = side.Width
-				v.GuiElems.Main.Size = UDim2.new(0,side.Width,0,v.SizeY)
-				v.GuiElems.Main.Position = UDim2.new(sideFramePos.X.Scale,sideFramePos.X.Offset,0,currentPos)
-				currentPos = currentPos + v.SizeY+4
-			end
-		end
-
-		local function sideResizerHook(resizer,dir,side,pos)
-			local pressing = false
-			
-			local mouse = Main.Mouse
-			local windows = side.Windows
-
-			resizer.MouseEnter:Connect(function() resizer.BackgroundColor3 = theme.MainColor2 end)
-			resizer.MouseButton1Down:Connect(function() pressing = true resizer.BackgroundColor3 = theme.MainColor2 end)
-			resizer.MouseButton1Up:Connect(function() pressing = false resizer.BackgroundColor3 = theme.Button end)
-
-			resizer.InputBegan:Connect(function(input)
-				if not side.Resizing and pressing then
-					if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-						resizer.BackgroundColor3 = theme.MainColor2
-					end
-					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-						local releaseEvent,mouseEvent
-
-						local offX = mouse.X - resizer.AbsolutePosition.X
-						local offY = mouse.Y - resizer.AbsolutePosition.Y
-
-						side.Resizing = resizer
-						resizer.BackgroundColor3 = theme.MainColor2
-
-						releaseEvent = service.UserInputService.InputEnded:Connect(function(input)
-							if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-								releaseEvent:Disconnect()
-								mouseEvent:Disconnect()
-								side.Resizing = false
-								resizer.BackgroundColor3 = theme.Button
-							end
-						end)
-
-						mouseEvent = service.UserInputService.InputChanged:Connect(function(input)
-							if not resizer.Parent then
-								releaseEvent:Disconnect()
-								mouseEvent:Disconnect()
-								side.Resizing = false
-								return
-							end
-							if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-								if dir == "V" then
-									local delta = input.Position.Y - resizer.AbsolutePosition.Y - offY
-
-									if delta > 0 then
-										local neededSize = delta
-										for i = pos+1,#windows do
-											local window = windows[i]
-											local newSize = math.max(window.SizeY-neededSize,(window.MinY or 100))
-											neededSize = neededSize - (window.SizeY - newSize)
-											window.SizeY = newSize
-										end
-										windows[pos].SizeY = windows[pos].SizeY + math.max(0,delta-neededSize)
-									else
-										local neededSize = -delta
-										for i = pos,1,-1 do
-											local window = windows[i]
-											local newSize = math.max(window.SizeY-neededSize,(window.MinY or 100))
-											neededSize = neededSize - (window.SizeY - newSize)
-											window.SizeY = newSize
-										end
-										windows[pos+1].SizeY = windows[pos+1].SizeY + math.max(0,-delta-neededSize)
-									end
-
-									updateSideFrames()
-									sideResized(side)
-								elseif dir == "H" then
-									local maxWidth = math.max(300,sidesGui.AbsoluteSize.X-static.FreeWidth)
-									local otherSide = (side == leftSide and rightSide or leftSide)
-									local delta = input.Position.X - resizer.AbsolutePosition.X - offX
-									delta = (side == leftSide and delta or -delta)
-
-									local proposedSize = math.max(static.MinWidth,side.Width + delta)
-									if proposedSize + otherSide.Width <= maxWidth then
-										side.Width = proposedSize
-									else
-										local newOtherSize = maxWidth - proposedSize
-										if newOtherSize >= static.MinWidth then
-											side.Width = proposedSize
-											otherSide.Width = newOtherSize
-										else
-											side.Width = maxWidth - static.MinWidth
-											otherSide.Width = static.MinWidth
-										end
-									end
-
-									updateSideFrames(true)
-									sideResized(side)
-									sideResized(otherSide)
-								end
-							end
-						end)
-					end
-				end
-			end)
-
-			resizer.InputEnded:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch and side.Resizing ~= resizer then
-					resizer.BackgroundColor3 = theme.Button
-				end
-			end)
-		end
-
-		local function renderSide(side,noTween)
-			local currentPos = 0
-			local sideFramePos = getSideFramePos(side)
-			local template = side.WindowResizer:Clone()
-			for i,v in pairs(side.ResizeCons) do v:Disconnect() end
-			for i,v in pairs(side.Frame:GetChildren()) do if v.Name == "WindowResizer" then v:Destroy() end end
-			side.ResizeCons = {}
-			side.Resizing = nil
-
-			for i,v in pairs(side.Windows) do
-				v.SidePos = i
-				local isEnd = i == #side.Windows
-				local size = UDim2.new(0,side.Width,0,v.SizeY)
-				local pos = UDim2.new(sideFramePos.X.Scale,sideFramePos.X.Offset,0,currentPos)
-				Lib.ShowGui(v.Gui)
-
-				if noTween then
-					v.GuiElems.Main.Size = size
-					v.GuiElems.Main.Position = pos
-				else
-					local tween = service.TweenService:Create(v.GuiElems.Main,sideTweenInfo,{Size = size, Position = pos})
-					tweens[#tweens+1] = tween
-					tween:Play()
-				end
-				currentPos = currentPos + v.SizeY+4
-
-				if not isEnd then
-					local newTemplate = template:Clone()
-					newTemplate.Position = UDim2.new(1,-side.Width,0,currentPos-4)
-					side.ResizeCons[#side.ResizeCons+1] = v.Gui.Main:GetPropertyChangedSignal("Size"):Connect(function()
-						newTemplate.Position = UDim2.new(1,-side.Width,0, v.GuiElems.Main.Position.Y.Offset + v.GuiElems.Main.Size.Y.Offset)
-					end)
-					side.ResizeCons[#side.ResizeCons+1] = v.Gui.Main:GetPropertyChangedSignal("Position"):Connect(function()
-						newTemplate.Position = UDim2.new(1,-side.Width,0, v.GuiElems.Main.Position.Y.Offset + v.GuiElems.Main.Size.Y.Offset)
-					end)
-					sideResizerHook(newTemplate,"V",side,i)
-					newTemplate.Parent = side.Frame
-				end
-			end
-
-		end
-
-		local function updateSide(side,noTween)
-			local oldHeight = 0
-			local currentPos = 0
-			local neededSize = 0
-			local windows = side.Windows
-			local height = sidesGui.AbsoluteSize.Y - (math.max(0,#windows - 1) * 4)
-
-			for i,v in pairs(windows) do oldHeight = oldHeight + v.SizeY end
-			for i,v in pairs(windows) do
-				if i == #windows then
-					v.SizeY = height-currentPos
-					neededSize = math.max(0,(v.MinY or 100)-v.SizeY)
-				else
-					v.SizeY = math.max(math.floor(v.SizeY/oldHeight*height),v.MinY or 100)
-				end
-				currentPos = currentPos + v.SizeY
-			end
-
-			if neededSize > 0 then
-				for i = #windows-1,1,-1 do
-					local window = windows[i]
-					local newSize = math.max(window.SizeY-neededSize,(window.MinY or 100))
-					neededSize = neededSize - (window.SizeY - newSize)
-					window.SizeY = newSize
-				end
-				local lastWindow = windows[#windows]
-				lastWindow.SizeY = (lastWindow.MinY or 100)-neededSize
-			end
-			renderSide(side,noTween)
-		end
-
-		updateWindows = function(noTween)
-			updateSideFrames(noTween)
-			updateSide(leftSide,noTween)
-			updateSide(rightSide,noTween)
-			local count = 0
-			for i = #visibleWindows,1,-1 do
-				visibleWindows[i].Gui.DisplayOrder = displayOrderStart + count
-				Lib.ShowGui(visibleWindows[i].Gui)
-				count = count + 1
-			end
-
-		end
-
-		funcs.SetMinimized = function(self,set,mode)
-			local oldVal = self.Minimized
-			local newVal
-			if set == nil then newVal = not self.Minimized else newVal = set end
-			self.Minimized = newVal
-			if not mode then mode = 1 end
-
-			local resizeControls = self.GuiElems.ResizeControls
-			local minimizeControls = {"North","NorthEast","NorthWest","South","SouthEast","SouthWest"}
-			for i = 1,#minimizeControls do
-				local control = resizeControls:FindFirstChild(minimizeControls[i])
-				if control then control.Visible = not newVal end
-			end
-
-			if mode == 1 or mode == 2 then
-				self:StopTweens()
-				if mode == 1 then
-					self.GuiElems.Main:TweenSize(UDim2.new(0,self.SizeX,0,newVal and 20 or self.SizeY),Enum.EasingDirection.Out,Enum.EasingStyle.Quart,0.25,true)
-				else
-					local maxY = sidesGui.AbsoluteSize.Y
-					local newPos = UDim2.new(0,self.PosX,0,newVal and math.min(maxY-20,self.PosY + self.SizeY - 20) or math.max(0,self.PosY - self.SizeY + 20))
-
-					self.GuiElems.Main:TweenPosition(newPos,Enum.EasingDirection.Out,Enum.EasingStyle.Quart,0.25,true)
-					self.GuiElems.Main:TweenSize(UDim2.new(0,self.SizeX,0,newVal and 20 or self.SizeY),Enum.EasingDirection.Out,Enum.EasingStyle.Quart,0.25,true)
-				end
-				self.GuiElems.Minimize.ImageLabel.Image = newVal and "rbxassetid://5060023708" or "rbxassetid://5034768003"
-			end
-
-			if oldVal ~= newVal then
-				if newVal then
-					self.OnMinimize:Fire()
-				else
-					self.OnRestore:Fire()
-				end
-			end
-		end
-
-		funcs.Resize = function(self,sizeX,sizeY)
-			self.SizeX = sizeX or self.SizeX
-			self.SizeY = sizeY or self.SizeY
-			self.GuiElems.Main.Size = UDim2.new(0,self.SizeX,0,self.SizeY)
-		end
-
-		funcs.SetSize = funcs.Resize
-
-		funcs.SetTitle = function(self,title)
-			self.GuiElems.Title.Text = title
-		end
-
-		funcs.SetResizable = function(self,val)
-			self.Resizable = val
-			self.GuiElems.ResizeControls.Visible = self.Resizable and self.ResizableInternal
-		end
-
-		funcs.SetResizableInternal = function(self,val)
-			self.ResizableInternal = val
-			self.GuiElems.ResizeControls.Visible = self.Resizable and self.ResizableInternal
-		end
-
-		funcs.SetAligned = function(self,val)
-			self.Aligned = val
-			self:SetResizableInternal(not val)
-			self.GuiElems.Main.Active = not val
-			self.GuiElems.Main.Outlines.Visible = not val
-			if not val then
-				for i,v in pairs(leftSide.Windows) do if v == self then table.remove(leftSide.Windows,i) break end end
-				for i,v in pairs(rightSide.Windows) do if v == self then table.remove(rightSide.Windows,i) break end end
-				if not table.find(visibleWindows,self) then table.insert(visibleWindows,1,self) end
-				self.GuiElems.Minimize.ImageLabel.Image = "rbxassetid://5034768003"
-				self.Side = nil
-				updateWindows()
-			else
-				self:SetMinimized(false,3)
-				for i,v in pairs(visibleWindows) do if v == self then table.remove(visibleWindows,i) break end end
-				self.GuiElems.Minimize.ImageLabel.Image = "rbxassetid://5448127505"
-			end
-		end
-
-		funcs.Add = function(self,obj,name)
-			if type(obj) == "table" and obj.Gui and obj.Gui:IsA("GuiObject") then
-				obj.Gui.Parent = self.ContentPane
-			else
-				obj.Parent = self.ContentPane
-			end
-			if name then self.Elements[name] = obj end
-		end
-
-		funcs.GetElement = function(self,obj,name)
-			return self.Elements[name]
-		end
-
-		funcs.AlignTo = function(self,side,pos,size,silent)
-			if table.find(side.Windows,self) or self.Closed then return end
-
-			size = size or self.SizeY
-			if size > 0 and size <= 1 then
-				local totalSideHeight = 0
-				for i,v in pairs(side.Windows) do totalSideHeight = totalSideHeight + v.SizeY end
-				self.SizeY = (totalSideHeight > 0 and totalSideHeight * size * 2) or size
-			else
-				self.SizeY = (size > 0 and size or 100)
-			end
-
-			self:SetAligned(true)
-			self.Side = side
-			self.SizeX = side.Width
-			self.Gui.DisplayOrder = sideDisplayOrder + 1
-			for i,v in pairs(side.Windows) do v.Gui.DisplayOrder = sideDisplayOrder end
-			pos = math.min(#side.Windows+1, pos or 1)
-			self.SidePos = pos
-			table.insert(side.Windows, pos, self)
-
-			if not silent then
-				side.Hidden = false
-			end
-			updateWindows(silent)
-		end
-
-		funcs.Close = function(self)
-			self.Closed = true
-			self:SetResizableInternal(false)
-
-			Lib.FindAndRemove(leftSide.Windows,self)
-			Lib.FindAndRemove(rightSide.Windows,self)
-			Lib.FindAndRemove(visibleWindows,self)
-
-			self.MinimizeAnim.Disable()
-			self.CloseAnim.Disable()
-			self.ClosedSide = self.Side
-			self.Side = nil
-			self.OnDeactivate:Fire()
-
-			if not self.Aligned then
-				self:StopTweens()
-				local ti = TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-
-				local closeTime = tick()
-				self.LastClose = closeTime
-
-				self:DoTween(self.GuiElems.Main,ti,{Size = UDim2.new(0,self.SizeX,0,20)})
-				self:DoTween(self.GuiElems.Title,ti,{TextTransparency = 1})
-				self:DoTween(self.GuiElems.Minimize.ImageLabel,ti,{ImageTransparency = 1})
-				self:DoTween(self.GuiElems.Close.ImageLabel,ti,{ImageTransparency = 1})
-				Lib.FastWait(0.2)
-				if closeTime ~= self.LastClose then return end
-
-				self:DoTween(self.GuiElems.TopBar,ti,{BackgroundTransparency = 1})
-				self:DoTween(self.GuiElems.Outlines,ti,{ImageTransparency = 1})
-				Lib.FastWait(0.2)
-				if closeTime ~= self.LastClose then return end
-			end
-
-			self.Aligned = false
-			self.Gui.Parent = nil
-			updateWindows(true)
-		end
-		
-		funcs.Destroy = function(self)
-			self.Closed = true
-			self:SetResizableInternal(false)
-
-			Lib.FindAndRemove(leftSide.Windows,self)
-			Lib.FindAndRemove(rightSide.Windows,self)
-			Lib.FindAndRemove(visibleWindows,self)
-
-			self.MinimizeAnim.Disable()
-			self.CloseAnim.Disable()
-			self.ClosedSide = self.Side
-			self.Side = nil
-			self.OnDeactivate:Fire()
-
-			if not self.Aligned then
-				self:StopTweens()
-				local ti = TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-
-				local closeTime = tick()
-				self.LastClose = closeTime
-
-				self:DoTween(self.GuiElems.Main,ti,{Size = UDim2.new(0,self.SizeX,0,20)})
-				self:DoTween(self.GuiElems.Title,ti,{TextTransparency = 1})
-				self:DoTween(self.GuiElems.Minimize.ImageLabel,ti,{ImageTransparency = 1})
-				self:DoTween(self.GuiElems.Close.ImageLabel,ti,{ImageTransparency = 1})
-				Lib.FastWait(0.2)
-				if closeTime ~= self.LastClose then return end
-
-				self:DoTween(self.GuiElems.TopBar,ti,{BackgroundTransparency = 1})
-				self:DoTween(self.GuiElems.Outlines,ti,{ImageTransparency = 1})
-				Lib.FastWait(0.2)
-				if closeTime ~= self.LastClose then return end
-			end
-
-			self.Aligned = false
-
-			updateWindows(true)
-			self.Gui:Destroy()
-		end
-
-		funcs.Hide = funcs.Close
-
-		funcs.IsVisible = function(self)
-			return not self.Closed and ((self.Side and not self.Side.Hidden) or not self.Side)
-		end
-
-		funcs.IsContentVisible = function(self)
-			return self:IsVisible() and not self.Minimized
-		end
-
-		funcs.Focus = function(self)
-			moveToTop(self)
-		end
-
-		funcs.MoveInBoundary = function(self)
-			local posX,posY = self.PosX,self.PosY
-			local maxX,maxY = sidesGui.AbsoluteSize.X,sidesGui.AbsoluteSize.Y
-			posX = math.min(posX,maxX-self.SizeX)
-			posY = math.min(posY,maxY-20)
-			self.GuiElems.Main.Position = UDim2.new(0,posX,0,posY)
-		end
-
-		funcs.DoTween = function(self,...)
-			local tween = service.TweenService:Create(...)
-			self.Tweens[#self.Tweens+1] = tween
-			tween:Play()
-		end
-
-		funcs.StopTweens = function(self)
-			for i,v in pairs(self.Tweens) do
-				v:Cancel()
-			end
-			self.Tweens = {}
-		end
-
-		funcs.Show = function(self,data)
-			return static.ShowWindow(self,data)
-		end
-
-		funcs.ShowAndFocus = function(self,data)
-			static.ShowWindow(self,data)
-			service.RunService.RenderStepped:wait()
-			self:Focus()
-		end
-
-		static.ShowWindow = function(window,data)
-			data = data or {}
-			local align = data.Align
-			local pos = data.Pos
-			local size = data.Size
-			local targetSide = (align == "left" and leftSide) or (align == "right" and rightSide)
-
-			if not window.Closed then
-				if not window.Aligned then
-					window:SetMinimized(false)
-				elseif window.Side and not data.Silent then
-					static.SetSideVisible(window.Side,true)
-				end
-				return
-			end
-
-			window.Closed = false
-			window.LastClose = tick()
-			window.GuiElems.Title.TextTransparency = 0
-			window.GuiElems.Minimize.ImageLabel.ImageTransparency = 0
-			window.GuiElems.Close.ImageLabel.ImageTransparency = 0
-			window.GuiElems.TopBar.BackgroundTransparency = 0
-			window.GuiElems.Outlines.ImageTransparency = 0
-			window.GuiElems.Minimize.ImageLabel.Image = "rbxassetid://5034768003"
-			window.GuiElems.Main.Active = true
-			window.GuiElems.Main.Outlines.Visible = true
-			window:SetMinimized(false,3)
-			window:SetResizableInternal(true)
-			window.MinimizeAnim.Enable()
-			window.CloseAnim.Enable()
-
-			if align then
-				window:AlignTo(targetSide,pos,size,data.Silent)
-			else
-				if align == nil and window.ClosedSide then
-					window:AlignTo(window.ClosedSide,window.SidePos,size,true)
-					static.SetSideVisible(window.ClosedSide,true)
-				else
-					if table.find(visibleWindows,window) then return end
-
-					window.GuiElems.Main.Size = UDim2.new(0,window.SizeX,0,20)
-					local ti = TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-					window:StopTweens()
-					window:DoTween(window.GuiElems.Main,ti,{Size = UDim2.new(0,window.SizeX,0,window.SizeY)})
-
-					window.SizeY = size or window.SizeY
-					table.insert(visibleWindows,1,window)
-					updateWindows()
-				end
-			end
-
-			window.ClosedSide = nil
-			window.OnActivate:Fire()
-		end
-
-		static.ToggleSide = function(name)
-			local side = (name == "left" and leftSide or rightSide)
-			side.Hidden = not side.Hidden
-			for i,v in pairs(side.Windows) do
-				if side.Hidden then
-					v.OnDeactivate:Fire()
-				else
-					v.OnActivate:Fire()
-				end
-			end
-			updateWindows()
-		end
-
-		static.SetSideVisible = function(s,vis)
-			local side = (type(s) == "table" and s) or (s == "left" and leftSide or rightSide)
-			side.Hidden = not vis
-			for i,v in pairs(side.Windows) do
-				if side.Hidden then
-					v.OnDeactivate:Fire()
-				else
-					v.OnActivate:Fire()
-				end
-			end
-			updateWindows()
-		end
-
-		static.Init = function()
-			displayOrderStart = Main.DisplayOrders.Window
-			sideDisplayOrder = Main.DisplayOrders.SideWindow
-
-			sidesGui = Instance.new("ScreenGui")
-			local leftFrame = create({
-				{1,"Frame",{Active=true,Name="LeftSide",BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderSizePixel=0,}},
-				{2,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2549019753933,0.2549019753933,0.2549019753933),BorderSizePixel=0,Font=3,Name="Resizer",Parent={1},Size=UDim2.new(0,5,1,0),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{3,"Frame",{BackgroundColor3=Color3.new(0.14117647707462,0.14117647707462,0.14117647707462),BorderSizePixel=0,Name="Line",Parent={2},Position=UDim2.new(0,0,0,0),Size=UDim2.new(0,1,1,0),}},
-				{4,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2549019753933,0.2549019753933,0.2549019753933),BorderSizePixel=0,Font=3,Name="WindowResizer",Parent={1},Position=UDim2.new(1,-300,0,0),Size=UDim2.new(1,0,0,4),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{5,"Frame",{BackgroundColor3=Color3.new(0.14117647707462,0.14117647707462,0.14117647707462),BorderSizePixel=0,Name="Line",Parent={4},Size=UDim2.new(1,0,0,1),}},
-			})
-			leftSide.Frame = leftFrame
-			leftFrame.Position = UDim2.new(0,-leftSide.Width-10,0,0)
-			leftSide.WindowResizer = leftFrame.WindowResizer
-			leftFrame.WindowResizer.Parent = nil
-			leftFrame.Parent = sidesGui
-
-			local rightFrame = create({
-				{1,"Frame",{Active=true,Name="RightSide",BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderSizePixel=0,}},
-				{2,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2549019753933,0.2549019753933,0.2549019753933),BorderSizePixel=0,Font=3,Name="Resizer",Parent={1},Size=UDim2.new(0,5,1,0),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{3,"Frame",{BackgroundColor3=Color3.new(0.14117647707462,0.14117647707462,0.14117647707462),BorderSizePixel=0,Name="Line",Parent={2},Position=UDim2.new(0,4,0,0),Size=UDim2.new(0,1,1,0),}},
-				{4,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2549019753933,0.2549019753933,0.2549019753933),BorderSizePixel=0,Font=3,Name="WindowResizer",Parent={1},Position=UDim2.new(1,-300,0,0),Size=UDim2.new(1,0,0,4),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-				{5,"Frame",{BackgroundColor3=Color3.new(0.14117647707462,0.14117647707462,0.14117647707462),BorderSizePixel=0,Name="Line",Parent={4},Size=UDim2.new(1,0,0,1),}},
-			})
-			rightSide.Frame = rightFrame
-			rightFrame.Position = UDim2.new(1,10,0,0)
-			rightSide.WindowResizer = rightFrame.WindowResizer
-			rightFrame.WindowResizer.Parent = nil
-			rightFrame.Parent = sidesGui
-
-			if Settings.Window.Transparency and Settings.Window.Transparency > 0 then
-				leftSide.BackgroundTransparency = 1
-				rightSide.BackgroundTransparency = 1
-
-				leftFrame.BackgroundTransparency = 1
-				rightFrame.BackgroundTransparency = 1
-			end
-
-			sideResizerHook(leftFrame.Resizer,"H",leftSide)
-			sideResizerHook(rightFrame.Resizer,"H",rightSide)
-
-			alignIndicator = Instance.new("ScreenGui")
-			alignIndicator.DisplayOrder = Main.DisplayOrders.Core
-			local indicator = Instance.new("Frame",alignIndicator)
-			indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-			indicator.BorderSizePixel = 0
-			indicator.BackgroundTransparency = 0.8
-			indicator.Name = "Indicator"
-			local corner = Instance.new("UICorner",indicator)
-			corner.CornerRadius = UDim.new(0,10)
-
-			local leftToggle = create({{1,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderColor3=Color3.new(0.14117647707462,0.14117647707462,0.14117647707462),BorderMode=2,Font=10,Name="LeftToggle",Position=UDim2.new(0,0,0,-36),Size=UDim2.new(0,16,0,36),Text="<",TextColor3=Color3.new(1,1,1),TextSize=14,}}})
-			local rightToggle = leftToggle:Clone()
-			rightToggle.Name = "RightToggle"
-			rightToggle.Position = UDim2.new(1,-16,0,-36)
-			Lib.ButtonAnim(leftToggle,{Mode = 2,PressColor = Color3.fromRGB(32,32,32)})
-			Lib.ButtonAnim(rightToggle,{Mode = 2,PressColor = Color3.fromRGB(32,32,32)})
-
-			leftToggle.MouseButton1Click:Connect(function()
-				static.ToggleSide("left")
-			end)
-
-			rightToggle.MouseButton1Click:Connect(function()
-				static.ToggleSide("right")
-			end)
-
-			leftToggle.Parent = sidesGui
-			rightToggle.Parent = sidesGui
-
-			sidesGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-				local maxWidth = math.max(300,sidesGui.AbsoluteSize.X-static.FreeWidth)
-				leftSide.Width = math.max(static.MinWidth,math.min(leftSide.Width,maxWidth-rightSide.Width))
-				rightSide.Width = math.max(static.MinWidth,math.min(rightSide.Width,maxWidth-leftSide.Width))
-				for i = 1,#visibleWindows do
-					visibleWindows[i]:MoveInBoundary()
-				end
-				updateWindows(true)
-			end)
-
-			sidesGui.DisplayOrder = sideDisplayOrder - 1
-			Lib.ShowGui(sidesGui)
-			updateSideFrames()
-		end
-
-		local mt = {__index = funcs}
-		static.new = function()
-			local obj = setmetatable({
-				Minimized = false,
-				Dragging = false,
-				Resizing = false,
-				Aligned = false,
-				Draggable = true,
-				Resizable = true,
-				ResizableInternal = true,
-				Alignable = true,
-				Closed = true,
-				SizeX = 300,
-				SizeY = 300,
-				MinX = 200,
-				MinY = 200,
-				PosX = 0,
-				PosY = 0,
-				GuiElems = {},
-				Tweens = {},
-				Elements = {},
-				OnActivate = Lib.Signal.new(),
-				OnDeactivate = Lib.Signal.new(),
-				OnMinimize = Lib.Signal.new(),
-				OnRestore = Lib.Signal.new()
-			},mt)
-			obj.Gui = createGui(obj)
-			return obj
-		end
-
-		return static
-	end)()
-
-	Lib.ContextMenu = (function()
-		local funcs = {}
-		local mouse
-
-		local function createGui(self)
-			local contextGui = create({
-				{1,"ScreenGui",{DisplayOrder=1000000,Name="Context",ZIndexBehavior=1,}},
-				{2,"Frame",{Active=true,BackgroundColor3=Color3.new(50,50,50),BorderColor3=Color3.new(0.14117647707462,0.14117647707462,0.14117647707462),Name="Main",Parent={1},Position=UDim2.new(0.5,-100,0.5,-150),Size=UDim2.new(0,200,0,100),}},
-				{3,"UICorner",{CornerRadius=UDim.new(0,4),Parent={2},}},
-				{4,"Frame",{BackgroundColor3=Color3.new(50,50,50),Name="Container",Parent={2},Position=UDim2.new(0,1,0,1),Size=UDim2.new(1,-2,1,-2),}},
-				{5,"UICorner",{CornerRadius=UDim.new(0,4),Parent={4},}},
-				{6,"ScrollingFrame",{Active=true,BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BackgroundTransparency=1,BorderSizePixel=0,CanvasSize=UDim2.new(0,0,0,0),Name="List",Parent={4},Position=UDim2.new(0,2,0,2),ScrollBarImageColor3=Color3.new(0,0,0),ScrollBarThickness=4,Size=UDim2.new(1,-4,1,-4),VerticalScrollBarInset=1,}},
-				{7,"UIListLayout",{Parent={6},SortOrder=2,}},
-				{8,"Frame",{BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderSizePixel=0,Name="SearchFrame",Parent={4},Size=UDim2.new(1,0,0,24),Visible=false,}},
-				{9,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.1176470592618,0.1176470592618,0.1176470592618),BorderSizePixel=0,Name="SearchContainer",Parent={8},Position=UDim2.new(0,3,0,3),Size=UDim2.new(1,-6,0,18),}},
-				{10,"TextBox",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="SearchBox",Parent={9},PlaceholderColor3=Color3.new(0.39215689897537,0.39215689897537,0.39215689897537),PlaceholderText="Search",Position=UDim2.new(0,4,0,0),Size=UDim2.new(1,-8,0,18),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=0,}},
-				{11,"UICorner",{CornerRadius=UDim.new(0,2),Parent={9},}},
-				{12,"Frame",{BackgroundColor3=Color3.new(0.14117647707462,0.14117647707462,0.14117647707462),BorderSizePixel=0,Name="Line",Parent={8},Position=UDim2.new(0,0,1,0),Size=UDim2.new(1,0,0,1),}},
-				{13,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BackgroundTransparency=1,BorderColor3=Color3.new(0.33725491166115,0.49019610881805,0.73725491762161),BorderSizePixel=0,Font=3,Name="Entry",Parent={1},Size=UDim2.new(1,0,0,22),Text="",TextSize=14,Visible=false,}},
-				{14,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="EntryName",Parent={13},Position=UDim2.new(0,24,0,0),Size=UDim2.new(1,-24,1,0),Text="Duplicate",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{15,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Shortcut",Parent={13},Position=UDim2.new(0,24,0,0),Size=UDim2.new(1,-30,1,0),Text="Ctrl+D",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{16,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,ImageRectOffset=Vector2.new(304,0),ImageRectSize=Vector2.new(16,16),Name="Icon",Parent={13},Position=UDim2.new(0,2,0,3),ScaleType=4,Size=UDim2.new(0,16,0,16),}},
-				{17,"UICorner",{CornerRadius=UDim.new(0,4),Parent={13},}},
-				{18,"Frame",{BackgroundColor3=Color3.new(0.21568629145622,0.21568629145622,0.21568629145622),BackgroundTransparency=1,BorderSizePixel=0,Name="Divider",Parent={1},Position=UDim2.new(0,0,0,20),Size=UDim2.new(1,0,0,7),Visible=false,}},
-				{19,"Frame",{BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderSizePixel=0,Name="Line",Parent={18},Position=UDim2.new(0,0,0.5,0),Size=UDim2.new(1,0,0,1),}},
-				{20,"TextLabel",{AnchorPoint=Vector2.new(0,0.5),BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="DividerName",Parent={18},Position=UDim2.new(0,2,0.5,0),Size=UDim2.new(1,-4,1,0),Text="Objects",TextColor3=Color3.new(1,1,1),TextSize=14,TextTransparency=0.60000002384186,TextXAlignment=0,Visible=false,}}
-			})
-
-			self.GuiElems.Main = contextGui.Main
-			self.GuiElems.List = contextGui.Main.Container.List
-			self.GuiElems.Entry = contextGui.Entry
-			self.GuiElems.Divider = contextGui.Divider
-			self.GuiElems.SearchFrame = contextGui.Main.Container.SearchFrame
-			self.GuiElems.SearchBar = self.GuiElems.SearchFrame.SearchContainer.SearchBox
-			Lib.ViewportTextBox.convert(self.GuiElems.SearchBar)
-
-			self.GuiElems.SearchBar:GetPropertyChangedSignal("Text"):Connect(function()
-				local lower,find = string.lower,string.find
-				local searchText = lower(self.GuiElems.SearchBar.Text)
-				local items = self.Items
-				local map = self.ItemToEntryMap
-
-				if searchText ~= "" then
-					local results = {}
-					local count = 1
-					for i = 1,#items do
-						local item = items[i]
-						local entry = map[item]
-						if entry then
-							if not item.Divider and find(lower(item.Name),searchText,1,true) then
-								results[count] = item
-								count = count + 1
-							else
-								entry.Visible = false
-							end
-						end
-					end
-					table.sort(results,function(a,b) return a.Name < b.Name end)
-					for i = 1,#results do
-						local entry = map[results[i]]
-						entry.LayoutOrder = i
-						entry.Visible = true
-					end
-				else
-					for i = 1,#items do
-						local entry = map[items[i]]
-						if entry then entry.LayoutOrder = i entry.Visible = true end
-					end
-				end
-
-				local toSize = self.GuiElems.List.UIListLayout.AbsoluteContentSize.Y + 6
-				self.GuiElems.List.CanvasSize = UDim2.new(0,0,0,toSize-6)
-			end)
-
-			return contextGui
-		end
-
-		funcs.Add = function(self,item)
-			local newItem = {
-				Name = item.Name or "Item",
-				Icon = item.Icon or "",
-				Shortcut = item.Shortcut or "",
-				OnClick = item.OnClick,
-				OnHover = item.OnHover,
-				Disabled = item.Disabled or false,
-				DisabledIcon = item.DisabledIcon or "",
-				IconMap = item.IconMap,
-				OnRightClick = item.OnRightClick
-			}
-			
-			newItem.DisabledIcon = newItem.Icon
-
-			if self.QueuedDivider then
-				local text = self.QueuedDividerText and #self.QueuedDividerText > 0 and self.QueuedDividerText
-				self:AddDivider(text)
-			end
-			self.Items[#self.Items+1] = newItem
-			self.Updated = nil
-		end
-
-		funcs.AddRegistered = function(self,name,disabled)
-			if not self.Registered[name] then error(name.." is not registered") end
-
-			if self.QueuedDivider then
-				local text = self.QueuedDividerText and #self.QueuedDividerText > 0 and self.QueuedDividerText
-				self:AddDivider(text)
-			end
-			self.Registered[name].Disabled = disabled
-			self.Items[#self.Items+1] = self.Registered[name]
-			self.Updated = nil
-		end
-
-		funcs.Register = function(self,name,item)
-			self.Registered[name] = {
-				Name = item.Name or "Item",
-				Icon = item.Icon or "",
-				Shortcut = item.Shortcut or "",
-				OnClick = item.OnClick,
-				OnHover = item.OnHover,
-				DisabledIcon = item.DisabledIcon or "",
-				IconMap = item.IconMap,
-				OnRightClick = item.OnRightClick
-			}
-		end
-
-		funcs.UnRegister = function(self,name)
-			self.Registered[name] = nil
-		end
-
-		funcs.AddDivider = function(self,text)
-			self.QueuedDivider = false
-			local textWidth = text and service.TextService:GetTextSize(text,14,Enum.Font.SourceSans,Vector2.new(999999999,20)).X or nil
-			table.insert(self.Items,{Divider = true, Text = text, TextSize = textWidth and textWidth+4})
-			self.Updated = nil
-		end
-
-		funcs.QueueDivider = function(self,text)
-			self.QueuedDivider = true
-			self.QueuedDividerText = text or ""
-		end
-
-		funcs.Clear = function(self)
-			self.Items = {}
-			self.Updated = nil
-		end
-
-		funcs.Refresh = function(self)
-			for i,v in pairs(self.GuiElems.List:GetChildren()) do
-				if not v:IsA("UIListLayout") then
-					v:Destroy()
-				end
-			end
-			local map = {}
-			self.ItemToEntryMap = map
-
-			local dividerFrame = self.GuiElems.Divider
-			local contextList = self.GuiElems.List
-			local entryFrame = self.GuiElems.Entry
-			local items = self.Items
-
-			for i = 1,#items do
-				local item = items[i]
-				if item.Divider then
-					local newDivider = dividerFrame:Clone()
-					newDivider.Line.BackgroundColor3 = self.Theme.DividerColor
-					if item.Text then
-						newDivider.Size = UDim2.new(1,0,0,20)
-						newDivider.Line.Position = UDim2.new(0,item.TextSize,0.5,0)
-						newDivider.Line.Size = UDim2.new(1,-item.TextSize,0,1)
-						newDivider.DividerName.TextColor3 = self.Theme.TextColor
-						newDivider.DividerName.Text = item.Text
-						newDivider.DividerName.Visible = true
-					end
-					newDivider.Visible = true
-					map[item] = newDivider
-					newDivider.Parent = contextList
-				else
-					local newEntry = entryFrame:Clone()
-					newEntry.BackgroundColor3 = self.Theme.HighlightColor
-					newEntry.EntryName.TextColor3 = self.Theme.TextColor
-					newEntry.EntryName.Text = item.Name
-					newEntry.Shortcut.Text = item.Shortcut
-					if item.Disabled then
-						newEntry.EntryName.TextColor3 = Color3.new(150/255,150/255,150/255)
-						newEntry.Shortcut.TextColor3 = Color3.new(150/255,150/255,150/255)
-					end
-
-					if self.Iconless then
-						newEntry.EntryName.Position = UDim2.new(0,2,0,0)
-						newEntry.EntryName.Size = UDim2.new(1,-4,0,20)
-						newEntry.Icon.Visible = false
-					else
-						local iconIndex
-						if item.Disabled and item.DisabledIcon then
-							iconIndex = item.DisabledIcon
-						elseif item.Icon then
-							iconIndex =  item.Icon
-						end
-
-						if item.IconMap then
-							if type(iconIndex) == "number" then
-								item.IconMap:Display(newEntry.Icon, iconIndex)
-							elseif type(iconIndex) == "string" then
-								item.IconMap:DisplayByKey(newEntry.Icon, iconIndex)
-							end
-						elseif type(iconIndex) == "string" then
-							newEntry.Icon.Image = iconIndex
-						end
-					end
-
-					if not item.Disabled then
-						if item.OnClick then
-							newEntry.MouseButton1Click:Connect(function()
-								item.OnClick(item.Name)
-								if not item.NoHide then
-									self:Hide()
-								end
-							end)
-						end
-
-						if item.OnRightClick then
-							newEntry.MouseButton2Click:Connect(function()
-								item.OnRightClick(item.Name)
-								if not item.NoHide then
-									self:Hide()
-								end
-							end)
-						end
-					end
-
-					newEntry.InputBegan:Connect(function(input)
-						if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-							newEntry.BackgroundTransparency = 0
-						end
-					end)
-
-					newEntry.InputEnded:Connect(function(input)
-						if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-							newEntry.BackgroundTransparency = 1
-						end
-					end)
-
-					newEntry.Visible = true
-					map[item] = newEntry
-					newEntry.Parent = contextList
-				end
-			end
-			self.Updated = true
-		end
-
-		funcs.Show = function(self,x,y)
-			local elems = self.GuiElems
-			elems.SearchFrame.Visible = self.SearchEnabled
-			elems.List.Position = UDim2.new(0,2,0,2 + (self.SearchEnabled and 24 or 0))
-			elems.List.Size = UDim2.new(1,-4,1,-4 - (self.SearchEnabled and 24 or 0))
-			if self.SearchEnabled and self.ClearSearchOnShow then elems.SearchBar.Text = "" end
-			self.GuiElems.List.CanvasPosition = Vector2.new(0,0)
-
-			if not self.Updated then
-				self:Refresh()
-			end
-
-			local reverseY = false
-			local x,y = x or mouse.X, y or mouse.Y
-			local maxX,maxY = mouse.ViewSizeX,mouse.ViewSizeY
-
-			if x + self.Width > maxX then
-				x = self.ReverseX and x - self.Width or maxX - self.Width
-			end
-			elems.Main.Position = UDim2.new(0,x,0,y)
-			elems.Main.Size = UDim2.new(0,self.Width,0,0)
-			self.Gui.DisplayOrder = Main.DisplayOrders.Menu
-			Lib.ShowGui(self.Gui)
-
-			local toSize = elems.List.UIListLayout.AbsoluteContentSize.Y + 6
-			if self.MaxHeight and toSize > self.MaxHeight then
-				elems.List.CanvasSize = UDim2.new(0,0,0,toSize-6)
-				toSize = self.MaxHeight
-			else
-				elems.List.CanvasSize = UDim2.new(0,0,0,0)
-			end
-			if y + toSize > maxY then reverseY = true end
-
-			local closable
-			if self.CloseEvent then self.CloseEvent:Disconnect() end
-			self.CloseEvent = service.UserInputService.InputBegan:Connect(function(input)
-				if not closable then return end
-
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					if not Lib.CheckMouseInGui(elems.Main) then
-						self.CloseEvent:Disconnect()
-						self:Hide()
-					end
-				end
-			end)
-
-			if reverseY then
-				elems.Main.Position = UDim2.new(0,x,0,y-(self.ReverseYOffset or 0))
-				local newY = y - toSize - (self.ReverseYOffset or 0)
-				y = newY >= 0 and newY or 0
-				elems.Main:TweenSizeAndPosition(UDim2.new(0,self.Width,0,toSize),UDim2.new(0,x,0,y),Enum.EasingDirection.Out,Enum.EasingStyle.Quart,0.2,true)
-			else
-				elems.Main:TweenSize(UDim2.new(0,self.Width,0,toSize),Enum.EasingDirection.Out,Enum.EasingStyle.Quart,0.2,true)
-			end
-
-			Lib.FastWait()
-			if self.SearchEnabled and self.FocusSearchOnShow then elems.SearchBar:CaptureFocus() end
-			closable = true
-		end
-
-		funcs.Hide = function(self)
-			self.Gui.Parent = nil
-		end
-
-		funcs.ApplyTheme = function(self,data)
-			local theme = self.Theme
-			theme.ContentColor = data.ContentColor or Settings.Theme.Menu
-			theme.OutlineColor = data.OutlineColor or Settings.Theme.Menu
-			theme.DividerColor = data.DividerColor or Settings.Theme.Outline2
-			theme.TextColor = data.TextColor or Settings.Theme.Text
-			theme.HighlightColor = data.HighlightColor or Settings.Theme.Main1
-
-			self.GuiElems.Main.BackgroundColor3 = theme.OutlineColor
-			self.GuiElems.Main.Container.BackgroundColor3 = theme.ContentColor
-		end
-
-		local mt = {__index = funcs}
-		local function new()
-			if not mouse then mouse = Main.Mouse or service.Players.LocalPlayer:GetMouse() end
-
-			local obj = setmetatable({
-				Width = 200,
-				MaxHeight = nil,
-				Iconless = false,
-				SearchEnabled = false,
-				ClearSearchOnShow = true,
-				FocusSearchOnShow = true,
-				Updated = false,
-				QueuedDivider = false,
-				QueuedDividerText = "",
-				Items = {},
-				Registered = {},
-				GuiElems = {},
-				Theme = {}
-			},mt)
-			obj.Gui = createGui(obj)
-			obj:ApplyTheme({})
-			return obj
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.CodeFrame = (function()
-		local funcs = {}
-
-		local typeMap = {
-			[1] = "String",
-			[2] = "String",
-			[3] = "String",
-			[4] = "Comment",
-			[5] = "Operator",
-			[6] = "Number",
-			[7] = "Keyword",
-			[8] = "BuiltIn",
-			[9] = "LocalMethod",
-			[10] = "LocalProperty",
-			[11] = "Nil",
-			[12] = "Bool",
-			[13] = "Function",
-			[14] = "Local",
-			[15] = "Self",
-			[16] = "FunctionName",
-			[17] = "Bracket"
-		}
-
-		local specialKeywordsTypes = {
-			["nil"] = 11,
-			["true"] = 12,
-			["false"] = 12,
-			["function"] = 13,
-			["local"] = 14,
-			["self"] = 15
-		}
-
-		local keywords = {
-			["and"] = true,
-			["break"] = true,
-			["do"] = true,
-			["else"] = true,
-			["elseif"] = true,
-			["end"] = true,
-			["false"] = true,
-			["for"] = true,
-			["function"] = true,
-			["if"] = true,
-			["in"] = true,
-			["local"] = true,
-			["nil"] = true,
-			["not"] = true,
-			["or"] = true,
-			["repeat"] = true,
-			["return"] = true,
-			["then"] = true,
-			["true"] = true,
-			["until"] = true,
-			["while"] = true,
-			["plugin"] = true
-		}
-
-		local builtIns = {
-			["delay"] = true,
-			["elapsedTime"] = true,
-			["require"] = true,
-			["spawn"] = true,
-			["tick"] = true,
-			["time"] = true,
-			["typeof"] = true,
-			["UserSettings"] = true,
-			["wait"] = true,
-			["warn"] = true,
-			["game"] = true,
-			["shared"] = true,
-			["script"] = true,
-			["workspace"] = true,
-			["assert"] = true,
-			["collectgarbage"] = true,
-			["error"] = true,
-			["getfenv"] = true,
-			["getmetatable"] = true,
-			["ipairs"] = true,
-			["loadstring"] = true,
-			["newproxy"] = true,
-			["next"] = true,
-			["pairs"] = true,
-			["pcall"] = true,
-			["print"] = true,
-			["rawequal"] = true,
-			["rawget"] = true,
-			["rawset"] = true,
-			["select"] = true,
-			["setfenv"] = true,
-			["setmetatable"] = true,
-			["tonumber"] = true,
-			["tostring"] = true,
-			["type"] = true,
-			["unpack"] = true,
-			["xpcall"] = true,
-			["_G"] = true,
-			["_VERSION"] = true,
-			["coroutine"] = true,
-			["debug"] = true,
-			["math"] = true,
-			["os"] = true,
-			["string"] = true,
-			["table"] = true,
-			["bit32"] = true,
-			["utf8"] = true,
-			["Axes"] = true,
-			["BrickColor"] = true,
-			["CFrame"] = true,
-			["Color3"] = true,
-			["ColorSequence"] = true,
-			["ColorSequenceKeypoint"] = true,
-			["DockWidgetPluginGuiInfo"] = true,
-			["Enum"] = true,
-			["Faces"] = true,
-			["Instance"] = true,
-			["NumberRange"] = true,
-			["NumberSequence"] = true,
-			["NumberSequenceKeypoint"] = true,
-			["PathWaypoint"] = true,
-			["PhysicalProperties"] = true,
-			["Random"] = true,
-			["Ray"] = true,
-			["Rect"] = true,
-			["Region3"] = true,
-			["Region3int16"] = true,
-			["TweenInfo"] = true,
-			["UDim"] = true,
-			["UDim2"] = true,
-			["Vector2"] = true,
-			["Vector2int16"] = true,
-			["Vector3"] = true,
-			["Vector3int16"] = true,
-
-			["getgenv"] = true,
-			["getrenv"] = true,
-			["getsenv"] = true,
-			["getgc"] = true,
-			["getreg"] = true,
-			["filtergc"] = true,
-			["saveinstave"] = true,
-			["decompile"] = true,
-			["syn"] = true,
-			["getupvalue"] = true,
-			["getupvalues"] = true,
-			["setupvalue"] = true,
-			["getstack"] = true,
-			["setstack"] = true,
-			["getconstants"] = true,
-			["getconstant"] = true,
-			["setconstant"] = true,
-			["getproto"] = true,
-			["getprotos"] = true,
-			["checkcaller"] = true,
-			["clonefunction"] = true,
-			["cloneref"] = true,
-			["getfunctionhash"] = true,
-			["gethwid"] = true,
-			["hookfunction"] = true,
-			["hookmetamethod"] = true,
-			["iscclosure"] = true,
-			["islclosure"] = true,
-			["newcclosure"] = true,
-			["isexecutorclosure"] = true,
-			["restorefunction"] = true,
-			["crypt"] = true,
-			["Drawing"] = true,
-
-		}
-
-		local builtInInited = false
-
-		local richReplace = {
-			["'"] = "&apos;",
-			["\""] = "&quot;",
-			["<"] = "&lt;",
-			[">"] = "&gt;",
-			["&"] = "&amp;"
-		}
-
-		local tabSub = "\205"
-		local tabReplacement = (" %s%s "):format(tabSub,tabSub)
-
-		local tabJumps = {
-			[("[^%s] %s"):format(tabSub,tabSub)] = 0,
-			[(" %s%s"):format(tabSub,tabSub)] = -1,
-			[("%s%s "):format(tabSub,tabSub)] = 2,
-			[("%s [^%s]"):format(tabSub,tabSub)] = 1,
-		}
-
-		local tweenService = service.TweenService
-		local lineTweens = {}
-
-		local function initBuiltIn()
-			local env = getfenv()
-			local type = type
-			local tostring = tostring
-			for name,_ in next,builtIns do
-				local envVal = env[name]
-				if type(envVal) == "table" then
-					local items = {}
-					for i,v in next,envVal do
-						items[i] = true
-					end
-					builtIns[name] = items
-				end
-			end
-
-			local enumEntries = {}
-			local enums = Enum:GetEnums()
-			for i = 1,#enums do
-				enumEntries[tostring(enums[i])] = true
-			end
-			builtIns["Enum"] = enumEntries
-
-			builtInInited = true
-		end
-
-		local function setupEditBox(obj)
-			local editBox = obj.GuiElems.EditBox
-
-			editBox.Focused:Connect(function()
-				obj:ConnectEditBoxEvent()
-				obj.Editing = true
-			end)
-
-			editBox.FocusLost:Connect(function()
-				obj:DisconnectEditBoxEvent()
-				obj.Editing = false
-			end)
-
-			editBox:GetPropertyChangedSignal("Text"):Connect(function()
-				local text = editBox.Text
-				if #text == 0 or obj.EditBoxCopying then return end
-				editBox.Text = ""
-				obj:AppendText(text)
-			end)
-		end
-
-		local function setupMouseSelection(obj)
-			local mouse = plr:GetMouse()
-			local codeFrame = obj.GuiElems.LinesFrame
-			local lines = obj.Lines
-
-			codeFrame.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					local fontSizeX,fontSizeY = math.ceil(obj.FontSize/2),obj.FontSize
-
-					local relX = mouse.X - codeFrame.AbsolutePosition.X
-					local relY = mouse.Y - codeFrame.AbsolutePosition.Y
-					local selX = math.round(relX / fontSizeX) + obj.ViewX
-					local selY = math.floor(relY / fontSizeY) + obj.ViewY
-					local releaseEvent,mouseEvent,scrollEvent
-					local scrollPowerV,scrollPowerH = 0,0
-					selY = math.min(#lines-1,selY)
-					local relativeLine = lines[selY+1] or ""
-					selX = math.min(#relativeLine, selX + obj:TabAdjust(selX,selY))
-
-					obj.SelectionRange = {{-1,-1},{-1,-1}}
-					obj:MoveCursor(selX,selY)
-					obj.FloatCursorX = selX
-
-					local function updateSelection()
-						local relX = mouse.X - codeFrame.AbsolutePosition.X
-						local relY = mouse.Y - codeFrame.AbsolutePosition.Y
-						local sel2X = math.max(0,math.round(relX / fontSizeX) + obj.ViewX)
-						local sel2Y = math.max(0,math.floor(relY / fontSizeY) + obj.ViewY)
-
-						sel2Y = math.min(#lines-1,sel2Y)
-						local relativeLine = lines[sel2Y+1] or ""
-						sel2X = math.min(#relativeLine, sel2X + obj:TabAdjust(sel2X,sel2Y))
-
-						if sel2Y < selY or (sel2Y == selY and sel2X < selX) then
-							obj.SelectionRange = {{sel2X,sel2Y},{selX,selY}}
-						else
-							obj.SelectionRange = {{selX,selY},{sel2X,sel2Y}}
-						end
-
-						obj:MoveCursor(sel2X,sel2Y)
-						obj.FloatCursorX = sel2X
-						obj:Refresh()
-					end
-
-					releaseEvent = service.UserInputService.InputEnded:Connect(function(input)
-						if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-							releaseEvent:Disconnect()
-							mouseEvent:Disconnect()
-							scrollEvent:Disconnect()
-							obj:SetCopyableSelection()
-
-						end
-					end)
-
-					mouseEvent = service.UserInputService.InputChanged:Connect(function(input)
-						if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-							local upDelta = mouse.Y - codeFrame.AbsolutePosition.Y
-							local downDelta = mouse.Y - codeFrame.AbsolutePosition.Y - codeFrame.AbsoluteSize.Y
-							local leftDelta = mouse.X - codeFrame.AbsolutePosition.X
-							local rightDelta = mouse.X - codeFrame.AbsolutePosition.X - codeFrame.AbsoluteSize.X
-							scrollPowerV = 0
-							scrollPowerH = 0
-							if downDelta > 0 then
-								scrollPowerV = math.floor(downDelta*0.05) + 1
-							elseif upDelta < 0 then
-								scrollPowerV = math.ceil(upDelta*0.05) - 1
-							end
-							if rightDelta > 0 then
-								scrollPowerH = math.floor(rightDelta*0.05) + 1
-							elseif leftDelta < 0 then
-								scrollPowerH = math.ceil(leftDelta*0.05) - 1
-							end
-							updateSelection()
-						end
-					end)
-
-					scrollEvent = game:GetService("RunService").RenderStepped:Connect(function()
-						if scrollPowerV ~= 0 or scrollPowerH ~= 0 then
-							obj:ScrollDelta(scrollPowerH,scrollPowerV)
-							updateSelection()
-						end
-					end)
-
-					obj:Refresh()
-				end
-			end)
-		end
-
-		local function makeFrame(obj)
-			local frame = create({
-				{1,"Frame",{BackgroundColor3=Color3.new(0.15686275064945,0.15686275064945,0.15686275064945),BorderSizePixel = 0,Position=UDim2.new(0.5,-300,0.5,-200),Size=UDim2.new(0,600,0,400),}},
-			})
-
-			if Settings.Window.Transparency and Settings.Window.Transparency > 0 then
-				frame.BackgroundTransparency = 0.5
-			end
-
-			local elems = {}
-
-			local linesFrame = Instance.new("Frame")
-			linesFrame.Name = "Lines"
-			linesFrame.BackgroundTransparency = 1
-			linesFrame.Size = UDim2.new(1,0,1,0)
-			linesFrame.ClipsDescendants = true
-			linesFrame.Parent = frame
-
-			local lineNumbersLabel = Instance.new("TextLabel")
-			lineNumbersLabel.Name = "LineNumbers"
-			lineNumbersLabel.BackgroundTransparency = 1
-			lineNumbersLabel.Font = Enum.Font.Code
-			lineNumbersLabel.TextXAlignment = Enum.TextXAlignment.Right
-			lineNumbersLabel.TextYAlignment = Enum.TextYAlignment.Top
-			lineNumbersLabel.ClipsDescendants = true
-			lineNumbersLabel.RichText = true
-			lineNumbersLabel.Parent = frame
-
-			local cursor = Instance.new("Frame")
-			cursor.Name = "Cursor"
-			cursor.BackgroundColor3 = Color3.fromRGB(220,220,220)
-			cursor.BorderSizePixel = 0
-			cursor.Parent = frame
-
-			local editBox = Instance.new("TextBox")
-			editBox.Name = "EditBox"
-			editBox.MultiLine = true
-			editBox.Visible = false
-			editBox.Parent = frame
-
-			lineTweens.Invis = tweenService:Create(cursor,TweenInfo.new(0.4,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{BackgroundTransparency = 1})
-			lineTweens.Vis = tweenService:Create(cursor,TweenInfo.new(0.2,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{BackgroundTransparency = 0})
-
-			elems.LinesFrame = linesFrame
-			elems.LineNumbersLabel = lineNumbersLabel
-			elems.Cursor = cursor
-			elems.EditBox = editBox
-			elems.ScrollCorner = create({{1,"Frame",{BackgroundColor3=Color3.new(0.15686275064945,0.15686275064945,0.15686275064945),BorderSizePixel=0,Name="ScrollCorner",Position=UDim2.new(1,-16,1,-16),Size=UDim2.new(0,16,0,16),Visible=false,}}})
-
-			elems.ScrollCorner.Parent = frame
-			linesFrame.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					obj:SetEditing(true,input)
-				end
-			end)
-
-			obj.Frame = frame
-			obj.Gui = frame
-			obj.GuiElems = elems
-			setupEditBox(obj)
-			setupMouseSelection(obj)
-
-			return frame
-		end
-
-		funcs.GetSelectionText = function(self)
-			if not self:IsValidRange() then return "" end
-
-			local selectionRange = self.SelectionRange
-			local selX,selY = selectionRange[1][1], selectionRange[1][2]
-			local sel2X,sel2Y = selectionRange[2][1], selectionRange[2][2]
-			local deltaLines = sel2Y-selY
-			local lines = self.Lines
-
-			if not lines[selY+1] or not lines[sel2Y+1] then return "" end
-
-			if deltaLines == 0 then
-				return self:ConvertText(lines[selY+1]:sub(selX+1,sel2X), false)
-			end
-
-			local leftSub = lines[selY+1]:sub(selX+1)
-			local rightSub = lines[sel2Y+1]:sub(1,sel2X)
-
-			local result = leftSub.."\n"
-			for i = selY+1,sel2Y-1 do
-				result = result..lines[i+1].."\n"
-			end
-			result = result..rightSub
-
-			return self:ConvertText(result,false)
-		end
-
-		funcs.SetCopyableSelection = function(self)
-			local text = self:GetSelectionText()
-			local editBox = self.GuiElems.EditBox
-
-			self.EditBoxCopying = true
-			editBox.Text = text
-			editBox.SelectionStart = 1
-			editBox.CursorPosition = #editBox.Text + 1
-			self.EditBoxCopying = false
-		end
-
-		funcs.ConnectEditBoxEvent = function(self)
-			if self.EditBoxEvent then
-				self.EditBoxEvent:Disconnect()
-			end
-
-			self.EditBoxEvent = service.UserInputService.InputBegan:Connect(function(input)
-				if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
-
-				local keycodes = Enum.KeyCode
-				local keycode = input.KeyCode
-
-				local function setupMove(key,func)
-					local endCon,finished
-					endCon = service.UserInputService.InputEnded:Connect(function(input)
-						if input.KeyCode ~= key then return end
-						endCon:Disconnect()
-						finished = true
-					end)
-					func()
-					Lib.FastWait(0.5)
-					while not finished do func() Lib.FastWait(0.03) end
-				end
-
-				if keycode == keycodes.Down then
-					setupMove(keycodes.Down,function()
-						self.CursorX = self.FloatCursorX
-						self.CursorY = self.CursorY + 1
-						self:UpdateCursor()
-						self:JumpToCursor()
-					end)
-				elseif keycode == keycodes.Up then
-					setupMove(keycodes.Up,function()
-						self.CursorX = self.FloatCursorX
-						self.CursorY = self.CursorY - 1
-						self:UpdateCursor()
-						self:JumpToCursor()
-					end)
-				elseif keycode == keycodes.Left then
-					setupMove(keycodes.Left,function()
-						local line = self.Lines[self.CursorY+1] or ""
-						self.CursorX = self.CursorX - 1 - (line:sub(self.CursorX-3,self.CursorX) == tabReplacement and 3 or 0)
-						if self.CursorX < 0 then
-							self.CursorY = self.CursorY - 1
-							local line2 = self.Lines[self.CursorY+1] or ""
-							self.CursorX = #line2
-						end
-						self.FloatCursorX = self.CursorX
-						self:UpdateCursor()
-						self:JumpToCursor()
-					end)
-				elseif keycode == keycodes.Right then
-					setupMove(keycodes.Right,function()
-						local line = self.Lines[self.CursorY+1] or ""
-						self.CursorX = self.CursorX + 1 + (line:sub(self.CursorX+1,self.CursorX+4) == tabReplacement and 3 or 0)
-						if self.CursorX > #line then
-							self.CursorY = self.CursorY + 1
-							self.CursorX = 0
-						end
-						self.FloatCursorX = self.CursorX
-						self:UpdateCursor()
-						self:JumpToCursor()
-					end)
-				elseif keycode == keycodes.Backspace then
-					setupMove(keycodes.Backspace,function()
-						local startRange,endRange
-						if self:IsValidRange() then
-							startRange = self.SelectionRange[1]
-							endRange = self.SelectionRange[2]
-						else
-							endRange = {self.CursorX,self.CursorY}
-						end
-
-						if not startRange then
-							local line = self.Lines[self.CursorY+1] or ""
-							self.CursorX = self.CursorX - 1 - (line:sub(self.CursorX-3,self.CursorX) == tabReplacement and 3 or 0)
-							if self.CursorX < 0 then
-								self.CursorY = self.CursorY - 1
-								local line2 = self.Lines[self.CursorY+1] or ""
-								self.CursorX = #line2
-							end
-							self.FloatCursorX = self.CursorX
-							self:UpdateCursor()
-
-							startRange = startRange or {self.CursorX,self.CursorY}
-						end
-
-						self:DeleteRange({startRange,endRange},false,true)
-						self:ResetSelection(true)
-						self:JumpToCursor()
-					end)
-				elseif keycode == keycodes.Delete then
-					setupMove(keycodes.Delete,function()
-						local startRange,endRange
-						if self:IsValidRange() then
-							startRange = self.SelectionRange[1]
-							endRange = self.SelectionRange[2]
-						else
-							startRange = {self.CursorX,self.CursorY}
-						end
-
-						if not endRange then
-							local line = self.Lines[self.CursorY+1] or ""
-							local endCursorX = self.CursorX + 1 + (line:sub(self.CursorX+1,self.CursorX+4) == tabReplacement and 3 or 0)
-							local endCursorY = self.CursorY
-							if endCursorX > #line then
-								endCursorY = endCursorY + 1
-								endCursorX = 0
-							end
-							self:UpdateCursor()
-
-							endRange = endRange or {endCursorX,endCursorY}
-						end
-
-						self:DeleteRange({startRange,endRange},false,true)
-						self:ResetSelection(true)
-						self:JumpToCursor()
-					end)
-				elseif service.UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-					if keycode == keycodes.A then
-						self.SelectionRange = {{0,0},{#self.Lines[#self.Lines],#self.Lines-1}}
-						self:SetCopyableSelection()
-						self:Refresh()
-					end
-				end
-			end)
-		end
-
-		funcs.DisconnectEditBoxEvent = function(self)
-			if self.EditBoxEvent then
-				self.EditBoxEvent:Disconnect()
-			end
-		end
-
-		funcs.ResetSelection = function(self,norefresh)
-			self.SelectionRange = {{-1,-1},{-1,-1}}
-			if not norefresh then self:Refresh() end
-		end
-
-		funcs.IsValidRange = function(self,range)
-			local selectionRange = range or self.SelectionRange
-			local selX,selY = selectionRange[1][1], selectionRange[1][2]
-			local sel2X,sel2Y = selectionRange[2][1], selectionRange[2][2]
-
-			if selX == -1 or (selX == sel2X and selY == sel2Y) then return false end
-
-			return true
-		end
-
-		funcs.DeleteRange = function(self,range,noprocess,updatemouse)
-			range = range or self.SelectionRange
-			if not self:IsValidRange(range) then return end
-
-			local lines = self.Lines
-			local selX,selY = range[1][1], range[1][2]
-			local sel2X,sel2Y = range[2][1], range[2][2]
-			local deltaLines = sel2Y-selY
-
-			if not lines[selY+1] or not lines[sel2Y+1] then return end
-
-			local leftSub = lines[selY+1]:sub(1,selX)
-			local rightSub = lines[sel2Y+1]:sub(sel2X+1)
-			lines[selY+1] = leftSub..rightSub
-
-			local remove = table.remove
-			for i = 1,deltaLines do
-				remove(lines,selY+2)
-			end
-
-			if range == self.SelectionRange then self.SelectionRange = {{-1,-1},{-1,-1}} end
-			if updatemouse then
-				self.CursorX = selX
-				self.CursorY = selY
-				self:UpdateCursor()
-			end
-
-			if not noprocess then
-				self:ProcessTextChange()
-			end
-		end
-
-		funcs.AppendText = function(self,text)
-			self:DeleteRange(nil,true,true)
-			local lines,cursorX,cursorY = self.Lines,self.CursorX,self.CursorY
-			local line = lines[cursorY+1]
-			local before = line:sub(1,cursorX)
-			local after = line:sub(cursorX+1)
-
-			text = text:gsub("\r\n","\n")
-			text = self:ConvertText(text,true)
-
-			local textLines = text:split("\n")
-			local insert = table.insert
-
-			for i = 1,#textLines do
-				local linePos = cursorY+i
-				if i > 1 then insert(lines,linePos,"") end
-
-				local textLine = textLines[i]
-				local newBefore = (i == 1 and before or "")
-				local newAfter = (i == #textLines and after or "")
-
-				lines[linePos] = newBefore..textLine..newAfter
-			end
-
-			if #textLines > 1 then cursorX = 0 end
-
-			self:ProcessTextChange()
-			self.CursorX = cursorX + #textLines[#textLines]
-			self.CursorY = cursorY + #textLines-1
-			self:UpdateCursor()
-		end
-
-		funcs.ScrollDelta = function(self,x,y)
-			self.ScrollV:ScrollTo(self.ScrollV.Index + y)
-			self.ScrollH:ScrollTo(self.ScrollH.Index + x)
-		end
-
-		funcs.TabAdjust = function(self,x,y)
-			local lines = self.Lines
-			local line = lines[y+1]
-			x=x+1
-
-			if line then
-				local left = line:sub(x-1,x-1)
-				local middle = line:sub(x,x)
-				local right = line:sub(x+1,x+1)
-				local selRange = (#left > 0 and left or " ") .. (#middle > 0 and middle or " ") .. (#right > 0 and right or " ")
-
-				for i,v in pairs(tabJumps) do
-					if selRange:find(i) then
-						return v
-					end
-				end
-			end
-			return 0
-		end
-
-		funcs.SetEditing = function(self,on,input)
-			self:UpdateCursor(input)
-
-			if on then
-				if self.Editable then
-					self.GuiElems.EditBox.Text = ""
-					self.GuiElems.EditBox:CaptureFocus()
-				end
-			else
-				self.GuiElems.EditBox:ReleaseFocus()
-			end
-		end
-
-		funcs.CursorAnim = function(self,on)
-			local cursor = self.GuiElems.Cursor
-			local animTime = tick()
-			self.LastAnimTime = animTime
-
-			if not on then return end
-
-			lineTweens.Invis:Cancel()
-			lineTweens.Vis:Cancel()
-			cursor.BackgroundTransparency = 0
-
-			coroutine.wrap(function()
-				while self.Editable do
-					Lib.FastWait(0.5)
-					if self.LastAnimTime ~= animTime then return end
-					lineTweens.Invis:Play()
-					Lib.FastWait(0.4)
-					if self.LastAnimTime ~= animTime then return end
-					lineTweens.Vis:Play()
-					Lib.FastWait(0.2)
-				end
-			end)()
-		end
-
-		funcs.MoveCursor = function(self,x,y)
-			self.CursorX = x
-			self.CursorY = y
-			self:UpdateCursor()
-			self:JumpToCursor()
-		end
-
-		funcs.JumpToCursor = function(self)
-			self:Refresh()
-		end
-
-		funcs.UpdateCursor = function(self,input)
-			local linesFrame = self.GuiElems.LinesFrame
-			local cursor = self.GuiElems.Cursor
-			local hSize = math.max(0,linesFrame.AbsoluteSize.X)
-			local vSize = math.max(0,linesFrame.AbsoluteSize.Y)
-			local maxLines = math.ceil(vSize / self.FontSize)
-			local maxCols = math.ceil(hSize / math.ceil(self.FontSize/2))
-			local viewX,viewY = self.ViewX,self.ViewY
-			local totalLinesStr = tostring(#self.Lines)
-			local fontWidth = math.ceil(self.FontSize / 2)
-			local linesOffset = #totalLinesStr*fontWidth + 4*fontWidth
-
-			if input then
-				local linesFrame = self.GuiElems.LinesFrame
-				local frameX,frameY = linesFrame.AbsolutePosition.X,linesFrame.AbsolutePosition.Y
-				local mouseX,mouseY = input.Position.X,input.Position.Y
-				local fontSizeX,fontSizeY = math.ceil(self.FontSize/2),self.FontSize
-
-				self.CursorX = self.ViewX + math.round((mouseX - frameX) / fontSizeX)
-				self.CursorY = self.ViewY + math.floor((mouseY - frameY) / fontSizeY)
-			end
-
-			local cursorX,cursorY = self.CursorX,self.CursorY
-
-			local line = self.Lines[cursorY+1] or ""
-			if cursorX > #line then cursorX = #line
-			elseif cursorX < 0 then cursorX = 0 end
-
-			if cursorY >= #self.Lines then
-				cursorY = math.max(0,#self.Lines-1)
-			elseif cursorY < 0 then
-				cursorY = 0
-			end
-
-			cursorX = cursorX + self:TabAdjust(cursorX,cursorY)
-
-			self.CursorX = cursorX
-			self.CursorY = cursorY
-
-			local cursorVisible = (cursorX >= viewX) and (cursorY >= viewY) and (cursorX <= viewX + maxCols) and (cursorY <= viewY + maxLines)
-			if cursorVisible then
-				local offX = (cursorX - viewX)
-				local offY = (cursorY - viewY)
-				cursor.Position = UDim2.new(0,linesOffset + offX*math.ceil(self.FontSize/2) - 1,0,offY*self.FontSize)
-				cursor.Size = UDim2.new(0,1,0,self.FontSize+2)
-				cursor.Visible = true
-				self:CursorAnim(true)
-			else
-				cursor.Visible = false
-			end
-		end
-
-		funcs.MapNewLines = function(self)
-			local newLines = {}
-			local count = 1
-			local text = self.Text
-			local find = string.find
-			local init = 1
-
-			local pos = find(text,"\n",init,true)
-			while pos do
-				newLines[count] = pos
-				count = count + 1
-				init = pos + 1
-				pos = find(text,"\n",init,true)
-			end
-
-			self.NewLines = newLines
-		end
-
-		funcs.PreHighlight = function(self)
-			local start = tick()
-			local text = self.Text:gsub("\\\\","  ")
-
-			local textLen = #text
-			local found = {}
-			local foundMap = {}
-			local extras = {}
-			local find = string.find
-			local sub = string.sub
-			self.ColoredLines = {}
-
-			local function findAll(str,pattern,typ,raw)
-				local count = #found+1
-				local init = 1
-				local x,y,extra = find(str,pattern,init,raw)
-				while x do
-					found[count] = x
-					foundMap[x] = typ
-					if extra then
-						extras[x] = extra
-					end
-
-					count = count+1
-					init = y+1
-					x,y,extra = find(str,pattern,init,raw)
-				end
-			end
-			local start = tick()
-			findAll(text,'"',1,true)
-			findAll(text,"'",2,true)
-			findAll(text,"%[(=*)%[",3)
-			findAll(text,"--",4,true)
-			table.sort(found)
-
-			local newLines = self.NewLines
-			local curLine = 0
-			local lineTableCount = 1
-			local lineStart = 0
-			local lineEnd = 0
-			local lastEnding = 0
-			local foundHighlights = {}
-
-			for i = 1,#found do
-				local pos = found[i]
-				if pos <= lastEnding then continue end
-
-				local ending = pos
-				local typ = foundMap[pos]
-				if typ == 1 then
-					ending = find(text,'"',pos+1,true)
-					while ending and sub(text,ending-1,ending-1) == "\\" do
-						ending = find(text,'"',ending+1,true)
-					end
-					if not ending then ending = textLen end
-				elseif typ == 2 then
-					ending = find(text,"'",pos+1,true)
-					while ending and sub(text,ending-1,ending-1) == "\\" do
-						ending = find(text,"'",ending+1,true)
-					end
-					if not ending then ending = textLen end
-				elseif typ == 3 then
-					_,ending = find(text,"]"..extras[pos].."]",pos+1,true)
-					if not ending then ending = textLen end
-				elseif typ == 4 then
-					local ahead = foundMap[pos+2]
-
-					if ahead == 3 then
-						_,ending = find(text,"]"..extras[pos+2].."]",pos+1,true)
-						if not ending then ending = textLen end
-					else
-						ending = find(text,"\n",pos+1,true) or textLen
-					end
-				end
-
-				while pos > lineEnd do
-					curLine = curLine + 1
-
-					lineEnd = newLines[curLine] or textLen+1
-				end
-				while true do
-					local lineTable = foundHighlights[curLine]
-					if not lineTable then lineTable = {} foundHighlights[curLine] = lineTable end
-					lineTable[pos] = {typ,ending}
-
-					if ending > lineEnd then
-						curLine = curLine + 1
-						lineEnd = newLines[curLine] or textLen+1
-					else
-						break
-					end
-				end
-
-				lastEnding = ending
-
-			end
-			self.PreHighlights = foundHighlights
-
-		end
-
-		funcs.HighlightLine = function(self,line)
-			local cached = self.ColoredLines[line]
-			if cached then return cached end
-
-			local sub = string.sub
-			local find = string.find
-			local match = string.match
-			local highlights = {}
-			local preHighlights = self.PreHighlights[line] or {}
-			local lineText = self.Lines[line] or ""
-			local lineLen = #lineText
-			local lastEnding = 0
-			local currentType = 0
-			local lastWord = nil
-			local wordBeginsDotted = false
-			local funcStatus = 0
-			local lineStart = self.NewLines[line-1] or 0
-
-			local preHighlightMap = {}
-			for pos,data in next,preHighlights do
-				local relativePos = pos-lineStart
-				if relativePos < 1 then
-					currentType = data[1]
-					lastEnding = data[2] - lineStart
-
-				else
-					preHighlightMap[relativePos] = {data[1],data[2]-lineStart}
-				end
-			end
-
-			for col = 1,#lineText do
-				if col <= lastEnding then highlights[col] = currentType continue end
-
-				local pre = preHighlightMap[col]
-				if pre then
-					currentType = pre[1]
-					lastEnding = pre[2]
-					highlights[col] = currentType
-					wordBeginsDotted = false
-					lastWord = nil
-					funcStatus = 0
-				else
-					local char = sub(lineText,col,col)
-					if find(char,"[%a_]") then
-						local word = match(lineText,"[%a%d_]+",col)
-						local wordType = (keywords[word] and 7) or (builtIns[word] and 8)
-
-						lastEnding = col+#word-1
-
-						if wordType ~= 7 then
-							if wordBeginsDotted then
-								local prevBuiltIn = lastWord and builtIns[lastWord]
-								wordType = (prevBuiltIn and type(prevBuiltIn) == "table" and prevBuiltIn[word] and 8) or 10
-							end
-
-							if wordType ~= 8 then
-								local x,y,br = find(lineText,"^%s*([%({\"'])",lastEnding+1)
-								if x then
-									wordType = (funcStatus > 0 and br == "(" and 16) or 9
-									funcStatus = 0
-								end
-							end
-						else
-							wordType = specialKeywordsTypes[word] or wordType
-							funcStatus = (word == "function" and 1 or 0)
-						end
-
-						lastWord = word
-						wordBeginsDotted = false
-						if funcStatus > 0 then funcStatus = 1 end
-
-						if wordType then
-							currentType = wordType
-							highlights[col] = currentType
-						else
-							currentType = nil
-						end
-					elseif find(char,"%p") then
-						local isDot = (char == ".")
-						local isNum = isDot and find(sub(lineText,col+1,col+1),"%d")
-						highlights[col] = (isNum and 6 or 5)
-
-						if not isNum then
-							local dotStr = isDot and match(lineText,"%.%.?%.?",col)
-							if dotStr and #dotStr > 1 then
-								currentType = 5
-								lastEnding = col+#dotStr-1
-								wordBeginsDotted = false
-								lastWord = nil
-								funcStatus = 0
-							else
-								if isDot then
-									if wordBeginsDotted then
-										lastWord = nil
-									else
-										wordBeginsDotted = true
-									end
-								else
-									wordBeginsDotted = false
-									lastWord = nil
-								end
-
-								funcStatus = ((isDot or char == ":") and funcStatus == 1 and 2) or 0
-							end
-						end
-					elseif find(char,"%d") then
-						local _,endPos = find(lineText,"%x+",col)
-						local endPart = sub(lineText,endPos,endPos+1)
-						if (endPart == "e+" or endPart == "e-") and find(sub(lineText,endPos+2,endPos+2),"%d") then
-							endPos = endPos + 1
-						end
-						currentType = 6
-						lastEnding = endPos
-						highlights[col] = 6
-						wordBeginsDotted = false
-						lastWord = nil
-						funcStatus = 0
-					else
-						highlights[col] = currentType
-						local _,endPos = find(lineText,"%s+",col)
-						if endPos then
-							lastEnding = endPos
-						end
-					end
-				end
-			end
-
-			self.ColoredLines[line] = highlights
-			return highlights
-		end
-
-		funcs.Refresh = function(self)
-			local start = tick()
-
-			local linesFrame = self.Frame.Lines
-			local hSize = math.max(0,linesFrame.AbsoluteSize.X)
-			local vSize = math.max(0,linesFrame.AbsoluteSize.Y)
-			local maxLines = math.ceil(vSize / self.FontSize)
-			local maxCols = math.ceil(hSize / math.ceil(self.FontSize/2))
-			local gsub = string.gsub
-			local sub = string.sub
-
-			local viewX,viewY = self.ViewX,self.ViewY
-
-			local lineNumberStr = ""
-
-			for row = 1,maxLines do
-				local lineFrame = self.LineFrames[row]
-				if not lineFrame then
-					lineFrame = Instance.new("Frame")
-					lineFrame.Name = "Line"
-					lineFrame.Position = UDim2.new(0,0,0,(row-1)*self.FontSize)
-					lineFrame.Size = UDim2.new(1,0,0,self.FontSize)
-					lineFrame.BorderSizePixel = 0
-					lineFrame.BackgroundTransparency = 1
-
-					local selectionHighlight = Instance.new("Frame")
-					selectionHighlight.Name = "SelectionHighlight"
-					selectionHighlight.BorderSizePixel = 0
-					selectionHighlight.BackgroundColor3 = Settings.Theme.Syntax.SelectionBack
-					selectionHighlight.Parent = lineFrame
-
-					local label = Instance.new("TextLabel")
-					label.Name = "Label"
-					label.BackgroundTransparency = 1
-					label.Font = Enum.Font.Code
-					label.TextSize = self.FontSize
-					label.Size = UDim2.new(1,0,0,self.FontSize)
-					label.RichText = true
-					label.TextXAlignment = Enum.TextXAlignment.Left
-					label.TextColor3 = self.Colors.Text
-					label.ZIndex = 2
-					label.Parent = lineFrame
-
-					lineFrame.Parent = linesFrame
-					self.LineFrames[row] = lineFrame
-				end
-
-				local relaY = viewY + row
-				local lineText = self.Lines[relaY] or ""
-				local resText = ""
-				local highlights = self:HighlightLine(relaY)
-				local colStart = viewX + 1
-
-				local richTemplates = self.RichTemplates
-				local textTemplate = richTemplates.Text
-				local selectionTemplate = richTemplates.Selection
-				local curType = highlights[colStart]
-				local curTemplate = richTemplates[typeMap[curType]] or textTemplate
-
-				local selectionRange = self.SelectionRange
-				local selPos1 = selectionRange[1]
-				local selPos2 = selectionRange[2]
-				local selRow,selColumn = selPos1[2],selPos1[1]
-				local sel2Row,sel2Column = selPos2[2],selPos2[1]
-				local selRelaX,selRelaY = viewX,relaY-1
-
-				if selRelaY >= selPos1[2] and selRelaY <= selPos2[2] then
-					local fontSizeX = math.ceil(self.FontSize/2)
-					local posX = (selRelaY == selPos1[2] and selPos1[1] or 0) - viewX
-					local sizeX = (selRelaY == selPos2[2] and selPos2[1]-posX-viewX or maxCols+viewX)
-
-					lineFrame.SelectionHighlight.Position = UDim2.new(0,posX*fontSizeX,0,0)
-					lineFrame.SelectionHighlight.Size = UDim2.new(0,sizeX*fontSizeX,1,0)
-					lineFrame.SelectionHighlight.Visible = true
-				else
-					lineFrame.SelectionHighlight.Visible = false
-				end
-
-				local inSelection = selRelaY >= selRow and selRelaY <= sel2Row and (selRelaY == selRow and viewX >= selColumn or selRelaY ~= selRow) and (selRelaY == sel2Row and viewX < sel2Column or selRelaY ~= sel2Row)
-				if inSelection then
-					curType = -999
-					curTemplate = selectionTemplate
-				end
-
-				for col = 2,maxCols do
-					local relaX = viewX + col
-					local selRelaX = relaX-1
-					local posType = highlights[relaX]
-
-					local inSelection = selRelaY >= selRow and selRelaY <= sel2Row and (selRelaY == selRow and selRelaX >= selColumn or selRelaY ~= selRow) and (selRelaY == sel2Row and selRelaX < sel2Column or selRelaY ~= sel2Row)
-					if inSelection then
-						posType = -999
-					end
-
-					if posType ~= curType then
-						local template = (inSelection and selectionTemplate) or richTemplates[typeMap[posType]] or textTemplate
-
-						if template ~= curTemplate then
-							local nextText = gsub(sub(lineText,colStart,relaX-1),"['\"<>&]",richReplace)
-							resText = resText .. (curTemplate ~= textTemplate and (curTemplate .. nextText .. "</font>") or nextText)
-							colStart = relaX
-							curTemplate = template
-						end
-						curType = posType
-					end
-				end
-
-				local lastText = gsub(sub(lineText,colStart,viewX+maxCols),"['\"<>&]",richReplace)
-
-				if #lastText > 0 then
-					resText = resText .. (curTemplate ~= textTemplate and (curTemplate .. lastText .. "</font>") or lastText)
-				end
-
-				if self.Lines[relaY] then
-
-					lineNumberStr = lineNumberStr .. (relaY == self.CursorY and ("<b>"..relaY.."</b>\n") or relaY .. "\n")
-
-				end
-
-				lineFrame.Label.Text = resText
-			end
-
-			for i = maxLines+1,#self.LineFrames do
-				self.LineFrames[i]:Destroy()
-				self.LineFrames[i] = nil
-			end
-
-			self.Frame.LineNumbers.Text = lineNumberStr
-			self:UpdateCursor()
-
-		end
-
-		funcs.UpdateView = function(self)
-			local totalLinesStr = tostring(#self.Lines)
-			local fontWidth = math.ceil(self.FontSize / 2)
-			local linesOffset = #totalLinesStr*fontWidth + 4*fontWidth
-
-			local linesFrame = self.Frame.Lines
-			local hSize = linesFrame.AbsoluteSize.X
-			local vSize = linesFrame.AbsoluteSize.Y
-			local maxLines = math.ceil(vSize / self.FontSize)
-			local totalWidth = self.MaxTextCols*fontWidth
-			local scrollV = self.ScrollV
-			local scrollH = self.ScrollH
-
-			scrollV.VisibleSpace = maxLines
-			scrollV.TotalSpace = #self.Lines + 1
-			scrollH.VisibleSpace = math.ceil(hSize/fontWidth)
-			scrollH.TotalSpace = self.MaxTextCols + 1
-
-			scrollV.Gui.Visible = #self.Lines + 1 > maxLines
-			scrollH.Gui.Visible = totalWidth > hSize
-
-			local oldOffsets = self.FrameOffsets
-			self.FrameOffsets = Vector2.new(scrollV.Gui.Visible and -16 or 0, scrollH.Gui.Visible and -16 or 0)
-			if oldOffsets ~= self.FrameOffsets then
-				self:UpdateView()
-			else
-				scrollV:ScrollTo(self.ViewY,true)
-				scrollH:ScrollTo(self.ViewX,true)
-
-				if scrollV.Gui.Visible and scrollH.Gui.Visible then
-					scrollV.Gui.Size = UDim2.new(0,16,1,-16)
-					scrollH.Gui.Size = UDim2.new(1,-16,0,16)
-					self.GuiElems.ScrollCorner.Visible = true
-				else
-					scrollV.Gui.Size = UDim2.new(0,16,1,0)
-					scrollH.Gui.Size = UDim2.new(1,0,0,16)
-					self.GuiElems.ScrollCorner.Visible = false
-				end
-
-				self.ViewY = scrollV.Index
-				self.ViewX = scrollH.Index
-				self.Frame.Lines.Position = UDim2.new(0,linesOffset,0,0)
-				self.Frame.Lines.Size = UDim2.new(1,-linesOffset+oldOffsets.X,1,oldOffsets.Y)
-				self.Frame.LineNumbers.Position = UDim2.new(0,fontWidth,0,0)
-				self.Frame.LineNumbers.Size = UDim2.new(0,#totalLinesStr*fontWidth,1,oldOffsets.Y)
-				self.Frame.LineNumbers.TextSize = self.FontSize
-			end
-		end
-
-		funcs.ProcessTextChange = function(self)
-			local maxCols = 0
-			local lines = self.Lines
-
-			for i = 1,#lines do
-				local lineLen = #lines[i]
-				if lineLen > maxCols then
-					maxCols = lineLen
-				end
-			end
-
-			self.MaxTextCols = maxCols
-			self:UpdateView()
-			self.Text = table.concat(self.Lines,"\n")
-			self:MapNewLines()
-			self:PreHighlight()
-			self:Refresh()
-
-		end
-
-		funcs.ConvertText = function(self,text,toEditor)
-			if toEditor then
-
-				return text:gsub("\t","    ")
-			else
-				return text:gsub((" %s%s "):format(tabSub,tabSub),"\t")
-			end
-		end
-
-		funcs.GetText = function(self)
-			local source = table.concat(self.Lines,"\n")
-			return self:ConvertText(source,false)
-		end
-
-		funcs.SetText = function(self,txt)
-			txt = self:ConvertText(txt,true)
-			local lines = self.Lines
-			table.clear(lines)
-			local count = 1
-
-			for line in txt:gmatch("([^\n\r]*)[\n\r]?") do
-				local len = #line
-				lines[count] = line
-				count = count + 1
-			end
-
-			self:ProcessTextChange()
-		end
-
-		funcs.MakeRichTemplates = function(self)
-			local floor = math.floor
-			local templates = {}
-
-			for name,color in pairs(self.Colors) do
-				templates[name] = ('<font color="rgb(%s,%s,%s)">'):format(floor(color.r*255),floor(color.g*255),floor(color.b*255))
-			end
-
-			self.RichTemplates = templates
-		end
-
-		funcs.ApplyTheme = function(self)
-			local colors = Settings.Theme.Syntax
-			self.Colors = colors
-			self.Frame.LineNumbers.TextColor3 = colors.Text
-			self.Frame.BackgroundColor3 = colors.Background
-		end
-
-		local mt = {__index = funcs}
-
-		local function new()
-			if not builtInInited then initBuiltIn() end
-
-			local scrollV = Lib.ScrollBar.new()
-			local scrollH = Lib.ScrollBar.new(true)
-			scrollH.Gui.Position = UDim2.new(0,0,1,-16)
-			local obj = setmetatable({
-				FontSize = 16,
-				ViewX = 0,
-				ViewY = 0,
-				Colors = Settings.Theme.Syntax,
-				ColoredLines = {},
-				Lines = {""},
-				LineFrames = {},
-				Editable = true,
-				Editing = false,
-				CursorX = 0,
-				CursorY = 0,
-				FloatCursorX = 0,
-				Text = "",
-				PreHighlights = {},
-				SelectionRange = {{-1,-1},{-1,-1}},
-				NewLines = {},
-				FrameOffsets = Vector2.new(0,0),
-				MaxTextCols = 0,
-				ScrollV = scrollV,
-				ScrollH = scrollH
-			},mt)
-
-			scrollV.WheelIncrement = 3
-			scrollH.Increment = 2
-			scrollH.WheelIncrement = 7
-
-			scrollV.Scrolled:Connect(function()
-				obj.ViewY = scrollV.Index
-				obj:Refresh()
-			end)
-
-			scrollH.Scrolled:Connect(function()
-				obj.ViewX = scrollH.Index
-				obj:Refresh()
-			end)
-
-			makeFrame(obj)
-			obj:MakeRichTemplates()
-			obj:ApplyTheme()
-			scrollV:SetScrollFrame(obj.Frame.Lines)
-			scrollV.Gui.Parent = obj.Frame
-			scrollH.Gui.Parent = obj.Frame
-
-			obj:UpdateView()
-			obj.Frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-				obj:UpdateView()
-				obj:Refresh()
-			end)
-
-			return obj
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.Checkbox = (function()
-		local funcs = {}
-		local c3 = Color3.fromRGB
-		local v2 = Vector2.new
-		local ud2s = UDim2.fromScale
-		local ud2o = UDim2.fromOffset
-		local ud = UDim.new
-		local max = math.max
-		local new = Instance.new
-		local TweenSize = new("Frame").TweenSize
-		local ti = TweenInfo.new
-		local delay = delay
-
-		local function ripple(object, color)
-			local circle = new('Frame')
-			circle.BackgroundColor3 = color
-			circle.BackgroundTransparency = 0.75
-			circle.BorderSizePixel = 0
-			circle.AnchorPoint = v2(0.5, 0.5)
-			circle.Size = ud2o()
-			circle.Position = ud2s(0.5, 0.5)
-			circle.Parent = object
-			local rounding = new('UICorner')
-			rounding.CornerRadius = ud(1)
-			rounding.Parent = circle
-
-			local abssz = object.AbsoluteSize
-			local size = max(abssz.X, abssz.Y) * 5/3
-
-			TweenSize(circle, ud2o(size, size), "Out", "Quart", 0.4)
-			service.TweenService:Create(circle, ti(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
-
-			service.Debris:AddItem(circle, 0.4)
-		end
-
-		local function initGui(self,frame)
-			local checkbox = frame or create({
-				{1,"ImageButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Name="Checkbox",Position=UDim2.new(0,3,0,3),Size=UDim2.new(0,16,0,16),}},
-				{2,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Name="ripples",Parent={1},Size=UDim2.new(1,0,1,0),}},
-				{3,"Frame",{BackgroundColor3=Color3.new(0.10196078568697,0.10196078568697,0.10196078568697),BorderSizePixel=0,Name="outline",Parent={1},Size=UDim2.new(0,16,0,16),}},
-				{4,"Frame",{BackgroundColor3=Color3.new(0.14117647707462,0.14117647707462,0.14117647707462),BorderSizePixel=0,Name="filler",Parent={3},Position=UDim2.new(0,1,0,1),Size=UDim2.new(0,14,0,14),}},
-				{5,"Frame",{BackgroundColor3=Color3.new(0.90196084976196,0.90196084976196,0.90196084976196),BorderSizePixel=0,Name="top",Parent={4},Size=UDim2.new(0,16,0,0),}},
-				{6,"Frame",{AnchorPoint=Vector2.new(0,1),BackgroundColor3=Color3.new(0.90196084976196,0.90196084976196,0.90196084976196),BorderSizePixel=0,Name="bottom",Parent={4},Position=UDim2.new(0,0,0,14),Size=UDim2.new(0,16,0,0),}},
-				{7,"Frame",{BackgroundColor3=Color3.new(0.90196084976196,0.90196084976196,0.90196084976196),BorderSizePixel=0,Name="left",Parent={4},Size=UDim2.new(0,0,0,16),}},
-				{8,"Frame",{AnchorPoint=Vector2.new(1,0),BackgroundColor3=Color3.new(0.90196084976196,0.90196084976196,0.90196084976196),BorderSizePixel=0,Name="right",Parent={4},Position=UDim2.new(0,14,0,0),Size=UDim2.new(0,0,0,16),}},
-				{9,"Frame",{AnchorPoint=Vector2.new(0.5,0.5),BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,ClipsDescendants=true,Name="checkmark",Parent={4},Position=UDim2.new(0.5,0,0.5,0),Size=UDim2.new(0,0,0,20),}},
-				{10,"ImageLabel",{AnchorPoint=Vector2.new(0.5,0.5),BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Image="rbxassetid://6234266378",Parent={9},Position=UDim2.new(0.5,0,0.5,0),ScaleType=3,Size=UDim2.new(0,15,0,11),}},
-				{11,"ImageLabel",{AnchorPoint=Vector2.new(0.5,0.5),BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://6401617475",ImageColor3=Color3.new(0.20784313976765,0.69803923368454,0.98431372642517),Name="checkmark2",Parent={4},Position=UDim2.new(0.5,0,0.5,0),Size=UDim2.new(0,12,0,12),Visible=false,}},
-				{12,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://6425281788",ImageTransparency=0.20000000298023,Name="middle",Parent={4},ScaleType=2,Size=UDim2.new(1,0,1,0),TileSize=UDim2.new(0,2,0,2),Visible=false,}},
-				{13,"UICorner",{CornerRadius=UDim.new(0,2),Parent={3},}},
-			})
-			local outline = checkbox.outline
-			local filler = outline.filler
-			local checkmark = filler.checkmark
-			local ripples_container = checkbox.ripples
-
-			local top, bottom, left, right = filler.top, filler.bottom, filler.left, filler.right
-
-			self.Gui = checkbox
-			self.GuiElems = {
-				Top = top,
-				Bottom = bottom,
-				Left = left,
-				Right = right,
-				Outline = outline,
-				Filler = filler,
-				Checkmark = checkmark,
-				Checkmark2 = filler.checkmark2,
-				Middle = filler.middle
-			}
-
-			checkbox.MouseButton1Up:Connect(function()
-				if Lib.CheckMouseInGui(checkbox) then
-					if self.Style == 0 then
-						ripple(ripples_container, self.Disabled and self.Colors.Disabled or self.Colors.Primary)
-					end
-
-					if not self.Disabled then
-						self:SetState(not self.Toggled,true)
-					else
-						self:Paint()
-					end
-
-					self.OnInput:Fire()
-				end
-			end)
-
-			self:Paint()
-		end
-
-		funcs.Collapse = function(self,anim)
-			local guiElems = self.GuiElems
-			if anim then
-				TweenSize(guiElems.Top, ud2o(14, 14), "In", "Quart", 4/15, true)
-				TweenSize(guiElems.Bottom, ud2o(14, 14), "In", "Quart", 4/15, true)
-				TweenSize(guiElems.Left, ud2o(14, 14), "In", "Quart", 4/15, true)
-				TweenSize(guiElems.Right, ud2o(14, 14), "In", "Quart", 4/15, true)
-			else
-				guiElems.Top.Size = ud2o(14, 14)
-				guiElems.Bottom.Size = ud2o(14, 14)
-				guiElems.Left.Size = ud2o(14, 14)
-				guiElems.Right.Size = ud2o(14, 14)
-			end
-		end
-
-		funcs.Expand = function(self,anim)
-			local guiElems = self.GuiElems
-			if anim then
-				TweenSize(guiElems.Top, ud2o(14, 0), "InOut", "Quart", 4/15, true)
-				TweenSize(guiElems.Bottom, ud2o(14, 0), "InOut", "Quart", 4/15, true)
-				TweenSize(guiElems.Left, ud2o(0, 14), "InOut", "Quart", 4/15, true)
-				TweenSize(guiElems.Right, ud2o(0, 14), "InOut", "Quart", 4/15, true)
-			else
-				guiElems.Top.Size = ud2o(14, 0)
-				guiElems.Bottom.Size = ud2o(14, 0)
-				guiElems.Left.Size = ud2o(0, 14)
-				guiElems.Right.Size = ud2o(0, 14)
-			end
-		end
-
-		funcs.Paint = function(self)
-			local guiElems = self.GuiElems
-
-			if self.Style == 0 then
-				local color_base = self.Disabled and self.Colors.Disabled
-				guiElems.Outline.BackgroundColor3 = color_base or (self.Toggled and self.Colors.Primary) or self.Colors.Secondary
-				local walls_color = color_base or self.Colors.Primary
-				guiElems.Top.BackgroundColor3 = walls_color
-				guiElems.Bottom.BackgroundColor3 = walls_color
-				guiElems.Left.BackgroundColor3 = walls_color
-				guiElems.Right.BackgroundColor3 = walls_color
-			else
-				guiElems.Outline.BackgroundColor3 = self.Disabled and self.Colors.Disabled or self.Colors.Secondary
-				guiElems.Filler.BackgroundColor3 = self.Disabled and self.Colors.DisabledBackground or self.Colors.Background
-				guiElems.Checkmark2.ImageColor3 = self.Disabled and self.Colors.DisabledCheck or self.Colors.Primary
-			end
-		end
-
-		funcs.SetState = function(self,val,anim)
-			self.Toggled = val
-
-			if self.OutlineColorTween then self.OutlineColorTween:Cancel() end
-			local setStateTime = tick()
-			self.LastSetStateTime = setStateTime
-
-			if self.Toggled then
-				if self.Style == 0 then
-					if anim then
-						self.OutlineColorTween = service.TweenService:Create(self.GuiElems.Outline, ti(4/15, Enum.EasingStyle.Circular, Enum.EasingDirection.Out), {BackgroundColor3 = self.Colors.Primary})
-						self.OutlineColorTween:Play()
-						delay(0.15, function()
-							if setStateTime ~= self.LastSetStateTime then return end
-							self:Paint()
-							TweenSize(self.GuiElems.Checkmark, ud2o(14, 20), "Out", "Bounce", 2/15, true)
-						end)
-					else
-						self.GuiElems.Outline.BackgroundColor3 = self.Colors.Primary
-						self:Paint()
-						self.GuiElems.Checkmark.Size = ud2o(14, 20)
-					end
-					self:Collapse(anim)
-				else
-					self:Paint()
-					self.GuiElems.Checkmark2.Visible = true
-					self.GuiElems.Middle.Visible = false
-				end
-			else
-				if self.Style == 0 then
-					if anim then
-						self.OutlineColorTween = service.TweenService:Create(self.GuiElems.Outline, ti(4/15, Enum.EasingStyle.Circular, Enum.EasingDirection.In), {BackgroundColor3 = self.Colors.Secondary})
-						self.OutlineColorTween:Play()
-						delay(0.15, function()
-							if setStateTime ~= self.LastSetStateTime then return end
-							self:Paint()
-							TweenSize(self.GuiElems.Checkmark, ud2o(0, 20), "Out", "Quad", 1/15, true)
-						end)
-					else
-						self.GuiElems.Outline.BackgroundColor3 = self.Colors.Secondary
-						self:Paint()
-						self.GuiElems.Checkmark.Size = ud2o(0, 20)
-					end
-					self:Expand(anim)
-				else
-					self:Paint()
-					self.GuiElems.Checkmark2.Visible = false
-					self.GuiElems.Middle.Visible = self.Toggled == nil
-				end
-			end
-		end
-
-		local mt = {__index = funcs}
-
-		local function new(style)
-			local obj = setmetatable({
-				Toggled = false,
-				Disabled = false,
-				OnInput = Lib.Signal.new(),
-				Style = style or 0,
-				Colors = {
-					Background = c3(36,36,36),
-					Primary = c3(49,176,230),
-					Secondary = c3(25,25,25),
-					Disabled = c3(64,64,64),
-					DisabledBackground = c3(52,52,52),
-					DisabledCheck = c3(80,80,80)
-				}
-			},mt)
-			initGui(obj)
-			return obj
-		end
-
-		local function fromFrame(frame)
-			local obj = setmetatable({
-				Toggled = false,
-				Disabled = false,
-				Colors = {
-					Background = c3(36,36,36),
-					Primary = c3(49,176,230),
-					Secondary = c3(25,25,25),
-					Disabled = c3(64,64,64),
-					DisabledBackground = c3(52,52,52)
-				}
-			},mt)
-			initGui(obj,frame)
-			return obj
-		end
-
-		return {new = new, fromFrame}
-	end)()
-
-	Lib.BrickColorPicker = (function()
-		local funcs = {}
-		local paletteCount = 0
-		local mouse = service.Players.LocalPlayer:GetMouse()
-		local hexStartX = 4
-		local hexSizeX = 27
-		local hexTriangleStart = 1
-		local hexTriangleSize = 8
-
-		local bottomColors = {
-			Color3.fromRGB(17,17,17),
-			Color3.fromRGB(99,95,98),
-			Color3.fromRGB(163,162,165),
-			Color3.fromRGB(205,205,205),
-			Color3.fromRGB(223,223,222),
-			Color3.fromRGB(237,234,234),
-			Color3.fromRGB(27,42,53),
-			Color3.fromRGB(91,93,105),
-			Color3.fromRGB(159,161,172),
-			Color3.fromRGB(202,203,209),
-			Color3.fromRGB(231,231,236),
-			Color3.fromRGB(248,248,248)
-		}
-
-		local function isMouseInHexagon(hex, touchPos)
-			local relativeX = touchPos.X - hex.AbsolutePosition.X
-			local relativeY = touchPos.Y - hex.AbsolutePosition.Y
-			if relativeX >= hexStartX and relativeX < hexStartX + hexSizeX then
-				relativeX = relativeX - 4
-				local relativeWidth = (13 - math.min(relativeX, 26 - relativeX)) / 13
-				if relativeY >= hexTriangleStart + hexTriangleSize * relativeWidth and relativeY < hex.AbsoluteSize.Y - hexTriangleStart - hexTriangleSize * relativeWidth then
-					return true
-				end
-			end
-			return false
-		end
-
-		local function hexInput(self, hex, color)
-			hex.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					if isMouseInHexagon(hex, input.Position) then
-						self.OnSelect:Fire(color)
-						self:Close()
-					end
-				end
-			end)
-
-			hex.InputChanged:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-					if isMouseInHexagon(hex, input.Position) then
-						self.OnPreview:Fire(color)
-					end
-				end
-			end)
-		end
-
-		local function createGui(self)
-			local gui = create({
-				{1,"ScreenGui",{Name="BrickColor",}},
-				{2,"Frame",{Active=true,BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderColor3=Color3.new(0.1294117718935,0.1294117718935,0.1294117718935),Parent={1},Position=UDim2.new(0.40000000596046,0,0.40000000596046,0),Size=UDim2.new(0,337,0,380),}},
-				{3,"TextButton",{BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),BorderSizePixel=0,Font=3,Name="MoreColors",Parent={2},Position=UDim2.new(0,5,1,-30),Size=UDim2.new(1,-10,0,25),Text="More Colors",TextColor3=Color3.new(1,1,1),TextSize=14,}},
-				{4,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Image="rbxassetid://1281023007",ImageColor3=Color3.new(0.33333334326744,0.33333334326744,0.49803924560547),Name="Hex",Parent={2},Size=UDim2.new(0,35,0,35),Visible=false,}},
-			})
-			local colorFrame = gui.Frame
-			local hex = colorFrame.Hex
-
-			for row = 1,13 do
-				local columns = math.min(row,14-row)+6
-				for column = 1,columns do
-					local nextColor = BrickColor.palette(paletteCount).Color
-					local newHex = hex:Clone()
-					newHex.Position = UDim2.new(0, (column-1)*25-(columns-7)*13+3*26 + 1, 0, (row-1)*23 + 4)
-					newHex.ImageColor3 = nextColor
-					newHex.Visible = true
-					hexInput(self,newHex,nextColor)
-					newHex.Parent = colorFrame
-					paletteCount = paletteCount + 1
-				end
-			end
-
-			for column = 1,12 do
-				local nextColor = bottomColors[column]
-				local newHex = hex:Clone()
-				newHex.Position = UDim2.new(0, (column-1)*25-(12-7)*13+3*26 + 3, 0, 308)
-				newHex.ImageColor3 = nextColor
-				newHex.Visible = true
-				hexInput(self,newHex,nextColor)
-				newHex.Parent = colorFrame
-				paletteCount = paletteCount + 1
-			end
-
-			colorFrame.MoreColors.MouseButton1Click:Connect(function()
-				self.OnMoreColors:Fire()
-				self:Close()
-			end)
-
-			self.Gui = gui
-		end
-
-		funcs.SetMoreColorsVisible = function(self,vis)
-			local colorFrame = self.Gui.Frame
-			colorFrame.Size = UDim2.new(0,337,0,380 - (not vis and 33 or 0))
-			colorFrame.MoreColors.Visible = vis
-		end
-
-		funcs.Show = function(self,x,y,prevColor)
-			self.PrevColor = prevColor or self.PrevColor
-
-			local reverseY = false
-
-			local x,y = x or mouse.X, y or mouse.Y
-			local maxX,maxY = mouse.ViewSizeX,mouse.ViewSizeY
-			Lib.ShowGui(self.Gui)
-			local sizeX,sizeY = self.Gui.Frame.AbsoluteSize.X,self.Gui.Frame.AbsoluteSize.Y
-
-			if x + sizeX > maxX then x = self.ReverseX and x - sizeX or maxX - sizeX end
-			if y + sizeY > maxY then reverseY = true end
-
-			local closable = false
-			if self.CloseEvent then self.CloseEvent:Disconnect() end
-
-			self.CloseEvent = service.UserInputService.InputBegan:Connect(function(input)
-				if not closable or (input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch) then
-					return
-				end
-
-				if not Lib.CheckMouseInGui(self.Gui.Frame) then
-					self.CloseEvent:Disconnect()
-					self:Close()
-				end
-			end)
-
-			if reverseY then
-				local newY = y - sizeY - (self.ReverseYOffset or 0)
-				y = newY >= 0 and newY or 0
-			end
-
-			self.Gui.Frame.Position = UDim2.new(0,x,0,y)
-
-			Lib.FastWait()
-			closable = true
-		end
-
-		funcs.Close = function(self)
-			self.Gui.Parent = nil
-			self.OnCancel:Fire()
-		end
-
-		local mt = {__index = funcs}
-
-		local function new()
-			local obj = setmetatable({
-				OnPreview = Lib.Signal.new(),
-				OnSelect = Lib.Signal.new(),
-				OnCancel = Lib.Signal.new(),
-				OnMoreColors = Lib.Signal.new(),
-				PrevColor = Color3.new(0,0,0)
-			}, mt)
-			createGui(obj)
-			return obj
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.ColorPicker = (function()
-		local funcs = {}
-
-		local function new()
-			local newMt = setmetatable({},{})
-
-			newMt.OnSelect = Lib.Signal.new()
-			newMt.OnCancel = Lib.Signal.new()
-			newMt.OnPreview = Lib.Signal.new()
-
-			local guiContents = create({
-				{1,"Frame",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderSizePixel=0,ClipsDescendants=true,Name="Content",Position=UDim2.new(0,0,0,20),Size=UDim2.new(1,0,1,-20),}},
-				{2,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Name="BasicColors",Parent={1},Position=UDim2.new(0,5,0,5),Size=UDim2.new(0,180,0,200),}},
-				{3,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={2},Position=UDim2.new(0,0,0,-5),Size=UDim2.new(1,0,0,26),Text="Basic Colors",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{4,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),Name="Blue",Parent={1},Position=UDim2.new(1,-63,0,255),Size=UDim2.new(0,52,0,16),}},
-				{5,"TextBox",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),Font=3,Name="Input",Parent={4},Position=UDim2.new(0,2,0,0),Size=UDim2.new(0,50,0,16),Text="0",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{6,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Name="ArrowFrame",Parent={5},Position=UDim2.new(1,-16,0,0),Size=UDim2.new(0,16,1,0),}},
-				{7,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Up",Parent={6},Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{8,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={7},Size=UDim2.new(0,16,0,8),}},
-				{9,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={8},Position=UDim2.new(0,8,0,3),Size=UDim2.new(0,1,0,1),}},
-				{10,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={8},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{11,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={8},Position=UDim2.new(0,6,0,5),Size=UDim2.new(0,5,0,1),}},
-				{12,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Down",Parent={6},Position=UDim2.new(0,0,0,8),Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{13,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={12},Size=UDim2.new(0,16,0,8),}},
-				{14,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={13},Position=UDim2.new(0,8,0,5),Size=UDim2.new(0,1,0,1),}},
-				{15,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={13},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{16,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={13},Position=UDim2.new(0,6,0,3),Size=UDim2.new(0,5,0,1),}},
-				{17,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={4},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Blue:",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{18,"Frame",{BackgroundColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),BorderSizePixel=0,ClipsDescendants=true,Name="ColorSpaceFrame",Parent={1},Position=UDim2.new(1,-261,0,4),Size=UDim2.new(0,222,0,202),}},
-				{19,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),BorderSizePixel=0,Image="rbxassetid://1072518406",Name="ColorSpace",Parent={18},Position=UDim2.new(0,1,0,1),Size=UDim2.new(0,220,0,200),}},
-				{20,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Name="Scope",Parent={19},Position=UDim2.new(0,210,0,190),Size=UDim2.new(0,20,0,20),}},
-				{21,"Frame",{BackgroundColor3=Color3.new(0,0,0),BorderSizePixel=0,Name="Line",Parent={20},Position=UDim2.new(0,9,0,0),Size=UDim2.new(0,2,0,20),}},
-				{22,"Frame",{BackgroundColor3=Color3.new(0,0,0),BorderSizePixel=0,Name="Line",Parent={20},Position=UDim2.new(0,0,0,9),Size=UDim2.new(0,20,0,2),}},
-				{23,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Name="CustomColors",Parent={1},Position=UDim2.new(0,5,0,210),Size=UDim2.new(0,180,0,90),}},
-				{24,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={23},Size=UDim2.new(1,0,0,20),Text="Custom Colors (RC = Set)",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{25,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),Name="Green",Parent={1},Position=UDim2.new(1,-63,0,233),Size=UDim2.new(0,52,0,16),}},
-				{26,"TextBox",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),Font=3,Name="Input",Parent={25},Position=UDim2.new(0,2,0,0),Size=UDim2.new(0,50,0,16),Text="0",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{27,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Name="ArrowFrame",Parent={26},Position=UDim2.new(1,-16,0,0),Size=UDim2.new(0,16,1,0),}},
-				{28,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Up",Parent={27},Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{29,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={28},Size=UDim2.new(0,16,0,8),}},
-				{30,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={29},Position=UDim2.new(0,8,0,3),Size=UDim2.new(0,1,0,1),}},
-				{31,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={29},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{32,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={29},Position=UDim2.new(0,6,0,5),Size=UDim2.new(0,5,0,1),}},
-				{33,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Down",Parent={27},Position=UDim2.new(0,0,0,8),Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{34,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={33},Size=UDim2.new(0,16,0,8),}},
-				{35,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={34},Position=UDim2.new(0,8,0,5),Size=UDim2.new(0,1,0,1),}},
-				{36,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={34},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{37,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={34},Position=UDim2.new(0,6,0,3),Size=UDim2.new(0,5,0,1),}},
-				{38,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={25},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Green:",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{39,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),Name="Hue",Parent={1},Position=UDim2.new(1,-180,0,211),Size=UDim2.new(0,52,0,16),}},
-				{40,"TextBox",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),Font=3,Name="Input",Parent={39},Position=UDim2.new(0,2,0,0),Size=UDim2.new(0,50,0,16),Text="0",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{41,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Name="ArrowFrame",Parent={40},Position=UDim2.new(1,-16,0,0),Size=UDim2.new(0,16,1,0),}},
-				{42,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Up",Parent={41},Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{43,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={42},Size=UDim2.new(0,16,0,8),}},
-				{44,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={43},Position=UDim2.new(0,8,0,3),Size=UDim2.new(0,1,0,1),}},
-				{45,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={43},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{46,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={43},Position=UDim2.new(0,6,0,5),Size=UDim2.new(0,5,0,1),}},
-				{47,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Down",Parent={41},Position=UDim2.new(0,0,0,8),Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{48,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={47},Size=UDim2.new(0,16,0,8),}},
-				{49,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={48},Position=UDim2.new(0,8,0,5),Size=UDim2.new(0,1,0,1),}},
-				{50,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={48},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{51,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={48},Position=UDim2.new(0,6,0,3),Size=UDim2.new(0,5,0,1),}},
-				{52,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={39},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Hue:",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{53,"Frame",{BackgroundColor3=Color3.new(1,1,1),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),Name="Preview",Parent={1},Position=UDim2.new(1,-260,0,211),Size=UDim2.new(0,35,1,-245),}},
-				{54,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),Name="Red",Parent={1},Position=UDim2.new(1,-63,0,211),Size=UDim2.new(0,52,0,16),}},
-				{55,"TextBox",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),Font=3,Name="Input",Parent={54},Position=UDim2.new(0,2,0,0),Size=UDim2.new(0,50,0,16),Text="0",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{56,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Name="ArrowFrame",Parent={55},Position=UDim2.new(1,-16,0,0),Size=UDim2.new(0,16,1,0),}},
-				{57,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Up",Parent={56},Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{58,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={57},Size=UDim2.new(0,16,0,8),}},
-				{59,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={58},Position=UDim2.new(0,8,0,3),Size=UDim2.new(0,1,0,1),}},
-				{60,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={58},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{61,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={58},Position=UDim2.new(0,6,0,5),Size=UDim2.new(0,5,0,1),}},
-				{62,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Down",Parent={56},Position=UDim2.new(0,0,0,8),Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{63,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={62},Size=UDim2.new(0,16,0,8),}},
-				{64,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={63},Position=UDim2.new(0,8,0,5),Size=UDim2.new(0,1,0,1),}},
-				{65,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={63},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{66,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={63},Position=UDim2.new(0,6,0,3),Size=UDim2.new(0,5,0,1),}},
-				{67,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={54},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Red:",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{68,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),Name="Sat",Parent={1},Position=UDim2.new(1,-180,0,233),Size=UDim2.new(0,52,0,16),}},
-				{69,"TextBox",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),Font=3,Name="Input",Parent={68},Position=UDim2.new(0,2,0,0),Size=UDim2.new(0,50,0,16),Text="0",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{70,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Name="ArrowFrame",Parent={69},Position=UDim2.new(1,-16,0,0),Size=UDim2.new(0,16,1,0),}},
-				{71,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Up",Parent={70},Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{72,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={71},Size=UDim2.new(0,16,0,8),}},
-				{73,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={72},Position=UDim2.new(0,8,0,3),Size=UDim2.new(0,1,0,1),}},
-				{74,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={72},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{75,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={72},Position=UDim2.new(0,6,0,5),Size=UDim2.new(0,5,0,1),}},
-				{76,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Down",Parent={70},Position=UDim2.new(0,0,0,8),Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{77,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={76},Size=UDim2.new(0,16,0,8),}},
-				{78,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={77},Position=UDim2.new(0,8,0,5),Size=UDim2.new(0,1,0,1),}},
-				{79,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={77},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{80,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={77},Position=UDim2.new(0,6,0,3),Size=UDim2.new(0,5,0,1),}},
-				{81,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={68},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Sat:",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{82,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),Name="Val",Parent={1},Position=UDim2.new(1,-180,0,255),Size=UDim2.new(0,52,0,16),}},
-				{83,"TextBox",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),Font=3,Name="Input",Parent={82},Position=UDim2.new(0,2,0,0),Size=UDim2.new(0,50,0,16),Text="255",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{84,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Name="ArrowFrame",Parent={83},Position=UDim2.new(1,-16,0,0),Size=UDim2.new(0,16,1,0),}},
-				{85,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Up",Parent={84},Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{86,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={85},Size=UDim2.new(0,16,0,8),}},
-				{87,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={86},Position=UDim2.new(0,8,0,3),Size=UDim2.new(0,1,0,1),}},
-				{88,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={86},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{89,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={86},Position=UDim2.new(0,6,0,5),Size=UDim2.new(0,5,0,1),}},
-				{90,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Down",Parent={84},Position=UDim2.new(0,0,0,8),Size=UDim2.new(1,0,0,8),Text="",TextSize=14,}},
-				{91,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={90},Size=UDim2.new(0,16,0,8),}},
-				{92,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={91},Position=UDim2.new(0,8,0,5),Size=UDim2.new(0,1,0,1),}},
-				{93,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={91},Position=UDim2.new(0,7,0,4),Size=UDim2.new(0,3,0,1),}},
-				{94,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={91},Position=UDim2.new(0,6,0,3),Size=UDim2.new(0,5,0,1),}},
-				{95,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={82},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Val:",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{96,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),Font=3,Name="Cancel",Parent={1},Position=UDim2.new(1,-105,1,-28),Size=UDim2.new(0,100,0,25),Text="Cancel",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,}},
-				{97,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),Font=3,Name="Ok",Parent={1},Position=UDim2.new(1,-210,1,-28),Size=UDim2.new(0,100,0,25),Text="OK",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,}},
-				{98,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),Image="rbxassetid://1072518502",Name="ColorStrip",Parent={1},Position=UDim2.new(1,-30,0,5),Size=UDim2.new(0,13,0,200),}},
-				{99,"Frame",{BackgroundColor3=Color3.new(0.3137255012989,0.3137255012989,0.3137255012989),BackgroundTransparency=1,BorderSizePixel=0,Name="ArrowFrame",Parent={1},Position=UDim2.new(1,-16,0,1),Size=UDim2.new(0,5,0,208),}},
-				{100,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={99},Position=UDim2.new(0,-2,0,-4),Size=UDim2.new(0,8,0,16),}},
-				{101,"Frame",{BackgroundColor3=Color3.new(0,0,0),BorderSizePixel=0,Parent={100},Position=UDim2.new(0,2,0,8),Size=UDim2.new(0,1,0,1),}},
-				{102,"Frame",{BackgroundColor3=Color3.new(0,0,0),BorderSizePixel=0,Parent={100},Position=UDim2.new(0,3,0,7),Size=UDim2.new(0,1,0,3),}},
-				{103,"Frame",{BackgroundColor3=Color3.new(0,0,0),BorderSizePixel=0,Parent={100},Position=UDim2.new(0,4,0,6),Size=UDim2.new(0,1,0,5),}},
-				{104,"Frame",{BackgroundColor3=Color3.new(0,0,0),BorderSizePixel=0,Parent={100},Position=UDim2.new(0,5,0,5),Size=UDim2.new(0,1,0,7),}},
-				{105,"Frame",{BackgroundColor3=Color3.new(0,0,0),BorderSizePixel=0,Parent={100},Position=UDim2.new(0,6,0,4),Size=UDim2.new(0,1,0,9),}},
-			})
-			local window = Lib.Window.new()
-			window.Resizable = false
-			window.Alignable = false
-			window:SetTitle("Color Picker")
-			window:Resize(450,330)
-			for i,v in pairs(guiContents:GetChildren()) do
-				v.Parent = window.GuiElems.Content
-			end
-			newMt.Window = window
-			newMt.Gui = window.Gui
-			local pickerGui = window.Gui.Main
-			local pickerTopBar = pickerGui.TopBar
-			local pickerFrame = pickerGui.Content
-			local colorSpace = pickerFrame.ColorSpaceFrame.ColorSpace
-			local colorStrip = pickerFrame.ColorStrip
-			local previewFrame = pickerFrame.Preview
-			local basicColorsFrame = pickerFrame.BasicColors
-			local customColorsFrame = pickerFrame.CustomColors
-			local okButton = pickerFrame.Ok
-			local cancelButton = pickerFrame.Cancel
-			local closeButton = pickerTopBar.Close
-
-			local colorScope = colorSpace.Scope
-			local colorArrow = pickerFrame.ArrowFrame.Arrow
-
-			local hueInput = pickerFrame.Hue.Input
-			local satInput = pickerFrame.Sat.Input
-			local valInput = pickerFrame.Val.Input
-
-			local redInput = pickerFrame.Red.Input
-			local greenInput = pickerFrame.Green.Input
-			local blueInput = pickerFrame.Blue.Input
-
-			local user = service.UserInputService
-			local mouse = service.Players.LocalPlayer:GetMouse()
-
-			local hue,sat,val = 0,0,1
-			local red,green,blue = 1,1,1
-			local chosenColor = Color3.new(0,0,0)
-
-			local basicColors = {Color3.new(0,0,0),Color3.new(0.66666668653488,0,0),Color3.new(0,0.33333334326744,0),Color3.new(0.66666668653488,0.33333334326744,0),Color3.new(0,0.66666668653488,0),Color3.new(0.66666668653488,0.66666668653488,0),Color3.new(0,1,0),Color3.new(0.66666668653488,1,0),Color3.new(0,0,0.49803924560547),Color3.new(0.66666668653488,0,0.49803924560547),Color3.new(0,0.33333334326744,0.49803924560547),Color3.new(0.66666668653488,0.33333334326744,0.49803924560547),Color3.new(0,0.66666668653488,0.49803924560547),Color3.new(0.66666668653488,0.66666668653488,0.49803924560547),Color3.new(0,1,0.49803924560547),Color3.new(0.66666668653488,1,0.49803924560547),Color3.new(0,0,1),Color3.new(0.66666668653488,0,1),Color3.new(0,0.33333334326744,1),Color3.new(0.66666668653488,0.33333334326744,1),Color3.new(0,0.66666668653488,1),Color3.new(0.66666668653488,0.66666668653488,1),Color3.new(0,1,1),Color3.new(0.66666668653488,1,1),Color3.new(0.33333334326744,0,0),Color3.new(1,0,0),Color3.new(0.33333334326744,0.33333334326744,0),Color3.new(1,0.33333334326744,0),Color3.new(0.33333334326744,0.66666668653488,0),Color3.new(1,0.66666668653488,0),Color3.new(0.33333334326744,1,0),Color3.new(1,1,0),Color3.new(0.33333334326744,0,0.49803924560547),Color3.new(1,0,0.49803924560547),Color3.new(0.33333334326744,0.33333334326744,0.49803924560547),Color3.new(1,0.33333334326744,0.49803924560547),Color3.new(0.33333334326744,0.66666668653488,0.49803924560547),Color3.new(1,0.66666668653488,0.49803924560547),Color3.new(0.33333334326744,1,0.49803924560547),Color3.new(1,1,0.49803924560547),Color3.new(0.33333334326744,0,1),Color3.new(1,0,1),Color3.new(0.33333334326744,0.33333334326744,1),Color3.new(1,0.33333334326744,1),Color3.new(0.33333334326744,0.66666668653488,1),Color3.new(1,0.66666668653488,1),Color3.new(0.33333334326744,1,1),Color3.new(1,1,1)}
-			local customColors = {}
-
-			local function updateColor(noupdate)
-				local relativeX, relativeY, relativeStripY = 219 - hue * 219, 199 - sat * 199, 199 - val * 199
-				local hsvColor = Color3.fromHSV(hue, sat, val)
-
-				if noupdate == 2 or not noupdate then
-					hueInput.Text = tostring(math.ceil(359 * hue))
-					satInput.Text = tostring(math.ceil(255 * sat))
-					valInput.Text = tostring(math.floor(255 * val))
-				end
-				if noupdate == 1 or not noupdate then
-					redInput.Text = tostring(math.floor(255 * red))
-					greenInput.Text = tostring(math.floor(255 * green))
-					blueInput.Text = tostring(math.floor(255 * blue))
-				end
-
-				chosenColor = Color3.new(red, green, blue)
-				colorScope.Position = UDim2.new(0, (relativeX - 9), 0, (relativeY - 9))
-				colorStrip.ImageColor3 = Color3.fromHSV(hue, sat, 1)
-				colorArrow.Position = UDim2.new(0, -2, 0, (relativeStripY - 4))
-				previewFrame.BackgroundColor3 = chosenColor
-
-				newMt.Color = chosenColor
-				newMt.OnPreview:Fire(chosenColor)
-			end
-
-			local function handleInputBegan(input, updateFunc)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					while user:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-						updateFunc()task.wait()
-					end
-				end
-			end
-
-			local function colorSpaceInput()
-				local relativeX = mouse.X - colorSpace.AbsolutePosition.X
-				local relativeY = mouse.Y - colorSpace.AbsolutePosition.Y
-
-				if relativeX < 0 then relativeX = 0 elseif relativeX > 219 then relativeX = 219 end
-				if relativeY < 0 then relativeY = 0 elseif relativeY > 199 then relativeY = 199 end
-
-				hue = (219 - relativeX) / 219
-				sat = (199 - relativeY) / 199
-
-				local hsvColor = Color3.fromHSV(hue, sat, val)
-				red, green, blue = hsvColor.R, hsvColor.G, hsvColor.B
-				updateColor()
-			end
-
-			local function colorStripInput()
-				local relativeY = mouse.Y - colorStrip.AbsolutePosition.Y
-
-				if relativeY < 0 then relativeY = 0 elseif relativeY > 199 then relativeY = 199 end
-
-				val = (199 - relativeY) / 199
-
-				local hsvColor = Color3.fromHSV(hue, sat, val)
-				red, green, blue = hsvColor.R, hsvColor.G, hsvColor.B
-				updateColor()
-			end
-
-			colorSpace.InputBegan:Connect(function(input) handleInputBegan(input, colorSpaceInput) end)
-			colorStrip.InputBegan:Connect(function(input) handleInputBegan(input, colorStripInput) end)
-
-			local function hookButtons(frame, func)
-				frame.ArrowFrame.Up.InputBegan:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-						local releaseEvent, runEvent
-						local startTime = tick()
-						local pressing = true
-						local startNum = tonumber(frame.Text)
-
-						if not startNum then return end
-
-						releaseEvent = user.InputEnded:Connect(function(endInput)
-							if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
-								releaseEvent:Disconnect()
-								pressing = false
-							end
-						end)
-
-						startNum = startNum + 1
-						func(startNum)
-						while pressing do
-							if tick() - startTime > 0.3 then
-								startNum = startNum + 1
-								func(startNum)
-								startTime = tick()
-							end
-							task.wait(0.1)
-						end
-					end
-				end)
-
-				frame.ArrowFrame.Down.InputBegan:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-						local releaseEvent, runEvent
-						local startTime = tick()
-						local pressing = true
-						local startNum = tonumber(frame.Text)
-
-						if not startNum then return end
-
-						releaseEvent = user.InputEnded:Connect(function(endInput)
-							if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
-								releaseEvent:Disconnect()
-								pressing = false
-							end
-						end)
-
-						startNum = startNum - 1
-						func(startNum)
-						while pressing do
-							if tick() - startTime > 0.3 then
-								startNum = startNum - 1
-								func(startNum)
-								startTime = tick()
-							end
-							task.wait(0.1)
-						end
-					end
-				end)
-			end
-
-			local function updateHue(str)
-				local num = tonumber(str)
-				if num then
-					hue = math.clamp(math.floor(num),0,359)/359
-					local hsvColor = Color3.fromHSV(hue,sat,val)
-					red,green,blue = hsvColor.r,hsvColor.g,hsvColor.b
-
-					hueInput.Text = tostring(hue*359)
-					updateColor(1)
-				end
-			end
-			hueInput.FocusLost:Connect(function() updateHue(hueInput.Text) end) hookButtons(hueInput, hueInput)
-
-			local function updateSat(str)
-				local num = tonumber(str)
-				if num then
-					sat = math.clamp(math.floor(num),0,255)/255
-					local hsvColor = Color3.fromHSV(hue,sat,val)
-					red,green,blue = hsvColor.r,hsvColor.g,hsvColor.b
-					satInput.Text = tostring(sat*255)
-					updateColor(1)
-				end
-			end
-			satInput.FocusLost:Connect(function() updateSat(satInput.Text) end) hookButtons(satInput,updateSat)
-
-			local function updateVal(str)
-				local num = tonumber(str)
-				if num then
-					val = math.clamp(math.floor(num),0,255)/255
-					local hsvColor = Color3.fromHSV(hue,sat,val)
-					red,green,blue = hsvColor.r,hsvColor.g,hsvColor.b
-					valInput.Text = tostring(val*255)
-					updateColor(1)
-				end
-			end
-			valInput.FocusLost:Connect(function() updateVal(valInput.Text) end) hookButtons(valInput,updateVal)
-
-			local function updateRed(str)
-				local num = tonumber(str)
-				if num then
-					red = math.clamp(math.floor(num),0,255)/255
-					local newColor = Color3.new(red,green,blue)
-					hue,sat,val = Color3.toHSV(newColor)
-					redInput.Text = tostring(red*255)
-					updateColor(2)
-				end
-			end
-			redInput.FocusLost:Connect(function() updateRed(redInput.Text) end) hookButtons(redInput,updateRed)
-
-			local function updateGreen(str)
-				local num = tonumber(str)
-				if num then
-					green = math.clamp(math.floor(num),0,255)/255
-					local newColor = Color3.new(red,green,blue)
-					hue,sat,val = Color3.toHSV(newColor)
-					greenInput.Text = tostring(green*255)
-					updateColor(2)
-				end
-			end
-			greenInput.FocusLost:Connect(function() updateGreen(greenInput.Text) end) hookButtons(greenInput,updateGreen)
-
-			local function updateBlue(str)
-				local num = tonumber(str)
-				if num then
-					blue = math.clamp(math.floor(num),0,255)/255
-					local newColor = Color3.new(red,green,blue)
-					hue,sat,val = Color3.toHSV(newColor)
-					blueInput.Text = tostring(blue*255)
-					updateColor(2)
-				end
-			end
-			blueInput.FocusLost:Connect(function() updateBlue(blueInput.Text) end) hookButtons(blueInput,updateBlue)
-
-			local colorChoice = Instance.new("TextButton")
-			colorChoice.Name = "Choice"
-			colorChoice.Size = UDim2.new(0,25,0,18)
-			colorChoice.BorderColor3 = Color3.fromRGB(55,55,55)
-			colorChoice.Text = ""
-			colorChoice.AutoButtonColor = false
-
-			local row = 0
-			local column = 0
-			for i,v in pairs(basicColors) do
-				local newColor = colorChoice:Clone()
-				newColor.BackgroundColor3 = v
-				newColor.Position = UDim2.new(0,1 + 30*column,0,21 + 23*row)
-
-				newColor.MouseButton1Click:Connect(function()
-					red,green,blue = v.r,v.g,v.b
-					local newColor = Color3.new(red,green,blue)
-					hue,sat,val = Color3.toHSV(newColor)
-					updateColor()
-				end)
-
-				newColor.Parent = basicColorsFrame
-				column = column + 1
-				if column == 6 then row = row + 1 column = 0 end
-			end
-
-			row = 0
-			column = 0
-			for i = 1,12 do
-				local color = customColors[i] or Color3.new(0,0,0)
-				local newColor = colorChoice:Clone()
-				newColor.BackgroundColor3 = color
-				newColor.Position = UDim2.new(0,1 + 30*column,0,20 + 23*row)
-
-				newColor.MouseButton1Click:Connect(function()
-					local curColor = customColors[i] or Color3.new(0,0,0)
-					red,green,blue = curColor.r,curColor.g,curColor.b
-					hue,sat,val = Color3.toHSV(curColor)
-					updateColor()
-				end)
-
-				newColor.MouseButton2Click:Connect(function()
-					customColors[i] = chosenColor
-					newColor.BackgroundColor3 = chosenColor
-				end)
-
-				newColor.Parent = customColorsFrame
-				column = column + 1
-				if column == 6 then row = row + 1 column = 0 end
-			end
-
-			okButton.MouseButton1Click:Connect(function() newMt.OnSelect:Fire(chosenColor) window:Close() end)
-			okButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then okButton.BackgroundTransparency = 0.4 end end)
-			okButton.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then okButton.BackgroundTransparency = 0 end end)
-
-			cancelButton.MouseButton1Click:Connect(function() newMt.OnCancel:Fire() window:Close() end)
-			cancelButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then cancelButton.BackgroundTransparency = 0.4 end end)
-			cancelButton.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then cancelButton.BackgroundTransparency = 0 end end)
-
-			updateColor()
-
-			newMt.SetColor = function(self,color)
-				red,green,blue = color.r,color.g,color.b
-				hue,sat,val = Color3.toHSV(color)
-				updateColor()
-			end
-
-			newMt.Show = function(self)
-				self.Window:Show()
-			end
-
-			return newMt
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.NumberSequenceEditor = (function()
-		local function new()
-			local newMt = setmetatable({},{})
-			newMt.OnSelect = Lib.Signal.new()
-			newMt.OnCancel = Lib.Signal.new()
-			newMt.OnPreview = Lib.Signal.new()
-
-			local guiContents = create({
-				{1,"Frame",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderSizePixel=0,ClipsDescendants=true,Name="Content",Position=UDim2.new(0,0,0,20),Size=UDim2.new(1,0,1,-20),}},
-				{2,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),Name="Time",Parent={1},Position=UDim2.new(0,40,0,210),Size=UDim2.new(0,60,0,20),}},
-				{3,"TextBox",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),ClipsDescendants=true,Font=3,Name="Input",Parent={2},Position=UDim2.new(0,2,0,0),Size=UDim2.new(0,58,0,20),Text="0",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{4,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={2},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Time",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{5,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),Font=3,Name="Close",Parent={1},Position=UDim2.new(1,-90,0,210),Size=UDim2.new(0,80,0,20),Text="Close",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,}},
-				{6,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),Font=3,Name="Reset",Parent={1},Position=UDim2.new(1,-180,0,210),Size=UDim2.new(0,80,0,20),Text="Reset",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,}},
-				{7,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),Font=3,Name="Delete",Parent={1},Position=UDim2.new(0,380,0,210),Size=UDim2.new(0,80,0,20),Text="Delete",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,}},
-				{8,"Frame",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),Name="NumberLineOutlines",Parent={1},Position=UDim2.new(0,10,0,20),Size=UDim2.new(1,-20,0,170),}},
-				{9,"Frame",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),Name="NumberLine",Parent={1},Position=UDim2.new(0,10,0,20),Size=UDim2.new(1,-20,0,170),}},
-				{10,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),Name="Value",Parent={1},Position=UDim2.new(0,170,0,210),Size=UDim2.new(0,60,0,20),}},
-				{11,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={10},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Value",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{12,"TextBox",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),ClipsDescendants=true,Font=3,Name="Input",Parent={10},Position=UDim2.new(0,2,0,0),Size=UDim2.new(0,58,0,20),Text="0",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{13,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),Name="Envelope",Parent={1},Position=UDim2.new(0,300,0,210),Size=UDim2.new(0,60,0,20),}},
-				{14,"TextBox",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),ClipsDescendants=true,Font=3,Name="Input",Parent={13},Position=UDim2.new(0,2,0,0),Size=UDim2.new(0,58,0,20),Text="0",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{15,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={13},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Envelope",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-			})
-			local window = Lib.Window.new()
-			window.Resizable = false
-			window:Resize(680,265)
-			window:SetTitle("NumberSequence Editor")
-			newMt.Window = window
-			newMt.Gui = window.Gui
-			for i,v in pairs(guiContents:GetChildren()) do
-				v.Parent = window.GuiElems.Content
-			end
-			local gui = window.Gui
-			local pickerGui = gui.Main
-			local pickerTopBar = pickerGui.TopBar
-			local pickerFrame = pickerGui.Content
-			local numberLine = pickerFrame.NumberLine
-			local numberLineOutlines = pickerFrame.NumberLineOutlines
-			local timeBox = pickerFrame.Time.Input
-			local valueBox = pickerFrame.Value.Input
-			local envelopeBox = pickerFrame.Envelope.Input
-			local deleteButton = pickerFrame.Delete
-			local resetButton = pickerFrame.Reset
-			local closeButton = pickerFrame.Close
-			local topClose = pickerTopBar.Close
-
-			local points = {{1,0,3},{8,0.05,1},{5,0.6,2},{4,0.7,4},{6,1,4}}
-			local lines = {}
-			local eLines = {}
-			local beginPoint = points[1]
-			local endPoint = points[#points]
-			local currentlySelected = nil
-			local currentPoint = nil
-			local resetSequence = nil
-
-			local user = service.UserInputService
-			local mouse = service.Players.LocalPlayer:GetMouse()
-
-			for i = 2,10 do
-				local newLine = Instance.new("Frame")
-				newLine.BackgroundTransparency = 0.5
-				newLine.BackgroundColor3 = Color3.new(96/255,96/255,96/255)
-				newLine.BorderSizePixel = 0
-				newLine.Size = UDim2.new(0,1,1,0)
-				newLine.Position = UDim2.new((i-1)/(11-1),0,0,0)
-				newLine.Parent = numberLineOutlines
-			end
-
-			for i = 2,4 do
-				local newLine = Instance.new("Frame")
-				newLine.BackgroundTransparency = 0.5
-				newLine.BackgroundColor3 = Color3.new(96/255,96/255,96/255)
-				newLine.BorderSizePixel = 0
-				newLine.Size = UDim2.new(1,0,0,1)
-				newLine.Position = UDim2.new(0,0,(i-1)/(5-1),0)
-				newLine.Parent = numberLineOutlines
-			end
-
-			local lineTemp = Instance.new("Frame")
-			lineTemp.BackgroundColor3 = Color3.new(0,0,0)
-			lineTemp.BorderSizePixel = 0
-			lineTemp.Size = UDim2.new(0,1,0,1)
-
-			local sequenceLine = Instance.new("Frame")
-			sequenceLine.BackgroundColor3 = Color3.new(0,0,0)
-			sequenceLine.BorderSizePixel = 0
-			sequenceLine.Size = UDim2.new(0,1,0,0)
-
-			for i = 1,numberLine.AbsoluteSize.X do
-				local line = sequenceLine:Clone()
-				eLines[i] = line
-				line.Name = "E"..tostring(i)
-				line.BackgroundTransparency = 0.5
-				line.BackgroundColor3 = Color3.new(199/255,44/255,28/255)
-				line.Position = UDim2.new(0,i-1,0,0)
-				line.Parent = numberLine
-			end
-
-			for i = 1,numberLine.AbsoluteSize.X do
-				local line = sequenceLine:Clone()
-				lines[i] = line
-				line.Name = tostring(i)
-				line.Position = UDim2.new(0,i-1,0,0)
-				line.Parent = numberLine
-			end
-
-			local envelopeDrag = Instance.new("Frame")
-			envelopeDrag.BackgroundTransparency = 1
-			envelopeDrag.BackgroundColor3 = Color3.new(0,0,0)
-			envelopeDrag.BorderSizePixel = 0
-			envelopeDrag.Size = UDim2.new(0,7,0,20)
-			envelopeDrag.Visible = false
-			envelopeDrag.ZIndex = 2
-			local envelopeDragLine = Instance.new("Frame",envelopeDrag)
-			envelopeDragLine.Name = "Line"
-			envelopeDragLine.BackgroundColor3 = Color3.new(0,0,0)
-			envelopeDragLine.BorderSizePixel = 0
-			envelopeDragLine.Position = UDim2.new(0,3,0,0)
-			envelopeDragLine.Size = UDim2.new(0,1,0,20)
-			envelopeDragLine.ZIndex = 2
-
-			local envelopeDragTop,envelopeDragBottom = envelopeDrag:Clone(),envelopeDrag:Clone()
-			envelopeDragTop.Parent = numberLine
-			envelopeDragBottom.Parent = numberLine
-
-			local function buildSequence()
-				local newPoints = {}
-				for i,v in pairs(points) do
-					table.insert(newPoints,NumberSequenceKeypoint.new(v[2],v[1],v[3]))
-				end
-				newMt.Sequence = NumberSequence.new(newPoints)
-				newMt.OnSelect:Fire(newMt.Sequence)
-			end
-
-			local function round(num,places)
-				local multi = 10^places
-				return math.floor(num*multi + 0.5)/multi
-			end
-
-			local function updateInputs(point)
-				if point then
-					currentPoint = point
-					local rawT,rawV,rawE = point[2],point[1],point[3]
-					timeBox.Text = round(rawT,(rawT < 0.01 and 5) or (rawT < 0.1 and 4) or 3)
-					valueBox.Text = round(rawV,(rawV < 0.01 and 5) or (rawV < 0.1 and 4) or (rawV < 1 and 3) or 2)
-					envelopeBox.Text = round(rawE,(rawE < 0.01 and 5) or (rawE < 0.1 and 4) or (rawV < 1 and 3) or 2)
-
-					local envelopeDistance = numberLine.AbsoluteSize.Y*(point[3]/10)
-					envelopeDragTop.Position = UDim2.new(0,point[4].Position.X.Offset-1,0,point[4].Position.Y.Offset-envelopeDistance-17)
-					envelopeDragTop.Visible = true
-					envelopeDragBottom.Position = UDim2.new(0,point[4].Position.X.Offset-1,0,point[4].Position.Y.Offset+envelopeDistance+2)
-					envelopeDragBottom.Visible = true
-				end
-			end
-
-			envelopeDragTop.InputBegan:Connect(function(input)
-				if (input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch) or not currentPoint or Lib.CheckMouseInGui(currentPoint[4].Select) then return end
-
-				local mouseEvent, releaseEvent
-				local maxSize = numberLine.AbsoluteSize.Y
-				local mouseDelta = math.abs(envelopeDragTop.AbsolutePosition.Y - mouse.Y)
-
-				envelopeDragTop.Line.Position = UDim2.new(0, 2, 0, 0)
-				envelopeDragTop.Line.Size = UDim2.new(0, 3, 0, 20)
-
-				releaseEvent = user.InputEnded:Connect(function(input)
-					if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
-					mouseEvent:Disconnect()
-					releaseEvent:Disconnect()
-					envelopeDragTop.Line.Position = UDim2.new(0, 3, 0, 0)
-					envelopeDragTop.Line.Size = UDim2.new(0, 1, 0, 20)
-				end)
-
-				mouseEvent = user.InputChanged:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-						local topDiff = (currentPoint[4].AbsolutePosition.Y + 2) - (mouse.Y - mouseDelta) - 19
-						local newEnvelope = 10 * (math.max(topDiff, 0) / maxSize)
-						local maxEnvelope = math.min(currentPoint[1], 10 - currentPoint[1])
-						currentPoint[3] = math.min(newEnvelope, maxEnvelope)
-						newMt:Redraw()
-						buildSequence()
-						updateInputs(currentPoint)
-					end
-				end)
-			end)
-
-			envelopeDragBottom.InputBegan:Connect(function(input)
-				if (input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch) or not currentPoint or Lib.CheckMouseInGui(currentPoint[4].Select) then return end
-
-				local mouseEvent, releaseEvent
-				local maxSize = numberLine.AbsoluteSize.Y
-				local mouseDelta = math.abs(envelopeDragBottom.AbsolutePosition.Y - mouse.Y)
-
-				envelopeDragBottom.Line.Position = UDim2.new(0, 2, 0, 0)
-				envelopeDragBottom.Line.Size = UDim2.new(0, 3, 0, 20)
-
-				releaseEvent = user.InputEnded:Connect(function(input)
-					if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
-					mouseEvent:Disconnect()
-					releaseEvent:Disconnect()
-					envelopeDragBottom.Line.Position = UDim2.new(0, 3, 0, 0)
-					envelopeDragBottom.Line.Size = UDim2.new(0, 1, 0, 20)
-				end)
-
-				mouseEvent = user.InputChanged:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-						local bottomDiff = (mouse.Y + (20 - mouseDelta)) - (currentPoint[4].AbsolutePosition.Y + 2) - 19
-						local newEnvelope = 10 * (math.max(bottomDiff, 0) / maxSize)
-						local maxEnvelope = math.min(currentPoint[1], 10 - currentPoint[1])
-						currentPoint[3] = math.min(newEnvelope, maxEnvelope)
-						newMt:Redraw()
-						buildSequence()
-						updateInputs(currentPoint)
-					end
-				end)
-			end)
-
-			local function placePoint(point)
-				local newPoint = Instance.new("Frame")
-				newPoint.Name = "Point"
-				newPoint.BorderSizePixel = 0
-				newPoint.Size = UDim2.new(0,5,0,5)
-				newPoint.Position = UDim2.new(0,math.floor((numberLine.AbsoluteSize.X-1) * point[2])-2,0,numberLine.AbsoluteSize.Y*(10-point[1])/10-2)
-				newPoint.BackgroundColor3 = Color3.new(0,0,0)
-
-				local newSelect = Instance.new("Frame")
-				newSelect.Name = "Select"
-				newSelect.BackgroundTransparency = 1
-				newSelect.BackgroundColor3 = Color3.new(199/255,44/255,28/255)
-				newSelect.Position = UDim2.new(0,-2,0,-2)
-				newSelect.Size = UDim2.new(0,9,0,9)
-				newSelect.Parent = newPoint
-
-				newPoint.Parent = numberLine
-
-				newSelect.InputBegan:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-						for i, v in pairs(points) do
-							v[4].Select.BackgroundTransparency = 1
-						end
-
-						newSelect.BackgroundTransparency = 0
-						updateInputs(point)
-					end
-
-					if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not currentlySelected then
-						currentPoint = point
-						local mouseEvent, releaseEvent
-						currentlySelected = true
-						newSelect.BackgroundColor3 = Color3.new(249/255, 191/255, 59/255)
-
-						local oldEnvelope = point[3]
-
-						releaseEvent = user.InputEnded:Connect(function(input)
-							if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then	return end
-
-							mouseEvent:Disconnect()
-							releaseEvent:Disconnect()
-							currentlySelected = nil
-							newSelect.BackgroundColor3 = Color3.new(199/255, 44/255, 28/255)
-						end)
-
-						mouseEvent = user.InputChanged:Connect(function(input)
-							if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-								local maxX = numberLine.AbsoluteSize.X - 1
-								local relativeX = (input.Position.X - numberLine.AbsolutePosition.X)
-								if relativeX < 0 then relativeX = 0 end
-								if relativeX > maxX then relativeX = maxX end
-
-								local maxY = numberLine.AbsoluteSize.Y - 1
-								local relativeY = (input.Position.Y - numberLine.AbsolutePosition.Y)
-								if relativeY < 0 then relativeY = 0 end
-								if relativeY > maxY then relativeY = maxY end
-
-								if point ~= beginPoint and point ~= endPoint then
-									point[2] = relativeX / maxX
-								end
-
-								point[1] = 10 - (relativeY / maxY) * 10
-								local maxEnvelope = math.min(point[1], 10 - point[1])
-								point[3] = math.min(oldEnvelope, maxEnvelope)
-								newMt:Redraw()
-								updateInputs(point)
-
-								for i, v in pairs(points) do
-									v[4].Select.BackgroundTransparency = 1
-								end
-
-								newSelect.BackgroundTransparency = 0
-								buildSequence()
-							end
-						end)
-					end
-				end)
-
-				return newPoint
-			end
-
-			local function placePoints()
-				for i,v in pairs(points) do
-					v[4] = placePoint(v)
-				end
-			end
-
-			local function redraw(self)
-				local numberLineSize = numberLine.AbsoluteSize
-				table.sort(points,function(a,b) return a[2] < b[2] end)
-				for i,v in pairs(points) do
-					v[4].Position = UDim2.new(0,math.floor((numberLineSize.X-1) * v[2])-2,0,(numberLineSize.Y-1)*(10-v[1])/10-2)
-				end
-				lines[1].Size = UDim2.new(0,1,0,0)
-				for i = 1,#points-1 do
-					local fromPoint = points[i]
-					local toPoint = points[i+1]
-					local deltaY = toPoint[4].Position.Y.Offset-fromPoint[4].Position.Y.Offset
-					local deltaX = toPoint[4].Position.X.Offset-fromPoint[4].Position.X.Offset
-					local slope = deltaY/deltaX
-
-					local fromEnvelope = fromPoint[3]
-					local nextEnvelope = toPoint[3]
-
-					local currentRise = math.abs(slope)
-					local totalRise = 0
-					local maxRise = math.abs(toPoint[4].Position.Y.Offset-fromPoint[4].Position.Y.Offset)
-
-					for lineCount = math.min(fromPoint[4].Position.X.Offset+1,toPoint[4].Position.X.Offset),toPoint[4].Position.X.Offset do
-						if deltaX == 0 and deltaY == 0 then return end
-						local riseNow = math.floor(currentRise)
-						local line = lines[lineCount+3]
-						if line then
-							if totalRise+riseNow > maxRise then riseNow = maxRise-totalRise end
-							if math.sign(slope) == -1 then
-								line.Position = UDim2.new(0,lineCount+2,0,fromPoint[4].Position.Y.Offset + -(totalRise+riseNow)+2)
-							else
-								line.Position = UDim2.new(0,lineCount+2,0,fromPoint[4].Position.Y.Offset + totalRise+2)
-							end
-							line.Size = UDim2.new(0,1,0,math.max(riseNow,1))
-						end
-						totalRise = totalRise + riseNow
-						currentRise = currentRise - riseNow + math.abs(slope)
-
-						local envPercent = (lineCount-fromPoint[4].Position.X.Offset)/(toPoint[4].Position.X.Offset-fromPoint[4].Position.X.Offset)
-						local envLerp = fromEnvelope+(nextEnvelope-fromEnvelope)*envPercent
-						local relativeSize = (envLerp/10)*numberLineSize.Y
-
-						local line = eLines[lineCount + 3]
-						if line then
-							line.Position = UDim2.new(0,lineCount+2,0,lines[lineCount+3].Position.Y.Offset-math.floor(relativeSize))
-							line.Size = UDim2.new(0,1,0,math.floor(relativeSize*2))
-						end
-					end
-				end
-			end
-			newMt.Redraw = redraw
-
-			local function loadSequence(self,seq)
-				resetSequence = seq
-				for i,v in pairs(points) do if v[4] then v[4]:Destroy() end end
-				points = {}
-				for i,v in pairs(seq.Keypoints) do
-					local maxEnvelope = math.min(v.Value,10-v.Value)
-					local newPoint = {v.Value,v.Time,math.min(v.Envelope,maxEnvelope)}
-					newPoint[4] = placePoint(newPoint)
-					table.insert(points,newPoint)
-				end
-				beginPoint = points[1]
-				endPoint = points[#points]
-				currentlySelected = nil
-				redraw()
-				envelopeDragTop.Visible = false
-				envelopeDragBottom.Visible = false
-			end
-			newMt.SetSequence = loadSequence
-
-			timeBox.FocusLost:Connect(function()
-				local point = currentPoint
-				local num = tonumber(timeBox.Text)
-				if point and num and point ~= beginPoint and point ~= endPoint then
-					num = math.clamp(num,0,1)
-					point[2] = num
-					redraw()
-					buildSequence()
-					updateInputs(point)
-				end
-			end)
-
-			valueBox.FocusLost:Connect(function()
-				local point = currentPoint
-				local num = tonumber(valueBox.Text)
-				if point and num then
-					local oldEnvelope = point[3]
-					num = math.clamp(num,0,10)
-					point[1] = num
-					local maxEnvelope = math.min(point[1],10-point[1])
-					point[3] = math.min(oldEnvelope,maxEnvelope)
-					redraw()
-					buildSequence()
-					updateInputs(point)
-				end
-			end)
-
-			envelopeBox.FocusLost:Connect(function()
-				local point = currentPoint
-				local num = tonumber(envelopeBox.Text)
-				if point and num then
-					num = math.clamp(num,0,5)
-					local maxEnvelope = math.min(point[1],10-point[1])
-					point[3] = math.min(num,maxEnvelope)
-					redraw()
-					buildSequence()
-					updateInputs(point)
-				end
-			end)
-
-			local function buttonAnimations(button,inverse)
-				button.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then button.BackgroundTransparency = (inverse and 0.5 or 0.4) end end)
-				button.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then button.BackgroundTransparency = (inverse and 1 or 0) end end)
-			end
-
-			numberLine.InputBegan:Connect(function(input)
-				if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and #points < 20 then
-
-					if Lib.CheckMouseInGui(envelopeDragTop) or Lib.CheckMouseInGui(envelopeDragBottom) then return end
-
-					for i, v in pairs(points) do
-						if Lib.CheckMouseInGui(v[4].Select) then
-							return
-						end
-					end
-
-					local maxX = numberLine.AbsoluteSize.X - 1
-					local relativeX = (input.Position.X - numberLine.AbsolutePosition.X)
-					if relativeX < 0 then relativeX = 0 end
-					if relativeX > maxX then relativeX = maxX end
-
-					local maxY = numberLine.AbsoluteSize.Y - 1
-					local relativeY = (input.Position.Y - numberLine.AbsolutePosition.Y)
-					if relativeY < 0 then relativeY = 0 end
-					if relativeY > maxY then relativeY = maxY end
-
-					local raw = relativeX / maxX
-					local newPoint = {10 - (relativeY / maxY) * 10, raw, 0}
-					newPoint[4] = placePoint(newPoint)
-					table.insert(points, newPoint)
-					redraw()
-					buildSequence()
-				end
-			end)
-
-			deleteButton.MouseButton1Click:Connect(function()
-				if currentPoint and currentPoint ~= beginPoint and currentPoint ~= endPoint then
-					for i,v in pairs(points) do
-						if v == currentPoint then
-							v[4]:Destroy()
-							table.remove(points,i)
-							break
-						end
-					end
-					currentlySelected = nil
-					redraw()
-					buildSequence()
-					updateInputs(points[1])
-				end
-			end)
-
-			resetButton.MouseButton1Click:Connect(function()
-				if resetSequence then
-					newMt:SetSequence(resetSequence)
-					buildSequence()
-				end
-			end)
-
-			closeButton.MouseButton1Click:Connect(function()
-				window:Close()
-			end)
-
-			buttonAnimations(deleteButton)
-			buttonAnimations(resetButton)
-			buttonAnimations(closeButton)
-
-			placePoints()
-			redraw()
-
-			newMt.Show = function(self)
-				window:Show()
-			end
-
-			return newMt
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.ColorSequenceEditor = (function()
-		local function new()
-			local newMt = setmetatable({},{})
-			newMt.OnSelect = Lib.Signal.new()
-			newMt.OnCancel = Lib.Signal.new()
-			newMt.OnPreview = Lib.Signal.new()
-			newMt.OnPickColor = Lib.Signal.new()
-
-			local guiContents = create({
-				{1,"Frame",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderSizePixel=0,ClipsDescendants=true,Name="Content",Position=UDim2.new(0,0,0,20),Size=UDim2.new(1,0,1,-20),}},
-				{2,"Frame",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),Name="ColorLine",Parent={1},Position=UDim2.new(0,10,0,5),Size=UDim2.new(1,-20,0,70),}},
-				{3,"Frame",{BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,Name="Gradient",Parent={2},Size=UDim2.new(1,0,1,0),}},
-				{4,"UIGradient",{Parent={3},}},
-				{5,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Name="Arrows",Parent={1},Position=UDim2.new(0,1,0,73),Size=UDim2.new(1,-2,0,16),}},
-				{6,"Frame",{BackgroundColor3=Color3.new(0,0,0),BackgroundTransparency=0.5,BorderSizePixel=0,Name="Cursor",Parent={1},Position=UDim2.new(0,10,0,0),Size=UDim2.new(0,1,0,80),}},
-				{7,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),Name="Time",Parent={1},Position=UDim2.new(0,40,0,95),Size=UDim2.new(0,100,0,20),}},
-				{8,"TextBox",{BackgroundColor3=Color3.new(0.25098040699959,0.25098040699959,0.25098040699959),BackgroundTransparency=1,BorderColor3=Color3.new(0.37647062540054,0.37647062540054,0.37647062540054),ClipsDescendants=true,Font=3,Name="Input",Parent={7},Position=UDim2.new(0,2,0,0),Size=UDim2.new(0,98,0,20),Text="0",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=0,}},
-				{9,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={7},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Time",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{10,"Frame",{BackgroundColor3=Color3.new(1,1,1),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),Name="ColorBox",Parent={1},Position=UDim2.new(0,220,0,95),Size=UDim2.new(0,20,0,20),}},
-				{11,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Title",Parent={10},Position=UDim2.new(0,-40,0,0),Size=UDim2.new(0,34,1,0),Text="Color",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,TextXAlignment=1,}},
-				{12,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),BorderSizePixel=0,Font=3,Name="Close",Parent={1},Position=UDim2.new(1,-90,0,95),Size=UDim2.new(0,80,0,20),Text="Close",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,}},
-				{13,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),BorderSizePixel=0,Font=3,Name="Reset",Parent={1},Position=UDim2.new(1,-180,0,95),Size=UDim2.new(0,80,0,20),Text="Reset",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,}},
-				{14,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderColor3=Color3.new(0.21568627655506,0.21568627655506,0.21568627655506),BorderSizePixel=0,Font=3,Name="Delete",Parent={1},Position=UDim2.new(0,280,0,95),Size=UDim2.new(0,80,0,20),Text="Delete",TextColor3=Color3.new(0.86274516582489,0.86274516582489,0.86274516582489),TextSize=14,}},
-				{15,"Frame",{BackgroundTransparency=1,Name="Arrow",Parent={1},Size=UDim2.new(0,16,0,16),Visible=false,}},
-				{16,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={15},Position=UDim2.new(0,8,0,3),Size=UDim2.new(0,1,0,2),}},
-				{17,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={15},Position=UDim2.new(0,7,0,5),Size=UDim2.new(0,3,0,2),}},
-				{18,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={15},Position=UDim2.new(0,6,0,7),Size=UDim2.new(0,5,0,2),}},
-				{19,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={15},Position=UDim2.new(0,5,0,9),Size=UDim2.new(0,7,0,2),}},
-				{20,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={15},Position=UDim2.new(0,4,0,11),Size=UDim2.new(0,9,0,2),}},
-			})
-			local window = Lib.Window.new()
-			window.Resizable = false
-			window:Resize(650,150)
-			window:SetTitle("ColorSequence Editor")
-			newMt.Window = window
-			newMt.Gui = window.Gui
-			for i,v in pairs(guiContents:GetChildren()) do
-				v.Parent = window.GuiElems.Content
-			end
-			local gui = window.Gui
-			local pickerGui = gui.Main
-			local pickerTopBar = pickerGui.TopBar
-			local pickerFrame = pickerGui.Content
-			local colorLine = pickerFrame.ColorLine
-			local gradient = colorLine.Gradient.UIGradient
-			local arrowFrame = pickerFrame.Arrows
-			local arrow = pickerFrame.Arrow
-			local cursor = pickerFrame.Cursor
-			local timeBox = pickerFrame.Time.Input
-			local colorBox = pickerFrame.ColorBox
-			local deleteButton = pickerFrame.Delete
-			local resetButton = pickerFrame.Reset
-			local closeButton = pickerFrame.Close
-			local topClose = pickerTopBar.Close
-
-			local user = service.UserInputService
-			local mouse = service.Players.LocalPlayer:GetMouse()
-
-			local colors = {{Color3.new(1,0,1),0},{Color3.new(0.2,0.9,0.2),0.2},{Color3.new(0.4,0.5,0.9),0.7},{Color3.new(0.6,1,1),1}}
-			local resetSequence = nil
-
-			local beginPoint = colors[1]
-			local endPoint = colors[#colors]
-
-			local currentlySelected = nil
-			local currentPoint = nil
-
-			local sequenceLine = Instance.new("Frame")
-			sequenceLine.BorderSizePixel = 0
-			sequenceLine.Size = UDim2.new(0,1,1,0)
-
-			newMt.Sequence = ColorSequence.new(Color3.new(1,1,1))
-			local function buildSequence(noupdate)
-				local newPoints = {}
-				table.sort(colors,function(a,b) return a[2] < b[2] end)
-				for i,v in pairs(colors) do
-					table.insert(newPoints,ColorSequenceKeypoint.new(v[2],v[1]))
-				end
-				newMt.Sequence = ColorSequence.new(newPoints)
-				if not noupdate then newMt.OnSelect:Fire(newMt.Sequence) end
-			end
-
-			local function round(num,places)
-				local multi = 10^places
-				return math.floor(num*multi + 0.5)/multi
-			end
-
-			local function updateInputs(point)
-				if point then
-					currentPoint = point
-					local raw = point[2]
-					timeBox.Text = round(raw,(raw < 0.01 and 5) or (raw < 0.1 and 4) or 3)
-					colorBox.BackgroundColor3 = point[1]
-				end
-			end
-
-			local function placeArrow(ind,point)
-				local newArrow = arrow:Clone()
-				newArrow.Position = UDim2.new(0,ind-1,0,0)
-				newArrow.Visible = true
-				newArrow.Parent = arrowFrame
-
-				newArrow.InputBegan:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-						cursor.Visible = true
-						cursor.Position = UDim2.new(0, 9 + newArrow.Position.X.Offset, 0, 0)
-					end
-
-					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-						updateInputs(point)
-						if point == beginPoint or point == endPoint or currentlySelected then return end
-
-						local mouseEvent, releaseEvent
-						currentlySelected = true
-
-						releaseEvent = user.InputEnded:Connect(function(input)
-							if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
-							mouseEvent:Disconnect()
-							releaseEvent:Disconnect()
-							currentlySelected = nil
-							cursor.Visible = false
-						end)
-
-						mouseEvent = user.InputChanged:Connect(function(input)
-							if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-								local maxSize = colorLine.AbsoluteSize.X - 1
-								local relativeX = (input.Position.X - colorLine.AbsolutePosition.X)
-								if relativeX < 0 then relativeX = 0 end
-								if relativeX > maxSize then relativeX = maxSize end
-								local raw = relativeX / maxSize
-								point[2] = relativeX / maxSize
-								updateInputs(point)
-								cursor.Visible = true
-								cursor.Position = UDim2.new(0, 9 + newArrow.Position.X.Offset, 0, 0)
-								buildSequence()
-								newMt:Redraw()
-							end
-						end)
-					end
-				end)
-
-				newArrow.InputEnded:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-						cursor.Visible = false
-					end
-				end)
-
-				return newArrow
-			end
-
-			local function placeArrows()
-				for i,v in pairs(colors) do
-					v[3] = placeArrow(math.floor((colorLine.AbsoluteSize.X-1) * v[2]) + 1,v)
-				end
-			end
-
-			local function redraw(self)
-				gradient.Color = newMt.Sequence or ColorSequence.new(Color3.new(1,1,1))
-
-				for i = 2,#colors do
-					local nextColor = colors[i]
-					local endPos = math.floor((colorLine.AbsoluteSize.X-1) * nextColor[2]) + 1
-					nextColor[3].Position = UDim2.new(0,endPos,0,0)
-				end
-			end
-			newMt.Redraw = redraw
-
-			local function loadSequence(self,seq)
-				resetSequence = seq
-				for i,v in pairs(colors) do if v[3] then v[3]:Destroy() end end
-				colors = {}
-				currentlySelected = nil
-				for i,v in pairs(seq.Keypoints) do
-					local newPoint = {v.Value,v.Time}
-					newPoint[3] = placeArrow(v.Time,newPoint)
-					table.insert(colors,newPoint)
-				end
-				beginPoint = colors[1]
-				endPoint = colors[#colors]
-				currentlySelected = nil
-				updateInputs(colors[1])
-				buildSequence(true)
-				redraw()
-			end
-			newMt.SetSequence = loadSequence
-
-			local function buttonAnimations(button,inverse)
-				button.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then button.BackgroundTransparency = (inverse and 0.5 or 0.4) end end)
-				button.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then button.BackgroundTransparency = (inverse and 1 or 0) end end)
-			end
-
-			colorLine.InputBegan:Connect(function(input)
-				if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and #colors < 20 then
-					local maxSize = colorLine.AbsoluteSize.X - 1
-					local relativeX = (input.Position.X - colorLine.AbsolutePosition.X)
-					if relativeX < 0 then relativeX = 0 end
-					if relativeX > maxSize then relativeX = maxSize end
-
-					local raw = relativeX / maxSize
-					local fromColor = nil
-					local toColor = nil
-					for i, col in pairs(colors) do
-						if col[2] >= raw then
-							fromColor = colors[math.max(i - 1, 1)]
-							toColor = colors[i]
-							break
-						end
-					end
-					local lerpColor = fromColor[1]:lerp(toColor[1], (raw - fromColor[2]) / (toColor[2] - fromColor[2]))
-					local newPoint = {lerpColor, raw}
-					newPoint[3] = placeArrow(newPoint[2], newPoint)
-					table.insert(colors, newPoint)
-					updateInputs(newPoint)
-					buildSequence()
-					redraw()
-				end
-			end)
-
-			colorLine.InputChanged:Connect(function(input)
-				if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-					local maxSize = colorLine.AbsoluteSize.X - 1
-					local relativeX = (input.Position.X - colorLine.AbsolutePosition.X)
-					if relativeX < 0 then relativeX = 0 end
-					if relativeX > maxSize then relativeX = maxSize end
-					cursor.Visible = true
-					cursor.Position = UDim2.new(0, 10 + relativeX, 0, 0)
-				end
-			end)
-
-			colorLine.InputEnded:Connect(function(input)
-				if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-					local inArrow = false
-					for i, v in pairs(colors) do
-						if Lib.CheckMouseInGui(v[3]) then
-							inArrow = v[3]
-						end
-					end
-					cursor.Visible = inArrow and true or false
-					if inArrow then cursor.Position = UDim2.new(0, 9 + inArrow.Position.X.Offset, 0, 0) end
-				end
-			end)
-
-			timeBox:GetPropertyChangedSignal("Text"):Connect(function()
-				local point = currentPoint
-				local num = tonumber(timeBox.Text)
-				if point and num and point ~= beginPoint and point ~= endPoint then
-					num = math.clamp(num,0,1)
-					point[2] = num
-					buildSequence()
-					redraw()
-				end
-			end)
-
-			colorBox.InputBegan:Connect(function(input)
-				if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-					local editor = newMt.ColorPicker
-					if not editor then
-						editor = Lib.ColorPicker.new()
-						editor.Window:SetTitle("ColorSequence Color Picker")
-
-						editor.OnSelect:Connect(function(col)
-							if currentPoint then
-								currentPoint[1] = col
-							end
-							buildSequence()
-							redraw()
-						end)
-
-						newMt.ColorPicker = editor
-					end
-
-					editor.Window:ShowAndFocus()
-				end
-			end)
-
-			deleteButton.MouseButton1Click:Connect(function()
-				if currentPoint and currentPoint ~= beginPoint and currentPoint ~= endPoint then
-					for i,v in pairs(colors) do
-						if v == currentPoint then
-							v[3]:Destroy()
-							table.remove(colors,i)
-							break
-						end
-					end
-					currentlySelected = nil
-					updateInputs(colors[1])
-					buildSequence()
-					redraw()
-				end
-			end)
-
-			resetButton.MouseButton1Click:Connect(function()
-				if resetSequence then
-					newMt:SetSequence(resetSequence)
-				end
-			end)
-
-			closeButton.MouseButton1Click:Connect(function()
-				window:Close()
-			end)
-
-			topClose.MouseButton1Click:Connect(function()
-				window:Close()
-			end)
-
-			buttonAnimations(deleteButton)
-			buttonAnimations(resetButton)
-			buttonAnimations(closeButton)
-
-			placeArrows()
-			redraw()
-
-			newMt.Show = function(self)
-				window:Show()
-			end
-
-			return newMt
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.ViewportTextBox = (function()
-		local textService = service.TextService
-
-		local props = {
-			OffsetX = 0,
-			TextBox = PH,
-			CursorPos = -1,
-			Gui = PH,
-			View = PH
-		}
-		local funcs = {}
-		funcs.Update = function(self)
-			local cursorPos = self.CursorPos or -1
-			local text = self.TextBox.Text
-			if text == "" then self.TextBox.Position = UDim2.new(0,0,0,0) return end
-			if cursorPos == -1 then return end
-
-			local cursorText = text:sub(1,cursorPos-1)
-			local pos = nil
-			local leftEnd = -self.TextBox.Position.X.Offset
-			local rightEnd = leftEnd + self.View.AbsoluteSize.X
-
-			local totalTextSize = textService:GetTextSize(text,self.TextBox.TextSize,self.TextBox.Font,Vector2.new(999999999,100)).X
-			local cursorTextSize = textService:GetTextSize(cursorText,self.TextBox.TextSize,self.TextBox.Font,Vector2.new(999999999,100)).X
-
-			if cursorTextSize > rightEnd then
-				pos = math.max(-1,cursorTextSize - self.View.AbsoluteSize.X + 2)
-			elseif cursorTextSize < leftEnd then
-				pos = math.max(-1,cursorTextSize-2)
-			elseif totalTextSize < rightEnd then
-				pos = math.max(-1,totalTextSize - self.View.AbsoluteSize.X + 2)
-			end
-
-			if pos then
-				self.TextBox.Position = UDim2.new(0,-pos,0,0)
-				self.TextBox.Size = UDim2.new(1,pos,1,0)
-			end
-		end
-
-		funcs.GetText = function(self)
-			return self.TextBox.Text
-		end
-
-		funcs.SetText = function(self,text)
-			self.TextBox.Text = text
-		end
-
-		local mt = getGuiMT(props,funcs)
-
-		local function convert(textbox)
-			local obj = initObj(props,mt)
-
-			local view = Instance.new("Frame")
-			view.BackgroundTransparency = textbox.BackgroundTransparency
-			view.BackgroundColor3 = textbox.BackgroundColor3
-			view.BorderSizePixel = textbox.BorderSizePixel
-			view.BorderColor3 = textbox.BorderColor3
-			view.Position = textbox.Position
-			view.Size = textbox.Size
-			view.ClipsDescendants = true
-			view.Name = textbox.Name
-			textbox.BackgroundTransparency = 1
-			textbox.Position = UDim2.new(0,0,0,0)
-			textbox.Size = UDim2.new(1,0,1,0)
-			textbox.TextXAlignment = Enum.TextXAlignment.Left
-			textbox.Name = "Input"
-
-			obj.TextBox = textbox
-			obj.View = view
-			obj.Gui = view
-
-			textbox.Changed:Connect(function(prop)
-				if prop == "Text" or prop == "CursorPosition" or prop == "AbsoluteSize" then
-					local cursorPos = obj.TextBox.CursorPosition
-					if cursorPos ~= -1 then obj.CursorPos = cursorPos end
-					obj:Update()
-				end
-			end)
-
-			obj:Update()
-
-			view.Parent = textbox.Parent
-			textbox.Parent = view
-
-			return obj
-		end
-
-		local function new()
-			local textBox = Instance.new("TextBox")
-			textBox.Active = true
-			textBox.Size = UDim2.new(0,100,0,20)
-			textBox.BackgroundColor3 = Settings.Theme.TextBox
-			textBox.BorderColor3 = Settings.Theme.Outline3
-			textBox.ClearTextOnFocus = false
-			textBox.TextColor3 = Settings.Theme.Text
-			textBox.Font = Enum.Font.SourceSans
-			textBox.TextSize = 14
-			textBox.Text = ""
-			return convert(textBox)
-		end
-
-		return {new = new, convert = convert}
-	end)()
-
-	Lib.Label = (function()
-		local props,funcs = {},{}
-
-		local mt = getGuiMT(props,funcs)
-
-		local function new()
-			local label = Instance.new("TextLabel")
-			label.BackgroundTransparency = 1
-			label.TextXAlignment = Enum.TextXAlignment.Left
-			label.TextColor3 = Settings.Theme.Text
-			label.TextTransparency = 0.1
-			label.Size = UDim2.new(0,100,0,20)
-			label.Font = Enum.Font.SourceSans
-			label.TextSize = 14
-
-			local obj = setmetatable({
-				Gui = label
-			},mt)
-			return obj
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.Frame = (function()
-		local props,funcs = {},{}
-
-		local mt = getGuiMT(props,funcs)
-
-		local function new()
-			local fr = Instance.new("Frame")
-			fr.BackgroundColor3 = Settings.Theme.Main1
-			fr.BorderColor3 = Settings.Theme.Outline1
-			fr.Size = UDim2.new(0,50,0,50)
-
-			local obj = setmetatable({
-				Gui = fr
-			},mt)
-			return obj
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.Button = (function()
-		local props = {
-			Gui = PH,
-			Anim = PH,
-			Disabled = false,
-			OnClick = SIGNAL,
-			OnDown = SIGNAL,
-			OnUp = SIGNAL,
-			AllowedButtons = {1}
-		}
-		local funcs = {}
-		local tableFind = table.find
-
-		funcs.Trigger = function(self,event,button)
-			if not self.Disabled and tableFind(self.AllowedButtons,button) then
-				self["On"..event]:Fire(button)
-			end
-		end
-
-		funcs.SetDisabled = function(self,dis)
-			self.Disabled = dis
-
-			if dis then
-				self.Anim:Disable()
-				self.Gui.TextTransparency = 0.5
-			else
-				self.Anim.Enable()
-				self.Gui.TextTransparency = 0
-			end
-		end
-
-		local mt = getGuiMT(props,funcs)
-
-		local function new()
-			local b = Instance.new("TextButton")
-			b.AutoButtonColor = false
-			b.TextColor3 = Settings.Theme.Text
-			b.TextTransparency = 0.1
-			b.Size = UDim2.new(0,100,0,20)
-			b.Font = Enum.Font.SourceSans
-			b.TextSize = 14
-			b.BackgroundColor3 = Settings.Theme.Button
-			b.BorderColor3 = Settings.Theme.Outline2
-
-			local obj = initObj(props,mt)
-			obj.Gui = b
-			obj.Anim = Lib.ButtonAnim(b,{Mode = 2, StartColor = Settings.Theme.Button, HoverColor = Settings.Theme.ButtonHover, PressColor = Settings.Theme.ButtonPress, OutlineColor = Settings.Theme.Outline2})
-
-			b.MouseButton1Click:Connect(function() obj:Trigger("Click",1) end)
-			b.MouseButton1Down:Connect(function() obj:Trigger("Down",1) end)
-			b.MouseButton1Up:Connect(function() obj:Trigger("Up",1) end)
-
-			b.MouseButton2Click:Connect(function() obj:Trigger("Click",2) end)
-			b.MouseButton2Down:Connect(function() obj:Trigger("Down",2) end)
-			b.MouseButton2Up:Connect(function() obj:Trigger("Up",2) end)
-
-			return obj
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.DropDown = (function()
-		local props = {
-			Gui = PH,
-			Anim = PH,
-			Context = PH,
-			Selected = PH,
-			Disabled = false,
-			CanBeEmpty = true,
-			Options = {},
-			GuiElems = {},
-			OnSelect = SIGNAL
-		}
-		local funcs = {}
-
-		funcs.Update = function(self)
-			local options = self.Options
-
-			if #options > 0 then
-				if not self.Selected then
-					if not self.CanBeEmpty then
-						self.Selected = options[1]
-						self.GuiElems.Label.Text = options[1]
-					else
-						self.GuiElems.Label.Text = "- Select -"
-					end
-				else
-					self.GuiElems.Label.Text = self.Selected
-				end
-			else
-				self.GuiElems.Label.Text = "- Select -"
-			end
-		end
-
-		funcs.ShowOptions = function(self)
-			local context = self.Context
-
-			context.Width = self.Gui.AbsoluteSize.X
-			context.ReverseYOffset = self.Gui.AbsoluteSize.Y
-			context:Show(self.Gui.AbsolutePosition.X, self.Gui.AbsolutePosition.Y + context.ReverseYOffset)
-		end
-
-		funcs.SetOptions = function(self,opts)
-			self.Options = opts
-
-			local context = self.Context
-			local options = self.Options
-			context:Clear()
-
-			local onClick = function(option) self.Selected = option self.OnSelect:Fire(option) self:Update() end
-
-			if self.CanBeEmpty then
-				context:Add({Name = "- Select -", function() self.Selected = nil self.OnSelect:Fire(nil) self:Update() end})
-			end
-
-			for i = 1,#options do
-				context:Add({Name = options[i], OnClick = onClick})
-			end
-
-			self:Update()
-		end
-
-		funcs.SetSelected = function(self,opt)
-			self.Selected = type(opt) == "number" and self.Options[opt] or opt
-			self:Update()
-		end
-
-		local mt = getGuiMT(props,funcs)
-
-		local function new()
-			local f = Instance.new("TextButton")
-			f.AutoButtonColor = false
-			f.Text = ""
-			f.Size = UDim2.new(0,100,0,20)
-			f.BackgroundColor3 = Settings.Theme.TextBox
-			f.BorderColor3 = Settings.Theme.Outline3
-
-			local label = Lib.Label.new()
-			label.Position = UDim2.new(0,2,0,0)
-			label.Size = UDim2.new(1,-22,1,0)
-			label.TextTruncate = Enum.TextTruncate.AtEnd
-			label.Parent = f
-			local arrow = create({
-				{1,"Frame",{BackgroundTransparency=1,Name="EnumArrow",Position=UDim2.new(1,-16,0,2),Size=UDim2.new(0,16,0,16),}},
-				{2,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={1},Position=UDim2.new(0,8,0,9),Size=UDim2.new(0,1,0,1),}},
-				{3,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={1},Position=UDim2.new(0,7,0,8),Size=UDim2.new(0,3,0,1),}},
-				{4,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={1},Position=UDim2.new(0,6,0,7),Size=UDim2.new(0,5,0,1),}},
-			})
-			arrow.Parent = f
-
-			local obj = initObj(props,mt)
-			obj.Gui = f
-			obj.Anim = Lib.ButtonAnim(f,{Mode = 2, StartColor = Settings.Theme.TextBox, LerpTo = Settings.Theme.Button, LerpDelta = 0.15})
-			obj.Context = Lib.ContextMenu.new()
-			obj.Context.Iconless = true
-			obj.Context.MaxHeight = 200
-			obj.Selected = nil
-			obj.GuiElems = {Label = label}
-			f.MouseButton1Down:Connect(function() obj:ShowOptions() end)
-			obj:Update()
-			return obj
-		end
-
-		return {new = new}
-	end)()
-
-	Lib.ClickSystem = (function()
-		local props = {
-			LastItem = PH,
-			OnDown = SIGNAL,
-			OnRelease = SIGNAL,
-			AllowedButtons = {1},
-			Combo = 0,
-			MaxCombo = 2,
-			ComboTime = 0.5,
-			Items = {},
-			ItemCons = {},
-			ClickId = -1,
-			LastButton = ""
-		}
-		local funcs = {}
-		local tostring = tostring
-
-		local disconnect = function(con)
-			local pos = table.find(con.Signal.Connections,con)
-			if pos then table.remove(con.Signal.Connections,pos) end
-		end
-
-		funcs.Trigger = function(self, item, button, X, Y)
-			if table.find(self.AllowedButtons, button) then
-				if self.LastButton ~= button or self.LastItem ~= item or self.Combo == self.MaxCombo or tick() - self.ClickId > self.ComboTime then
-					self.Combo = 0
-					self.LastButton = button
-					self.LastItem = item
-				end
-
-				self.Combo = self.Combo + 1
-				self.ClickId = tick()
-
-				task.spawn(function()
-					if self.InputDown then
-						self.InputDown = false
-					else
-						self.InputDown = tick()
-
-						local Connection = item.MouseButton1Up:Once(function()
-							self.InputDown = false
-						end)
-
-						while self.InputDown and not Explorer.Dragging do
-							if (tick() - self.InputDown) >= 0.4 then
-								self.InputDown = false
-								self["OnRelease"]:Fire(item, self.Combo, 2, Vector2.new(X, Y))
-								break
-							end;task.wait()
-						end
-					end
-				end)
-
-				local release
-				release = service.UserInputService.InputEnded:Connect(function(input)
-					if input.UserInputType == Enum.UserInputType["MouseButton" .. button] then
-						release:Disconnect()
-						if Lib.CheckMouseInGui(item) and self.LastButton == button and self.LastItem == item then
-							self.InputDown = false
-							self["OnRelease"]:Fire(item,self.Combo,button)
-						end
-					end
-				end)
-
-				self["OnDown"]:Fire(item,self.Combo,button)
-			end
-		end
-
-		funcs.Add = function(self,item)
-			if table.find(self.Items,item) then return end
-
-			local cons = {}
-			cons[1] = item.MouseButton1Down:Connect(function(X, Y) self:Trigger(item, 1, X, Y) end)
-			cons[2] = item.MouseButton2Down:Connect(function(X, Y) self:Trigger(item, 2, X, Y) end)
-
-			self.ItemCons[item] = cons
-			self.Items[#self.Items+1] = item
-		end
-
-		funcs.Remove = function(self,item)
-			local ind = table.find(self.Items,item)
-			if not ind then return end
-
-			for i,v in pairs(self.ItemCons[item]) do
-				v:Disconnect()
-			end
-			self.ItemCons[item] = nil
-			table.remove(self.Items,ind)
-		end
-
-		local mt = {__index = funcs}
-
-		local function new()
-			local obj = initObj(props,mt)
-
-			return obj
-		end
-
-		return {new = new}
-	end)()
-
-	return Lib
-end
-
-return {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
-end,
-["ModelViewer"] = function()
-
-local Main,Lib,Apps,Settings
-local Explorer, Properties, ScriptViewer, ModelViewer, Notebook
-local API,RMD,env,service,plr,create,createSimple
-
-local function initDeps(data)
-	Main = data.Main
-	Lib = data.Lib
-	Apps = data.Apps
-	Settings = data.Settings
-
-	API = data.API
-	RMD = data.RMD
-	env = data.env
-	service = data.service
-	plr = data.plr
-	create = data.create
-	createSimple = data.createSimple
-end
-
-local function initAfterMain()
-	Explorer = Apps.Explorer
-	Properties = Apps.Properties
-	ScriptViewer = Apps.ScriptViewer
-	Notebook = Apps.Notebook
-end
-
-local function getPath(obj)
-	if obj.Parent == nil then
-		return "Nil parented"
-	else
-		return Explorer.GetInstancePath(obj)
-	end
-end
-
-local function main()
-	local RunService = game:GetService("RunService")
-	local UserInputService = game:GetService("UserInputService")
-	
-	local ModelViewer = {
-		EnableInputCamera = true,
-		IsViewing = false,
-		AutoRefresh = false,
-		ZoomMultiplier = 2,
-		AutoRotate = true,
-		RotationSpeed = 0.01,
-		RefreshRate = 30
-	}
-	
-	local window, viewportFrame, pathLabel, settingsButton
-	local model, camera, originalModel
-
-	ModelViewer.StopViewModel = function(updating)
-		if updating then
-			viewportFrame:FindFirstChildOfClass("Model"):Destroy()
-		else
-			if camera then camera = nil end
-			if model then model = nil end
-			viewportFrame:ClearAllChildren()
-			
-			ModelViewer.IsViewing = false
-			window:SetTitle("3D Preview")
-			pathLabel.Gui.Text = ""
-		end
-	end
-
-	ModelViewer.ViewModel = function(item, updating)
-		if not item then return end
-		ModelViewer.StopViewModel(updating)
-		
-		if item ~= workspace and not item:IsA("Terrain") then
-
-			if item:IsA("BasePart") and not item:IsA("Model") then
-				model = Instance.new("Model")
-				model.Parent = viewportFrame
-
-				local clone = item:Clone()
-				clone.Parent = model
-				model.PrimaryPart = clone
-				model:SetPrimaryPartCFrame(CFrame.new(0, 0, 0))
-			elseif item:IsA("Model") then
-				item.Archivable = true
-
-				if #item:GetChildren() == 0 then return end
-				
-				model = item:Clone()
-				model.Parent = viewportFrame
-
-				if not model.PrimaryPart then
-					local found = false
-					for _, child in model:GetDescendants() do
-						if child:IsA("BasePart") then
-							model.PrimaryPart = child
-							model:SetPrimaryPartCFrame(CFrame.new(0, 0, 0))
-							found = true
-							break
-						end
-					end
-					if not found then
-						model:Destroy()
-						model = nil
-						return
-					end
-				end
-			else
-				return
-			end
-		end
-		
-		originalModel = item
-		
-		if ModelViewer.AutoRefresh and not updating then
-			task.spawn(function()
-				while model and ModelViewer.AutoRefresh do
-					
-					ModelViewer.ViewModel(originalModel, true)
-					task.wait(1 / ModelViewer.RefreshRate)
-				end
-			end)
-		end
-		
-		if not updating then
-			camera = Instance.new("Camera")
-			viewportFrame.CurrentCamera = camera
-
-			camera.Parent = viewportFrame
-			camera.FieldOfView = 60
-			
-			window:SetTitle(item.Name.." - 3D Preview")
-			pathLabel.Gui.Text = "path: " .. getPath(originalModel)
-			window:Show()
-			ModelViewer.IsViewing = true
-		end
-	end
-
-	ModelViewer.Init = function()
-		window = Lib.Window.new()
-		window:SetTitle("3D Preview")
-		window:Resize(350,200)
-		ModelViewer.Window =  window
-		
-		viewportFrame = Instance.new("ViewportFrame")
-		viewportFrame.Parent = window.GuiElems.Content
-		viewportFrame.BackgroundTransparency = 1
-		viewportFrame.Size = UDim2.new(1,0,1,0)
-		
-		pathLabel = Lib.Label.new()
-		pathLabel.Gui.Parent = window.GuiElems.Content
-		pathLabel.Gui.AnchorPoint = Vector2.new(0,1)
-		pathLabel.Gui.Text = ""
-		pathLabel.Gui.TextSize = 12
-		pathLabel.Gui.TextTransparency = 0.8
-		pathLabel.Gui.Position = UDim2.new(0,1,1,0)
-		pathLabel.Gui.Size = UDim2.new(1,-1,0,15)
-		pathLabel.Gui.BackgroundTransparency = 1
-		
-		settingsButton = Instance.new("ImageButton",window.GuiElems.Content)
-		settingsButton.AnchorPoint = Vector2.new(1,0)
-		settingsButton.BackgroundTransparency = 1
-		settingsButton.Size = UDim2.new(0,15,0,15)
-		settingsButton.Position = UDim2.new(1,-3,0,3)
-		settingsButton.Image = "rbxassetid://6578871732"
-		settingsButton.ImageTransparency = 0.5
-
-		if UserInputService:GetLastInputType() == Enum.UserInputType.Touch then
-			settingsButton.Visible = true
-		else
-			settingsButton.Visible = false
-		end
-
-		local rotationX, rotationY = -15, 0
-		local distance = 10
-		local dragging = false
-		local hovering = false
-		local lastpos = Vector2.zero
-
-		viewportFrame.InputBegan:Connect(function(input)
-			if not ModelViewer.EnableInputCamera then return end
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				dragging = true
-				lastpos = input.Position
-			elseif input.KeyCode == Enum.KeyCode.LeftShift then
-				ModelViewer.ZoomMultiplier = 10
-			end
-		end)
-
-		viewportFrame.MouseEnter:Connect(function()
-			hovering = true
-		end)
-		viewportFrame.MouseLeave:Connect(function()
-			hovering = false
-		end)
-
-		viewportFrame.InputEnded:Connect(function(input)
-			if not ModelViewer.EnableInputCamera then return end
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				dragging = false
-			elseif input.KeyCode == Enum.KeyCode.LeftShift then
-				ModelViewer.ZoomMultiplier = 2
-			end
-		end)
-
-		viewportFrame.InputChanged:Connect(function(input)
-			if not ModelViewer.EnableInputCamera then return end
-			if dragging and input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-				local delta = input.Position - lastpos
-				lastpos = input.Position
-
-				rotationY -= delta.X * 0.01
-				rotationX -= delta.Y * 0.01
-				rotationX = math.clamp(rotationX, -math.pi/2 + 0.1, math.pi/2 - 0.1)
-			end
-
-			if input.UserInputType == Enum.UserInputType.MouseWheel and hovering then
-				distance = math.clamp(distance - (input.Position.Z * ModelViewer.ZoomMultiplier), 0.1, math.huge)
-			end
-		end)
-
-		RunService.RenderStepped:Connect(function()
-			if camera and model then
-				if not dragging and ModelViewer.AutoRotate then
-					rotationY += ModelViewer.RotationSpeed
-				end
-				
-				local center = model.PrimaryPart.Position
-				local offset = CFrame.new(0, 0, distance)
-				local rotation = CFrame.Angles(0, rotationY, 0) * CFrame.Angles(rotationX, 0, 0)
-
-				local camCF = CFrame.new(center) * rotation * offset
-
-				camera.CFrame = CFrame.lookAt(camCF.Position, center)
-				
-			end
-		end)
-
-		local context = Lib.ContextMenu.new()
-		
-		local absoluteSize = context.Gui.AbsoluteSize
-		context.MaxHeight = (absoluteSize.Y <= 600 and (absoluteSize.Y - 40)) or nil
-
-		context:Register("STOP",{Name = "Stop Viewing", OnClick = function()
-			ModelViewer.StopViewModel()
-		end})
-		context:Register("EXIT",{Name = "Exit", OnClick = function()
-			ModelViewer.StopViewModel()
-			context:Hide()
-			window:Hide()
-		end})
-		context:Register("COPY_PATH",{Name = "Copy Path", OnClick = function()
-			if model then
-				env.setclipboard(getPath(originalModel))
-			end
-		end})
-		context:Register("REFRESH",{Name = "Refresh", OnClick = function()
-			if originalModel then
-				ModelViewer.ViewModel(originalModel)
-			end
-		end})
-		context:Register("ENABLE_AUTO_REFRESH",{Name = "Enable Auto Refresh", OnClick = function()
-			if originalModel then
-				ModelViewer.AutoRefresh = true
-				ModelViewer.ViewModel(originalModel)
-			end
-		end})
-		context:Register("DISABLE_AUTO_REFRESH",{Name = "Disable Auto Refresh", OnClick = function()
-			if originalModel then
-				ModelViewer.AutoRefresh = false
-				ModelViewer.ViewModel(originalModel)
-			end
-		end})
-		context:Register("SAVE_INST",{Name = "Save to File", OnClick = function()
-			if model then
-				Lib.SaveAsPrompt("Place_"..game.PlaceId.."_"..originalModel.Name.."_"..os.time(), function(filename)
-					window:SetTitle(originalModel.Name.." - Model Viewer - Saving")
-					
-					local success, result = pcall(env.saveinstance,
-					originalModel, filename,
-						{
-							Decompile = true,
-							RemovePlayerCharacters = false
-						}
-					)
-					
-					if success then
-						window:SetTitle(originalModel.Name.." - Model Viewer - Saved")
-						context:Hide()
-						task.wait(5)
-						if model then
-							window:SetTitle(originalModel.Name.." - Model Viewer")
-						end
-					else
-						window:SetTitle(originalModel.Name.." - Model Viewer - Error")
-						warn("Error while saving model: "..result)
-						context:Hide()
-						task.wait(5)
-						if model then
-							window:SetTitle(originalModel.Name.." - Model Viewer")
-						end
-					end
-				end)
-			end
-		end})
-		
-		context:Register("ENABLE_AUTO_ROTATE",{Name = "Enable Auto Rotate", OnClick = function()
-			ModelViewer.AutoRotate = true
-			
-		end})
-		context:Register("DISABLE_AUTO_ROTATE",{Name = "Disable Auto Rotate", OnClick = function()
-			ModelViewer.AutoRotate = false
-		end})
-		context:Register("LOCK_CAM",{Name = "Lock Camera", OnClick = function()
-			ModelViewer.EnableInputCamera = false
-		end})
-		context:Register("UNLOCK_CAM",{Name = "Unlock Camera", OnClick = function()
-			ModelViewer.EnableInputCamera = true
-		end})
-		
-		context:Register("ZOOM_IN",{Name = "Zoom In", OnClick = function()
-			distance = math.clamp(distance - (ModelViewer.ZoomMultiplier * 2), 2, math.huge)
-		end})
-		
-		context:Register("ZOOM_OUT",{Name = "Zoom Out", OnClick = function()
-			distance = math.clamp(distance + (ModelViewer.ZoomMultiplier * 2), 2, math.huge)
-		end})
-		
-		local function ShowContext()
-			context:Clear()
-
-			context:AddRegistered("STOP", not ModelViewer.IsViewing)
-			context:AddRegistered("REFRESH", not ModelViewer.IsViewing)
-			context:AddRegistered("COPY_PATH", not ModelViewer.IsViewing)
-			context:AddRegistered("SAVE_INST", not ModelViewer.IsViewing)
-			context:AddDivider()
-			
-			if env.isonmobile then
-				context:AddRegistered("ZOOM_IN")
-				context:AddRegistered("ZOOM_OUT")
-				context:AddDivider()
-			end
-
-			if ModelViewer.AutoRotate then
-				context:AddRegistered("DISABLE_AUTO_ROTATE")
-			else
-				context:AddRegistered("ENABLE_AUTO_ROTATE")
-			end
-			if ModelViewer.AutoRefresh then
-				context:AddRegistered("DISABLE_AUTO_REFRESH")
-			else
-				context:AddRegistered("ENABLE_AUTO_REFRESH")
-			end
-			if ModelViewer.EnableInputCamera then
-				context:AddRegistered("LOCK_CAM")
-			else
-				context:AddRegistered("UNLOCK_CAM")
-			end
-
-			context:AddDivider()
-
-			context:AddRegistered("EXIT")
-
-			context:Show()
-		end
-		
-		local function HideContext()
-			context:Hide()
-		end
-		
-		viewportFrame.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton2 then
-				ShowContext()
-			elseif input.UserInputType == Enum.UserInputType.MouseButton1 and Lib.CheckMouseInGui(context.Gui) then
-				HideContext()
-			end
-		end)
-		settingsButton.MouseButton1Click:Connect(function()
-			ShowContext()
-		end)
-	end
-
-	return ModelViewer
-end
-
-if gethsfuncs then
-	_G.moduleData = {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
-else
-	return {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
-end
-end,
-["Properties"] = function()
-
-local Main,Lib,Apps,Settings
-local Explorer, Properties, ScriptViewer, Notebook
-local API,RMD,env,service,plr,create,createSimple
-
-local function initDeps(data)
-	Main = data.Main
-	Lib = data.Lib
-	Apps = data.Apps
-	Settings = data.Settings
-
-	API = data.API
-	RMD = data.RMD
-	env = data.env
-	service = data.service
-	plr = data.plr
-	create = data.create
-	createSimple = data.createSimple
-end
-
-local function initAfterMain()
-	Explorer = Apps.Explorer
-	Properties = Apps.Properties
-	ScriptViewer = Apps.ScriptViewer
-	Notebook = Apps.Notebook
-end
-
-local function main()
-	local Properties = {}
-
-	local window, toolBar, propsFrame
-	local scrollV, scrollH
-	local categoryOrder
-	local props,viewList,expanded,indexableProps,propEntries,autoUpdateObjs = {},{},{},{},{},{}
-	local inputBox,inputTextBox,inputProp
-	local checkboxes,propCons = {},{}
-	local table,string = table,string
-	local getPropChangedSignal = game.GetPropertyChangedSignal
-	local getAttributeChangedSignal = game.GetAttributeChangedSignal
-	local isa = game.IsA
-	local getAttribute = game.GetAttribute
-	local setAttribute = game.SetAttribute
-
-	Properties.GuiElems = {}
-	Properties.Index = 0
-	Properties.ViewWidth = 0
-	Properties.MinInputWidth = 100
-	Properties.EntryIndent = 16
-	Properties.EntryOffset = 4
-	Properties.NameWidthCache = {}
-	Properties.SubPropCache = {}
-	Properties.ClassLists = {}
-	Properties.SearchText = ""
-
-	Properties.AddAttributeProp = {Category = "Attributes", Class = "", Name = "", SpecialRow = "AddAttribute", Tags = {}}
-	Properties.SoundPreviewProp = {Category = "Data", ValueType = {Name = "SoundPlayer"}, Class = "Sound", Name = "Preview", Tags = {}}
-
-	Properties.IgnoreProps = {
-		["DataModel"] = {
-			["PrivateServerId"] = true,
-			["PrivateServerOwnerId"] = true,
-			["VIPServerId"] = true,
-			["VIPServerOwnerId"] = true
-		}
-	}
-
-	Properties.ExpandableTypes = {
-		["Vector2"] = true,
-		["Vector3"] = true,
-		["UDim"] = true,
-		["UDim2"] = true,
-		["CFrame"] = true,
-		["Rect"] = true,
-		["PhysicalProperties"] = true,
-		["Ray"] = true,
-		["NumberRange"] = true,
-		["Faces"] = true,
-		["Axes"] = true,
-	}
-
-	Properties.ExpandableProps = {
-		["Sound.SoundId"] = true
-	}
-
-	Properties.CollapsedCategories = {
-		["Surface Inputs"] = true,
-		["Surface"] = true
-	}
-
-	Properties.ConflictSubProps = {
-		["Vector2"] = {"X","Y"},
-		["Vector3"] = {"X","Y","Z"},
-		["UDim"] = {"Scale","Offset"},
-		["UDim2"] = {"X","X.Scale","X.Offset","Y","Y.Scale","Y.Offset"},
-		["CFrame"] = {"Position","Position.X","Position.Y","Position.Z",
-			"RightVector","RightVector.X","RightVector.Y","RightVector.Z",
-			"UpVector","UpVector.X","UpVector.Y","UpVector.Z",
-			"LookVector","LookVector.X","LookVector.Y","LookVector.Z"},
-		["Rect"] = {"Min.X","Min.Y","Max.X","Max.Y"},
-		["PhysicalProperties"] = {"Density","Elasticity","ElasticityWeight","Friction","FrictionWeight"},
-		["Ray"] = {"Origin","Origin.X","Origin.Y","Origin.Z","Direction","Direction.X","Direction.Y","Direction.Z"},
-		["NumberRange"] = {"Min","Max"},
-		["Faces"] = {"Back","Bottom","Front","Left","Right","Top"},
-		["Axes"] = {"X","Y","Z"}
-	}
-
-	Properties.ConflictIgnore = {
-		["BasePart"] = {
-			["ResizableFaces"] = true
-		}
-	}
-
-	Properties.RoundableTypes = {
-		["float"] = true,
-		["double"] = true,
-		["Color3"] = true,
-		["UDim"] = true,
-		["UDim2"] = true,
-		["Vector2"] = true,
-		["Vector3"] = true,
-		["NumberRange"] = true,
-		["Rect"] = true,
-		["NumberSequence"] = true,
-		["ColorSequence"] = true,
-		["Ray"] = true,
-		["CFrame"] = true
-	}
-
-	Properties.TypeNameConvert = {
-		["number"] = "double",
-		["boolean"] = "bool"
-	}
-
-	Properties.ToNumberTypes = {
-		["int"] = true,
-		["int64"] = true,
-		["float"] = true,
-		["double"] = true
-	}
-
-	Properties.DefaultPropValue = {
-		string = "",
-		bool = false,
-		double = 0,
-		UDim = UDim.new(0,0),
-		UDim2 = UDim2.new(0,0,0,0),
-		BrickColor = BrickColor.new("Medium stone grey"),
-		Color3 = Color3.new(1,1,1),
-		Vector2 = Vector2.new(0,0),
-		Vector3 = Vector3.new(0,0,0),
-		NumberSequence = NumberSequence.new(1),
-		ColorSequence = ColorSequence.new(Color3.new(1,1,1)),
-		NumberRange = NumberRange.new(0),
-		Rect = Rect.new(0,0,0,0)
-	}
-
-	Properties.AllowedAttributeTypes = {"string","boolean","number","UDim","UDim2","BrickColor","Color3","Vector2","Vector3","NumberSequence","ColorSequence","NumberRange","Rect"}
-
-	Properties.StringToValue = function(prop,str)
-		local typeData = prop.ValueType
-		local typeName = typeData.Name
-
-		if typeName == "string" or typeName == "Content" then
-			return str
-		elseif Properties.ToNumberTypes[typeName] then
-			return tonumber(str)
-		elseif typeName == "Vector2" then
-			local vals = str:split(",")
-			local x,y = tonumber(vals[1]),tonumber(vals[2])
-			if x and y and #vals >= 2 then return Vector2.new(x,y) end
-		elseif typeName == "Vector3" then
-			local vals = str:split(",")
-			local x,y,z = tonumber(vals[1]),tonumber(vals[2]),tonumber(vals[3])
-			if x and y and z and #vals >= 3 then return Vector3.new(x,y,z) end
-		elseif typeName == "UDim" then
-			local vals = str:split(",")
-			local scale,offset = tonumber(vals[1]),tonumber(vals[2])
-			if scale and offset and #vals >= 2 then return UDim.new(scale,offset) end
-		elseif typeName == "UDim2" then
-			local vals = str:gsub("[{}]",""):split(",")
-			local xScale,xOffset,yScale,yOffset = tonumber(vals[1]),tonumber(vals[2]),tonumber(vals[3]),tonumber(vals[4])
-			if xScale and xOffset and yScale and yOffset and #vals >= 4 then return UDim2.new(xScale,xOffset,yScale,yOffset) end
-		elseif typeName == "CFrame" then
-			local vals = str:split(",")
-			local s,result = pcall(CFrame.new,unpack(vals))
-			if s and #vals >= 12 then return result end
-		elseif typeName == "Rect" then
-			local vals = str:split(",")
-			local s,result = pcall(Rect.new,unpack(vals))
-			if s and #vals >= 4 then return result end
-		elseif typeName == "Ray" then
-			local vals = str:gsub("[{}]",""):split(",")
-			local s,origin = pcall(Vector3.new,unpack(vals,1,3))
-			local s2,direction = pcall(Vector3.new,unpack(vals,4,6))
-			if s and s2 and #vals >= 6 then return Ray.new(origin,direction) end
-		elseif typeName == "NumberRange" then
-			local vals = str:split(",")
-			local s,result = pcall(NumberRange.new,unpack(vals))
-			if s and #vals >= 1 then return result end
-		elseif typeName == "Color3" then
-			local vals = str:gsub("[{}]",""):split(",")
-			local s,result = pcall(Color3.fromRGB,unpack(vals))
-			if s and #vals >= 3 then return result end
-		end
-
-		return nil
-	end
-
-	Properties.ValueToString = function(prop,val)
-		local typeData = prop.ValueType
-		local typeName = typeData.Name
-
-		if typeName == "Color3" then
-			return Lib.ColorToBytes(val)
-		elseif typeName == "NumberRange" then
-			return val.Min..", "..val.Max
-		end
-
-		return tostring(val)
-	end
-
-	Properties.GetIndexableProps = function(obj,classData)
-		if not Main.Elevated then
-			if not pcall(function() return obj.ClassName end) then return nil end
-		end
-
-		local ignoreProps = Properties.IgnoreProps[classData.Name] or {}
-
-		local result = {}
-		local count = 1
-		local props = classData.Properties
-		for i = 1,#props do
-			local prop = props[i]
-			if not ignoreProps[prop.Name] then
-				local s = pcall(function() return obj[prop.Name] end)
-				if s then
-					result[count] = prop
-					count = count + 1
-				end
-			end
-		end
-
 		return result
 	end
-
-	Properties.FindFirstObjWhichIsA = function(class)
-		local classList = Properties.ClassLists[class] or {}
-		if classList and #classList > 0 then
-			return classList[1]
-		end
-
-		return nil
+	function self:nextString(slen)
+		slen = slen or self:nextVarInt()
+		if slen == 0 then return "" end
+		guard(slen)
+		local r = buffer.readstring(stream, cursor, slen); cursor += slen; return r
 	end
-
-	Properties.ComputeConflicts = function(p)
-		local maxConflictCheck = Settings.Properties.MaxConflictCheck
-		local sList = Explorer.Selection.List
-		local classLists = Properties.ClassLists
-		local stringSplit = string.split
-		local t_clear = table.clear
-		local conflictIgnore = Properties.ConflictIgnore
-		local conflictMap = {}
-		local propList = p and {p} or props
-
-		if p then
-			local gName = p.Class.."."..p.Name
-			autoUpdateObjs[gName] = nil
-			local subProps = Properties.ConflictSubProps[p.ValueType.Name] or {}
-			for i = 1,#subProps do
-				autoUpdateObjs[gName.."."..subProps[i]] = nil
-			end
-		else
-			table.clear(autoUpdateObjs)
-		end
-
-		if #sList > 0 then
-			for i = 1,#propList do
-				local prop = propList[i]
-				local propName,propClass = prop.Name,prop.Class
-				local typeData = prop.RootType or prop.ValueType
-				local typeName = typeData.Name
-				local attributeName = prop.AttributeName
-				local gName = propClass.."."..propName
-
-				local checked = 0
-				local subProps = Properties.ConflictSubProps[typeName] or {}
-				local subPropCount = #subProps
-				local toCheck = subPropCount + 1
-				local conflictsFound = 0
-				local indexNames = {}
-				local ignored = conflictIgnore[propClass] and conflictIgnore[propClass][propName]
-				local truthyCheck = (typeName == "PhysicalProperties")
-				local isAttribute = prop.IsAttribute
-				local isMultiType = prop.MultiType
-
-				t_clear(conflictMap)
-
-				if not isMultiType then
-					local firstVal,firstObj,firstSet
-					local classList = classLists[prop.Class] or {}
-					for c = 1,#classList do
-						local obj = classList[c]
-						if not firstSet then
-							if isAttribute then
-								firstVal = getAttribute(obj,attributeName)
-								if firstVal ~= nil then
-									firstObj = obj
-									firstSet = true
-								end
-							else
-								firstVal = obj[propName]
-								firstObj = obj
-								firstSet = true
-							end
-							if ignored then break end
-						else
-							local propVal,skip
-							if isAttribute then
-								propVal = getAttribute(obj,attributeName)
-								if propVal == nil then skip = true end
-							else
-								propVal = obj[propName]
-							end
-
-							if not skip then
-								if not conflictMap[1] then
-									if truthyCheck then
-										if (firstVal and true or false) ~= (propVal and true or false) then
-											conflictMap[1] = true
-											conflictsFound = conflictsFound + 1
-										end
-									elseif firstVal ~= propVal then
-										conflictMap[1] = true
-										conflictsFound = conflictsFound + 1
-									end
-								end
-
-								if subPropCount > 0 then
-									for sPropInd = 1,subPropCount do
-										local indexes = indexNames[sPropInd]
-										if not indexes then indexes = stringSplit(subProps[sPropInd],".") indexNames[sPropInd] = indexes end
-
-										local firstValSub = firstVal
-										local propValSub = propVal
-
-										for j = 1,#indexes do
-											if not firstValSub or not propValSub then break end
-											local indexName = indexes[j]
-											firstValSub = firstValSub[indexName]
-											propValSub = propValSub[indexName]
-										end
-
-										local mapInd = sPropInd + 1
-										if not conflictMap[mapInd] and firstValSub ~= propValSub then
-											conflictMap[mapInd] = true
-											conflictsFound = conflictsFound + 1
-										end
-									end
-								end
-
-								if conflictsFound == toCheck then break end
-							end
-						end
-
-						checked = checked + 1
-						if checked == maxConflictCheck then break end
-					end
-
-					if not conflictMap[1] then autoUpdateObjs[gName] = firstObj end
-					for sPropInd = 1,subPropCount do
-						if not conflictMap[sPropInd+1] then
-							autoUpdateObjs[gName.."."..subProps[sPropInd]] = firstObj
-						end
-					end
-				end
-			end
-		end
-
-		if p then
-			Properties.Refresh()
-		end
+	function self:nextDouble()
+		guard(8); local r = buffer.readf64(stream, cursor); cursor += 8; return r
 	end
-
-	Properties.ShowExplorerProps = function()
-		local maxConflictCheck = Settings.Properties.MaxConflictCheck
-		local sList = Explorer.Selection.List
-		local foundClasses = {}
-		local propCount = 1
-		local elevated = Main.Elevated
-		local showDeprecated,showHidden = Settings.Properties.ShowDeprecated,Settings.Properties.ShowHidden
-		local Classes = API.Classes
-		local classLists = {}
-		local lower = string.lower
-		local RMDCustomOrders = RMD.PropertyOrders
-		local getAttributes = game.GetAttributes
-		local maxAttrs = Settings.Properties.MaxAttributes
-		local showingAttrs = Settings.Properties.ShowAttributes
-		local foundAttrs = {}
-		local attrCount = 0
-		local typeof = typeof
-		local typeNameConvert = Properties.TypeNameConvert
-
-		table.clear(props)
-
-		for i = 1,#sList do
-			local node = sList[i]
-			local obj = node.Obj
-			local class = node.Class
-			if not class then class = obj.ClassName node.Class = class end
-
-			local apiClass = Classes[class]
-			while apiClass do
-				local APIClassName = apiClass.Name
-				if not foundClasses[APIClassName] then
-					local apiProps = indexableProps[APIClassName]
-					if not apiProps then apiProps = Properties.GetIndexableProps(obj,apiClass) indexableProps[APIClassName] = apiProps end
-
-					for i = 1,#apiProps do
-						local prop = apiProps[i]
-						local tags = prop.Tags
-						if (not tags.Deprecated or showDeprecated) and (not tags.Hidden or showHidden) then
-							props[propCount] = prop
-							propCount = propCount + 1
-						end
-					end
-					foundClasses[APIClassName] = true
-				end
-
-				local classList = classLists[APIClassName]
-				if not classList then classList = {} classLists[APIClassName] = classList end
-				classList[#classList+1] = obj
-
-				apiClass = apiClass.Superclass
-			end
-
-			if showingAttrs and attrCount < maxAttrs then
-				local attrs = getAttributes(obj)
-				for name,val in pairs(attrs) do
-					local typ = typeof(val)
-					if not foundAttrs[name] then
-						local category = (typ == "Instance" and "Class") or (typ == "EnumItem" and "Enum") or "Other"
-						local valType = {Name = typeNameConvert[typ] or typ, Category = category}
-						local attrProp = {IsAttribute = true, Name = "ATTR_"..name, AttributeName = name, DisplayName = name, Class = "Instance", ValueType = valType, Category = "Attributes", Tags = {}}
-						props[propCount] = attrProp
-						propCount = propCount + 1
-						attrCount = attrCount + 1
-						foundAttrs[name] = {typ,attrProp}
-						if attrCount == maxAttrs then break end
-					elseif foundAttrs[name][1] ~= typ then
-						foundAttrs[name][2].MultiType = true
-						foundAttrs[name][2].Tags.ReadOnly = true
-						foundAttrs[name][2].ValueType = {Name = "string"}
-					end
-				end
-			end
-		end
-
-		table.sort(props,function(a,b)
-			if a.Category ~= b.Category then
-				return (categoryOrder[a.Category] or 9999) < (categoryOrder[b.Category] or 9999)
-			else
-				local aOrder = (RMDCustomOrders[a.Class] and RMDCustomOrders[a.Class][a.Name]) or 9999999
-				local bOrder = (RMDCustomOrders[b.Class] and RMDCustomOrders[b.Class][b.Name]) or 9999999
-				if aOrder ~= bOrder then
-					return aOrder < bOrder
-				else
-					return lower(a.Name) < lower(b.Name)
-				end
-			end
-		end)
-
-		Properties.ClassLists = classLists
-		Properties.ComputeConflicts()
-
-		if #props > 0 then
-			props[#props+1] = Properties.AddAttributeProp
-		end
-
-		Properties.Update()
-		Properties.Refresh()
-	end
-
-	Properties.UpdateView = function()
-		local maxEntries = math.ceil(propsFrame.AbsoluteSize.Y / 23)
-		local maxX = propsFrame.AbsoluteSize.X
-		local totalWidth = Properties.ViewWidth + Properties.MinInputWidth
-
-		scrollV.VisibleSpace = maxEntries
-		scrollV.TotalSpace = #viewList + 1
-		scrollH.VisibleSpace = maxX
-		scrollH.TotalSpace = totalWidth
-
-		scrollV.Gui.Visible = #viewList + 1 > maxEntries
-		scrollH.Gui.Visible = Settings.Properties.ScaleType == 0 and totalWidth > maxX
-
-		local oldSize = propsFrame.Size
-		propsFrame.Size = UDim2.new(1,(scrollV.Gui.Visible and -16 or 0),1,(scrollH.Gui.Visible and -39 or -23))
-		if oldSize ~= propsFrame.Size then
-			Properties.UpdateView()
-		else
-			scrollV:Update()
-			scrollH:Update()
-
-			if scrollV.Gui.Visible and scrollH.Gui.Visible then
-				scrollV.Gui.Size = UDim2.new(0,16,1,-39)
-				scrollH.Gui.Size = UDim2.new(1,-16,0,16)
-				Properties.Window.GuiElems.Content.ScrollCorner.Visible = true
-			else
-				scrollV.Gui.Size = UDim2.new(0,16,1,-23)
-				scrollH.Gui.Size = UDim2.new(1,0,0,16)
-				Properties.Window.GuiElems.Content.ScrollCorner.Visible = false
-			end
-
-			Properties.Index = scrollV.Index
-		end
-	end
-
-	Properties.MakeSubProp = function(prop,subName,valueType,displayName)
-		local subProp = {}
-		for i,v in pairs(prop) do
-			subProp[i] = v
-		end
-		subProp.RootType = subProp.RootType or subProp.ValueType
-		subProp.ValueType = valueType
-		subProp.SubName = subProp.SubName and (subProp.SubName..subName) or subName
-		subProp.DisplayName = displayName
-
-		return subProp
-	end
-
-	Properties.GetExpandedProps = function(prop)
-		local result = {}
-		local typeData = prop.ValueType
-		local typeName = typeData.Name
-		local makeSubProp = Properties.MakeSubProp
-
-		if typeName == "Vector2" then
-			result[1] = makeSubProp(prop,".X",{Name = "float"})
-			result[2] = makeSubProp(prop,".Y",{Name = "float"})
-		elseif typeName == "Vector3" then
-			result[1] = makeSubProp(prop,".X",{Name = "float"})
-			result[2] = makeSubProp(prop,".Y",{Name = "float"})
-			result[3] = makeSubProp(prop,".Z",{Name = "float"})
-		elseif typeName == "CFrame" then
-			result[1] = makeSubProp(prop,".Position",{Name = "Vector3"})
-			result[2] = makeSubProp(prop,".RightVector",{Name = "Vector3"})
-			result[3] = makeSubProp(prop,".UpVector",{Name = "Vector3"})
-			result[4] = makeSubProp(prop,".LookVector",{Name = "Vector3"})
-		elseif typeName == "UDim" then
-			result[1] = makeSubProp(prop,".Scale",{Name = "float"})
-			result[2] = makeSubProp(prop,".Offset",{Name = "int"})
-		elseif typeName == "UDim2" then
-			result[1] = makeSubProp(prop,".X",{Name = "UDim"})
-			result[2] = makeSubProp(prop,".Y",{Name = "UDim"})
-		elseif typeName == "Rect" then
-			result[1] = makeSubProp(prop,".Min.X",{Name = "float"},"X0")
-			result[2] = makeSubProp(prop,".Min.Y",{Name = "float"},"Y0")
-			result[3] = makeSubProp(prop,".Max.X",{Name = "float"},"X1")
-			result[4] = makeSubProp(prop,".Max.Y",{Name = "float"},"Y1")
-		elseif typeName == "PhysicalProperties" then
-			result[1] = makeSubProp(prop,".Density",{Name = "float"})
-			result[2] = makeSubProp(prop,".Elasticity",{Name = "float"})
-			result[3] = makeSubProp(prop,".ElasticityWeight",{Name = "float"})
-			result[4] = makeSubProp(prop,".Friction",{Name = "float"})
-			result[5] = makeSubProp(prop,".FrictionWeight",{Name = "float"})
-		elseif typeName == "Ray" then
-			result[1] = makeSubProp(prop,".Origin",{Name = "Vector3"})
-			result[2] = makeSubProp(prop,".Direction",{Name = "Vector3"})
-		elseif typeName == "NumberRange" then
-			result[1] = makeSubProp(prop,".Min",{Name = "float"})
-			result[2] = makeSubProp(prop,".Max",{Name = "float"})
-		elseif typeName == "Faces" then
-			result[1] = makeSubProp(prop,".Back",{Name = "bool"})
-			result[2] = makeSubProp(prop,".Bottom",{Name = "bool"})
-			result[3] = makeSubProp(prop,".Front",{Name = "bool"})
-			result[4] = makeSubProp(prop,".Left",{Name = "bool"})
-			result[5] = makeSubProp(prop,".Right",{Name = "bool"})
-			result[6] = makeSubProp(prop,".Top",{Name = "bool"})
-		elseif typeName == "Axes" then
-			result[1] = makeSubProp(prop,".X",{Name = "bool"})
-			result[2] = makeSubProp(prop,".Y",{Name = "bool"})
-			result[3] = makeSubProp(prop,".Z",{Name = "bool"})
-		end
-
-		if prop.Name == "SoundId" and prop.Class == "Sound" then
-			result[1] = Properties.SoundPreviewProp
-		end
-
-		return result
-	end
-
-	Properties.Update = function()
-		table.clear(viewList)
-
-		local nameWidthCache = Properties.NameWidthCache
-		local lastCategory
-		local count = 1
-		local maxWidth,maxDepth = 0,1
-
-		local textServ = service.TextService
-		local getTextSize = textServ.GetTextSize
-		local font = Enum.Font.SourceSans
-		local size = Vector2.new(math.huge,20)
-		local stringSplit = string.split
-		local entryIndent = Properties.EntryIndent
-		local isFirstScaleType = Settings.Properties.ScaleType == 0
-		local find,lower = string.find,string.lower
-		local searchText = (#Properties.SearchText > 0 and lower(Properties.SearchText))
-
-		local function recur(props,depth)
-			for i = 1,#props do
-				local prop = props[i]
-				local propName = prop.Name
-				local subName = prop.SubName
-				local category = prop.Category
-
-				local visible
-				if searchText and depth == 1 then
-					if find(lower(propName),searchText,1,true) then
-						visible = true
-					end
-				else
-					visible = true
-				end
-
-				if visible and lastCategory ~= category then
-					viewList[count] = {CategoryName = category}
-					count = count + 1
-					lastCategory = category
-				end
-
-				if (expanded["CAT_"..category] and visible) or prop.SpecialRow then
-					if depth > 1 then prop.Depth = depth if depth > maxDepth then maxDepth = depth end end
-
-					if isFirstScaleType then
-						local nameArr = subName and stringSplit(subName,".")
-						local displayName = prop.DisplayName or (nameArr and nameArr[#nameArr]) or propName
-
-						local nameWidth = nameWidthCache[displayName]
-						if not nameWidth then nameWidth = getTextSize(textServ,displayName,14,font,size).X nameWidthCache[displayName] = nameWidth end
-
-						local totalWidth = nameWidth + entryIndent*depth
-						if totalWidth > maxWidth then
-							maxWidth = totalWidth
-						end
-					end
-
-					viewList[count] = prop
-					count = count + 1
-
-					local fullName = prop.Class.."."..prop.Name..(prop.SubName or "")
-					if expanded[fullName] then
-						local nextDepth = depth+1
-						local expandedProps = Properties.GetExpandedProps(prop)
-						if #expandedProps > 0 then
-							recur(expandedProps,nextDepth)
-						end
-					end
-				end
-			end
-		end
-		recur(props,1)
-
-		inputProp = nil
-		Properties.ViewWidth = maxWidth + 9 + Properties.EntryOffset
-		Properties.UpdateView()
-	end
-
-	Properties.NewPropEntry = function(index)
-		local newEntry = Properties.EntryTemplate:Clone()
-		local nameFrame = newEntry.NameFrame
-		local valueFrame = newEntry.ValueFrame
-		local newCheckbox = Lib.Checkbox.new(1)
-		newCheckbox.Gui.Position = UDim2.new(0,3,0,3)
-		newCheckbox.Gui.Parent = valueFrame
-		newCheckbox.OnInput:Connect(function()
-			local prop = viewList[index + Properties.Index]
-			if not prop then return end
-
-			if prop.ValueType.Name == "PhysicalProperties" then
-				Properties.SetProp(prop,newCheckbox.Toggled and true or nil)
-			else
-				Properties.SetProp(prop,newCheckbox.Toggled)
-			end
-		end)
-		checkboxes[index] = newCheckbox
-
-		local iconFrame = Main.MiscIcons:GetLabel()
-		iconFrame.Position = UDim2.new(0,2,0,3)
-		iconFrame.Parent = newEntry.ValueFrame.RightButton
-
-		newEntry.Position = UDim2.new(0,0,0,23*(index-1))
-
-		nameFrame.Expand.InputBegan:Connect(function(input)
-			local prop = viewList[index + Properties.Index]
-			if not prop or input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
-
-			local fullName = (prop.CategoryName and "CAT_"..prop.CategoryName) or prop.Class.."."..prop.Name..(prop.SubName or "")
-
-			Main.MiscIcons:DisplayByKey(newEntry.NameFrame.Expand.Icon, expanded[fullName] and "Collapse_Over" or "Expand_Over")
-		end)
-
-		nameFrame.Expand.InputEnded:Connect(function(input)
-			local prop = viewList[index + Properties.Index]
-			if not prop or input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
-
-			local fullName = (prop.CategoryName and "CAT_"..prop.CategoryName) or prop.Class.."."..prop.Name..(prop.SubName or "")
-
-			Main.MiscIcons:DisplayByKey(newEntry.NameFrame.Expand.Icon, expanded[fullName] and "Collapse" or "Expand")
-		end)
-
-		nameFrame.Expand.MouseButton1Down:Connect(function()
-			local prop = viewList[index + Properties.Index]
-			if not prop then return end
-
-			local fullName = (prop.CategoryName and "CAT_"..prop.CategoryName) or prop.Class.."."..prop.Name..(prop.SubName or "")
-			if not prop.CategoryName and not Properties.ExpandableTypes[prop.ValueType and prop.ValueType.Name] and not Properties.ExpandableProps[fullName] then return end
-
-			expanded[fullName] = not expanded[fullName]
-			Properties.Update()
-			Properties.Refresh()
-		end)
-
-		nameFrame.PropName.InputBegan:Connect(function(input)
-			local prop = viewList[index + Properties.Index]
-			if not prop then return end
-			if input.UserInputType == Enum.UserInputType.MouseMovement and not nameFrame.PropName.TextFits then
-				local fullNameFrame = Properties.FullNameFrame
-				local nameArr = string.split(prop.Class.."."..prop.Name..(prop.SubName or ""),".")
-				local dispName = prop.DisplayName or nameArr[#nameArr]
-				local sizeX = service.TextService:GetTextSize(dispName,14,Enum.Font.SourceSans,Vector2.new(math.huge,20)).X
-
-				fullNameFrame.TextLabel.Text = dispName
-
-				fullNameFrame.Size = UDim2.new(0,sizeX + 4,0,22)
-				fullNameFrame.Visible = true
-				Properties.FullNameFrameIndex = index
-				Properties.FullNameFrameAttach.SetData(fullNameFrame, {Target = nameFrame})
-				Properties.FullNameFrameAttach.Enable()
-			end
-		end)
-
-		nameFrame.PropName.InputEnded:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseMovement and Properties.FullNameFrameIndex == index then
-				Properties.FullNameFrame.Visible = false
-				Properties.FullNameFrameAttach.Disable()
-			end
-		end)
-
-		valueFrame.ValueBox.MouseButton1Down:Connect(function()
-			local prop = viewList[index + Properties.Index]
-			if not prop then return end
-
-			Properties.SetInputProp(prop,index)
-		end)
-
-		valueFrame.ColorButton.MouseButton1Down:Connect(function()
-			local prop = viewList[index + Properties.Index]
-			if not prop then return end
-
-			Properties.SetInputProp(prop,index,"color")
-		end)
-
-		valueFrame.RightButton.MouseButton1Click:Connect(function()
-			local prop = viewList[index + Properties.Index]
-			if not prop then return end
-
-			local fullName = prop.Class.."."..prop.Name..(prop.SubName or "")
-			local inputFullName = inputProp and (inputProp.Class.."."..inputProp.Name..(inputProp.SubName or ""))
-
-			if fullName == inputFullName and inputProp.ValueType.Category == "Class" then
-				inputProp = nil
-				Properties.SetProp(prop,nil)
-			else
-				Properties.SetInputProp(prop,index,"right")
-			end
-		end)
-
-		nameFrame.ToggleAttributes.MouseButton1Click:Connect(function()
-			Settings.Properties.ShowAttributes = not Settings.Properties.ShowAttributes
-			Properties.ShowExplorerProps()
-		end)
-
-		newEntry.RowButton.MouseButton1Click:Connect(function()
-			Properties.DisplayAddAttributeWindow()
-		end)
-
-		newEntry.EditAttributeButton.MouseButton1Down:Connect(function()
-			local prop = viewList[index + Properties.Index]
-			if not prop then return end
-
-			Properties.DisplayAttributeContext(prop)
-		end)
-
-		valueFrame.SoundPreview.ControlButton.MouseButton1Click:Connect(function()
-			if Properties.PreviewSound and Properties.PreviewSound.Playing then
-				Properties.SetSoundPreview(false)
-			else
-				local soundObj = Properties.FindFirstObjWhichIsA("Sound")
-				if soundObj then Properties.SetSoundPreview(soundObj) end
-			end
-		end)
-
-		valueFrame.SoundPreview.InputBegan:Connect(function(input)
-			if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-
-			local releaseEvent,mouseEvent
-			releaseEvent = service.UserInputService.InputEnded:Connect(function(input)
-				if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-				releaseEvent:Disconnect()
-				mouseEvent:Disconnect()
-			end)
-
-			local timeLine = newEntry.ValueFrame.SoundPreview.TimeLine
-			local soundObj = Properties.FindFirstObjWhichIsA("Sound")
-			if soundObj then Properties.SetSoundPreview(soundObj,true) end
-
-			local function update(input)
-				local sound = Properties.PreviewSound
-				if not sound or sound.TimeLength == 0 then return end
-
-				local mouseX = input.Position.X
-				local timeLineSize = timeLine.AbsoluteSize
-				local relaX = mouseX - timeLine.AbsolutePosition.X
-
-				if timeLineSize.X <= 1 then return end
-				if relaX < 0 then relaX = 0 elseif relaX >= timeLineSize.X then relaX = timeLineSize.X-1 end
-
-				local perc = (relaX/(timeLineSize.X-1))
-				sound.TimePosition = perc*sound.TimeLength
-				timeLine.Slider.Position = UDim2.new(perc,-4,0,-8)
-			end
-			update(input)
-
-			mouseEvent = service.UserInputService.InputChanged:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseMovement then
-					update(input)
-				end
-			end)
-		end)
-
-		newEntry.Parent = propsFrame
-
-		return {
-			Gui = newEntry,
-			GuiElems = {
-				NameFrame = nameFrame,
-				ValueFrame = valueFrame,
-				PropName = nameFrame.PropName,
-				ValueBox = valueFrame.ValueBox,
-				Expand = nameFrame.Expand,
-				ColorButton = valueFrame.ColorButton,
-				ColorPreview = valueFrame.ColorButton.ColorPreview,
-				Gradient = valueFrame.ColorButton.ColorPreview.UIGradient,
-				EnumArrow = valueFrame.EnumArrow,
-				Checkbox = valueFrame.Checkbox,
-				RightButton = valueFrame.RightButton,
-				RightButtonIcon = iconFrame,
-				RowButton = newEntry.RowButton,
-				EditAttributeButton = newEntry.EditAttributeButton,
-				ToggleAttributes = nameFrame.ToggleAttributes,
-				SoundPreview = valueFrame.SoundPreview,
-				SoundPreviewSlider = valueFrame.SoundPreview.TimeLine.Slider
-			}
-		}
-	end
-
-	Properties.GetSoundPreviewEntry = function()
-		for i = 1,#viewList do
-			if viewList[i] == Properties.SoundPreviewProp then
-				return propEntries[i - Properties.Index]
-			end
-		end
-	end
-
-	Properties.SetSoundPreview = function(soundObj,noplay)
-		local sound = Properties.PreviewSound
-		if not sound then
-			sound = Instance.new("Sound")
-			sound.Name = "Preview"
-			sound.Paused:Connect(function()
-				local entry = Properties.GetSoundPreviewEntry()
-				if entry then Main.MiscIcons:DisplayByKey(entry.GuiElems.SoundPreview.ControlButton.Icon, "Play") end
-			end)
-			sound.Resumed:Connect(function() Properties.Refresh() end)
-			sound.Ended:Connect(function()
-				local entry = Properties.GetSoundPreviewEntry()
-				if entry then entry.GuiElems.SoundPreviewSlider.Position = UDim2.new(0,-4,0,-8) end
-				Properties.Refresh()
-			end)
-			sound.Parent = window.Gui
-			Properties.PreviewSound = sound
-		end
-
-		if not soundObj then
-			sound:Pause()
-		else
-			local newId = sound.SoundId ~= soundObj.SoundId
-			sound.SoundId = soundObj.SoundId
-			sound.PlaybackSpeed = soundObj.PlaybackSpeed
-			sound.Volume = soundObj.Volume
-			if newId then sound.TimePosition = 0 end
-			if not noplay then sound:Resume() end
-
-			coroutine.wrap(function()
-				local previewTime = tick()
-				Properties.SoundPreviewTime = previewTime
-				while previewTime == Properties.SoundPreviewTime and sound.Playing do
-					local entry = Properties.GetSoundPreviewEntry()
-					if entry then
-						local tl = sound.TimeLength
-						local perc = sound.TimePosition/(tl == 0 and 1 or tl)
-						entry.GuiElems.SoundPreviewSlider.Position = UDim2.new(perc,-4,0,-8)
-					end
-					Lib.FastWait()
-				end
-			end)()
-			Properties.Refresh()
-		end
-	end
-
-	Properties.DisplayAttributeContext = function(prop)
-		local context = Properties.AttributeContext
-		if not context then
-			context = Lib.ContextMenu.new()
-			context.Iconless = true
-			context.Width = 80
-		end
-		context:Clear()
-
-		context:Add({Name = "Edit", OnClick = function()
-			Properties.DisplayAddAttributeWindow(prop)
-		end})
-		context:Add({Name = "Delete", OnClick = function()
-			Properties.SetProp(prop,nil,true)
-			Properties.ShowExplorerProps()
-		end})
-
-		context:Show()
-	end
-
-	Properties.DisplayAddAttributeWindow = function(editAttr)
-		local win = Properties.AddAttributeWindow
-		if not win then
-			win = Lib.Window.new()
-			win.Alignable = false
-			win.Resizable = false
-			win:SetTitle("Add Attribute")
-			win:SetSize(200,130)
-
-			local saveButton = Lib.Button.new()
-			local nameLabel = Lib.Label.new()
-			nameLabel.Text = "Name"
-			nameLabel.Position = UDim2.new(0,30,0,10)
-			nameLabel.Size = UDim2.new(0,40,0,20)
-			win:Add(nameLabel)
-
-			local nameBox = Lib.ViewportTextBox.new()
-			nameBox.Position = UDim2.new(0,75,0,10)
-			nameBox.Size = UDim2.new(0,120,0,20)
-			win:Add(nameBox,"NameBox")
-			nameBox.TextBox:GetPropertyChangedSignal("Text"):Connect(function()
-				saveButton:SetDisabled(#nameBox:GetText() == 0)
-			end)
-
-			local typeLabel = Lib.Label.new()
-			typeLabel.Text = "Type"
-			typeLabel.Position = UDim2.new(0,30,0,40)
-			typeLabel.Size = UDim2.new(0,40,0,20)
-			win:Add(typeLabel)
-
-			local typeChooser = Lib.DropDown.new()
-			typeChooser.CanBeEmpty = false
-			typeChooser.Position = UDim2.new(0,75,0,40)
-			typeChooser.Size = UDim2.new(0,120,0,20)
-			typeChooser:SetOptions(Properties.AllowedAttributeTypes)
-			win:Add(typeChooser,"TypeChooser")
-
-			local errorLabel = Lib.Label.new()
-			errorLabel.Text = ""
-			errorLabel.Position = UDim2.new(0,5,1,-45)
-			errorLabel.Size = UDim2.new(1,-10,0,20)
-			errorLabel.TextColor3 = Settings.Theme.Important
-			win.ErrorLabel = errorLabel
-			win:Add(errorLabel,"Error")
-
-			local cancelButton = Lib.Button.new()
-			cancelButton.Text = "Cancel"
-			cancelButton.Position = UDim2.new(1,-97,1,-25)
-			cancelButton.Size = UDim2.new(0,92,0,20)
-			cancelButton.OnClick:Connect(function()
-				win:Close()
-			end)
-			win:Add(cancelButton)
-
-			saveButton.Text = "Save"
-			saveButton.Position = UDim2.new(0,5,1,-25)
-			saveButton.Size = UDim2.new(0,92,0,20)
-			saveButton.OnClick:Connect(function()
-				local name = nameBox:GetText()
-				if #name > 100 then
-					errorLabel.Text = "Error: Name over 100 chars"
-					return
-				elseif name:sub(1,3) == "RBX" then
-					errorLabel.Text = "Error: Name begins with 'RBX'"
-					return
-				end
-
-				local typ = typeChooser.Selected
-				local valType = {Name = Properties.TypeNameConvert[typ] or typ, Category = "DataType"}
-				local attrProp = {IsAttribute = true, Name = "ATTR_"..name, AttributeName = name, DisplayName = name, Class = "Instance", ValueType = valType, Category = "Attributes", Tags = {}}
-
-				Settings.Properties.ShowAttributes = true
-				Properties.SetProp(attrProp,Properties.DefaultPropValue[valType.Name],true,Properties.EditingAttribute)
-				Properties.ShowExplorerProps()
-				win:Close()
-			end)
-			win:Add(saveButton,"SaveButton")
-
-			Properties.AddAttributeWindow = win
-		end
-
-		Properties.EditingAttribute = editAttr
-		win:SetTitle(editAttr and "Edit Attribute "..editAttr.AttributeName or "Add Attribute")
-		win.Elements.Error.Text = ""
-		win.Elements.NameBox:SetText("")
-		win.Elements.SaveButton:SetDisabled(true)
-		win.Elements.TypeChooser:SetSelected(1)
-		win:Show()
-	end
-
-	Properties.IsTextEditable = function(prop)
-		local typeData = prop.ValueType
-		local typeName = typeData.Name
-
-		return typeName ~= "bool" and typeData.Category ~= "Enum" and typeData.Category ~= "Class" and typeName ~= "BrickColor"
-	end
-
-	Properties.DisplayEnumDropdown = function(entryIndex)
-		local context = Properties.EnumContext
-		if not context then
-			context = Lib.ContextMenu.new()
-			context.Iconless = true
-			context.MaxHeight = 200
-			context.ReverseYOffset = 22
-			Properties.EnumDropdown = context
-		end
-
-		if not inputProp or inputProp.ValueType.Category ~= "Enum" then return end
-		local prop = inputProp
-
-		local entry = propEntries[entryIndex]
-		local valueFrame = entry.GuiElems.ValueFrame
-
-		local enum = Enum[prop.ValueType.Name]
-		if not enum then return end
-
-		local sorted = {}
-		for name,enum in next,enum:GetEnumItems() do
-			sorted[#sorted+1] = enum
-		end
-		table.sort(sorted,function(a,b) return a.Name < b.Name end)
-
-		context:Clear()
-
-		local function onClick(name)
-			if prop ~= inputProp then return end
-
-			local enumItem = enum[name]
-			inputProp = nil
-			Properties.SetProp(prop,enumItem)
-		end
-
-		for i = 1,#sorted do
-			local enumItem = sorted[i]
-			context:Add({Name = enumItem.Name, OnClick = onClick})
-		end
-
-		context.Width = valueFrame.AbsoluteSize.X
-		context:Show(valueFrame.AbsolutePosition.X, valueFrame.AbsolutePosition.Y + 22)
-	end
-
-	Properties.DisplayBrickColorEditor = function(prop,entryIndex,col)
-		local editor = Properties.BrickColorEditor
-		if not editor then
-			editor = Lib.BrickColorPicker.new()
-			editor.Gui.DisplayOrder = Main.DisplayOrders.Menu
-			editor.ReverseYOffset = 22
-
-			editor.OnSelect:Connect(function(col)
-				if not editor.CurrentProp or editor.CurrentProp.ValueType.Name ~= "BrickColor" then return end
-
-				if editor.CurrentProp == inputProp then inputProp = nil end
-				Properties.SetProp(editor.CurrentProp,BrickColor.new(col))
-			end)
-
-			editor.OnMoreColors:Connect(function()
-				editor:Close()
-				local colProp
-				for i,v in pairs(API.Classes.BasePart.Properties) do
-					if v.Name == "Color" then
-						colProp = v
-						break
-					end
-				end
-				Properties.DisplayColorEditor(colProp,editor.SavedColor.Color)
-			end)
-
-			Properties.BrickColorEditor = editor
-		end
-
-		local entry = propEntries[entryIndex]
-		local valueFrame = entry.GuiElems.ValueFrame
-
-		editor.CurrentProp = prop
-		editor.SavedColor = col
-		if prop and prop.Class == "BasePart" and prop.Name == "BrickColor" then
-			editor:SetMoreColorsVisible(true)
-		else
-			editor:SetMoreColorsVisible(false)
-		end
-		editor:Show(valueFrame.AbsolutePosition.X, valueFrame.AbsolutePosition.Y + 22)
-	end
-
-	Properties.DisplayColorEditor = function(prop,col)
-		local editor = Properties.ColorEditor
-		if not editor then
-			editor = Lib.ColorPicker.new()
-
-			editor.OnSelect:Connect(function(col)
-				if not editor.CurrentProp then return end
-				local typeName = editor.CurrentProp.ValueType.Name
-				if typeName ~= "Color3" and typeName ~= "BrickColor" then return end
-
-				local colVal = (typeName == "Color3" and col or BrickColor.new(col))
-
-				if editor.CurrentProp == inputProp then inputProp = nil end
-				Properties.SetProp(editor.CurrentProp,colVal)
-			end)
-
-			Properties.ColorEditor = editor
-		end
-
-		editor.CurrentProp = prop
-		if col then
-			editor:SetColor(col)
-		else
-			local firstVal = Properties.GetFirstPropVal(prop)
-			if firstVal then editor:SetColor(firstVal) end
-		end
-		editor:Show()
-	end
-
-	Properties.DisplayNumberSequenceEditor = function(prop,seq)
-		local editor = Properties.NumberSequenceEditor
-		if not editor then
-			editor = Lib.NumberSequenceEditor.new()
-
-			editor.OnSelect:Connect(function(val)
-				if not editor.CurrentProp or editor.CurrentProp.ValueType.Name ~= "NumberSequence" then return end
-
-				if editor.CurrentProp == inputProp then inputProp = nil end
-				Properties.SetProp(editor.CurrentProp,val)
-			end)
-
-			Properties.NumberSequenceEditor = editor
-		end
-
-		editor.CurrentProp = prop
-		if seq then
-			editor:SetSequence(seq)
-		else
-			local firstVal = Properties.GetFirstPropVal(prop)
-			if firstVal then editor:SetSequence(firstVal) end
-		end
-		editor:Show()
-	end
-
-	Properties.DisplayColorSequenceEditor = function(prop,seq)
-		local editor = Properties.ColorSequenceEditor
-		if not editor then
-			editor = Lib.ColorSequenceEditor.new()
-
-			editor.OnSelect:Connect(function(val)
-				if not editor.CurrentProp or editor.CurrentProp.ValueType.Name ~= "ColorSequence" then return end
-
-				if editor.CurrentProp == inputProp then inputProp = nil end
-				Properties.SetProp(editor.CurrentProp,val)
-			end)
-
-			Properties.ColorSequenceEditor = editor
-		end
-
-		editor.CurrentProp = prop
-		if seq then
-			editor:SetSequence(seq)
-		else
-			local firstVal = Properties.GetFirstPropVal(prop)
-			if firstVal then editor:SetSequence(firstVal) end
-		end
-		editor:Show()
-	end
-
-	Properties.GetFirstPropVal = function(prop)
-		local first = Properties.FindFirstObjWhichIsA(prop.Class)
-		if first then
-			return Properties.GetPropVal(prop,first)
-		end
-	end
-
-	Properties.GetPropVal = function(prop,obj)
-		if prop.MultiType then return "<Multiple Types>" end
-		if not obj then return end
-
-		local propVal
-		if prop.IsAttribute then
-			propVal = getAttribute(obj,prop.AttributeName)
-			if propVal == nil then return nil end
-
-			local typ = typeof(propVal)
-			local currentType = Properties.TypeNameConvert[typ] or typ
-			if prop.RootType then
-				if prop.RootType.Name ~= currentType then
-					return nil
-				end
-			elseif prop.ValueType.Name ~= currentType then
-				return nil
-			end
-		else
-			propVal = obj[prop.Name]
-		end
-		if prop.SubName then
-			local indexes = string.split(prop.SubName,".")
-			for i = 1,#indexes do
-				local indexName = indexes[i]
-				if #indexName > 0 and propVal then
-					propVal = propVal[indexName]
-				end
-			end
-		end
-
-		return propVal
-	end
-
-	Properties.SelectObject = function(obj)
-		if inputProp and inputProp.ValueType.Category == "Class" then
-			local prop = inputProp
-			inputProp = nil
-
-			if isa(obj,prop.ValueType.Name) then
-				Properties.SetProp(prop,obj)
-			else
-				Properties.Refresh()
-			end
-
-			return true
-		end
-
-		return false
-	end
-
-	Properties.DisplayProp = function(prop,entryIndex)
-		local propName = prop.Name
-		local typeData = prop.ValueType
-		local typeName = typeData.Name
-		local tags = prop.Tags
-		local gName = prop.Class.."."..prop.Name..(prop.SubName or "")
-		local propObj = autoUpdateObjs[gName]
-		local entryData = propEntries[entryIndex]
-		local UDim2 = UDim2
-
-		local guiElems = entryData.GuiElems
-		local valueFrame = guiElems.ValueFrame
-		local valueBox = guiElems.ValueBox
-		local colorButton = guiElems.ColorButton
-		local colorPreview = guiElems.ColorPreview
-		local gradient = guiElems.Gradient
-		local enumArrow = guiElems.EnumArrow
-		local checkbox = guiElems.Checkbox
-		local rightButton = guiElems.RightButton
-		local soundPreview = guiElems.SoundPreview
-
-		local propVal = Properties.GetPropVal(prop,propObj)
-		local inputFullName = inputProp and (inputProp.Class.."."..inputProp.Name..(inputProp.SubName or ""))
-
-		local offset = 4
-		local endOffset = 6
-
-		if (typeName == "Color3" or typeName == "BrickColor" or typeName == "ColorSequence") then
-			colorButton.Visible = true
-			enumArrow.Visible = false
-			if propVal then
-				gradient.Color = (typeName == "Color3" and ColorSequence.new(propVal)) or (typeName == "BrickColor" and ColorSequence.new(propVal.Color)) or propVal
-			else
-				gradient.Color = ColorSequence.new(Color3.new(1,1,1))
-			end
-			colorPreview.BorderColor3 = (typeName == "ColorSequence" and Color3.new(1,1,1) or Color3.new(0,0,0))
-			offset = 22
-			endOffset = 24 + (typeName == "ColorSequence" and 20 or 0)
-		elseif typeData.Category == "Enum" then
-			colorButton.Visible = false
-			enumArrow.Visible = not prop.Tags.ReadOnly
-			endOffset = 22
-		elseif (gName == inputFullName and typeData.Category == "Class") or typeName == "NumberSequence" then
-			colorButton.Visible = false
-			enumArrow.Visible = false
-			endOffset = 26
-		else
-			colorButton.Visible = false
-			enumArrow.Visible = false
-		end
-
-		valueBox.Position = UDim2.new(0,offset,0,0)
-		valueBox.Size = UDim2.new(1,-endOffset,1,0)
-
-		if inputFullName == gName and typeData.Category == "Class" then
-			Main.MiscIcons:DisplayByKey(guiElems.RightButtonIcon, "Delete")
-			guiElems.RightButtonIcon.Visible = true
-			rightButton.Text = ""
-			rightButton.Visible = true
-		elseif typeName == "NumberSequence" or typeName == "ColorSequence" then
-			guiElems.RightButtonIcon.Visible = false
-			rightButton.Text = "..."
-			rightButton.Visible = true
-		else
-			rightButton.Visible = false
-		end
-
-		if typeName == "bool" or typeName == "PhysicalProperties" then
-			valueBox.Visible = false
-			checkbox.Visible = true
-			soundPreview.Visible = false
-			checkboxes[entryIndex].Disabled = tags.ReadOnly
-			if typeName == "PhysicalProperties" and autoUpdateObjs[gName] then
-				checkboxes[entryIndex]:SetState(propVal and true or false)
-			else
-				checkboxes[entryIndex]:SetState(propVal)
-			end
-		elseif typeName == "SoundPlayer" then
-			valueBox.Visible = false
-			checkbox.Visible = false
-			soundPreview.Visible = true
-			local playing = Properties.PreviewSound and Properties.PreviewSound.Playing
-			Main.MiscIcons:DisplayByKey(soundPreview.ControlButton.Icon, playing and "Pause" or "Play")
-		else
-			valueBox.Visible = true
-			checkbox.Visible = false
-			soundPreview.Visible = false
-
-			if propVal ~= nil then
-				if typeName == "Color3" then
-					valueBox.Text = "["..Lib.ColorToBytes(propVal).."]"
-				elseif typeData.Category == "Enum" then
-					valueBox.Text = propVal.Name
-				elseif Properties.RoundableTypes[typeName] and Settings.Properties.NumberRounding then
-					local rawStr = Properties.ValueToString(prop,propVal)
-					valueBox.Text = rawStr:gsub("-?%d+%.%d+",function(num)
-						return tostring(tonumber(("%."..Settings.Properties.NumberRounding.."f"):format(num)))
-					end)
-				else
-					valueBox.Text = Properties.ValueToString(prop,propVal)
-				end
-			else
-				valueBox.Text = ""
-			end
-
-			valueBox.TextColor3 = tags.ReadOnly and Settings.Theme.PlaceholderText or Settings.Theme.Text
-		end
-	end
-
-	Properties.Refresh = function()
-		local maxEntries = math.max(math.ceil((propsFrame.AbsoluteSize.Y) / 23),0)
-		local maxX = propsFrame.AbsoluteSize.X
-		local valueWidth = math.max(Properties.MinInputWidth,maxX-Properties.ViewWidth)
-		local inputPropVisible = false
-		local isa = game.IsA
-		local UDim2 = UDim2
-		local stringSplit = string.split
-		local scaleType = Settings.Properties.ScaleType
-
-		for i = 1,#propCons do
-			propCons[i]:Disconnect()
-		end
-		table.clear(propCons)
-
-		Properties.FullNameFrame.Visible = false
-		Properties.FullNameFrameAttach.Disable()
-
-		for i = 1,maxEntries do
-			local entryData = propEntries[i]
-			if not propEntries[i] then entryData = Properties.NewPropEntry(i) propEntries[i] = entryData end
-
-			local entry = entryData.Gui
-			local guiElems = entryData.GuiElems
-			local nameFrame = guiElems.NameFrame
-			local propNameLabel = guiElems.PropName
-			local valueFrame = guiElems.ValueFrame
-			local expand = guiElems.Expand
-			local valueBox = guiElems.ValueBox
-			local propNameBox = guiElems.PropName
-			local rightButton = guiElems.RightButton
-			local editAttributeButton = guiElems.EditAttributeButton
-			local toggleAttributes = guiElems.ToggleAttributes
-
-			local prop = viewList[i + Properties.Index]
-			if prop then
-				local entryXOffset = (scaleType == 0 and scrollH.Index or 0)
-				entry.Visible = true
-				entry.Position = UDim2.new(0,-entryXOffset,0,entry.Position.Y.Offset)
-				entry.Size = UDim2.new(scaleType == 0 and 0 or 1, scaleType == 0 and Properties.ViewWidth + valueWidth or 0,0,22)
-
-				if prop.SpecialRow then
-					if prop.SpecialRow == "AddAttribute" then
-						nameFrame.Visible = false
-						valueFrame.Visible = false
-						guiElems.RowButton.Visible = true
-					end
-				else
-
-					nameFrame.Visible = true
-					guiElems.RowButton.Visible = false
-
-					local depth = Properties.EntryIndent*(prop.Depth or 1)
-					local leftOffset = depth + Properties.EntryOffset
-					nameFrame.Position = UDim2.new(0,leftOffset,0,0)
-					propNameLabel.Size = UDim2.new(1,-2 - (scaleType == 0 and 0 or 6),1,0)
-
-					local gName = (prop.CategoryName and "CAT_"..prop.CategoryName) or prop.Class.."."..prop.Name..(prop.SubName or "")
-
-					if prop.CategoryName then
-						entry.BackgroundColor3 = Settings.Theme.Main1
-						valueFrame.Visible = false
-
-						propNameBox.Text = prop.CategoryName
-						propNameBox.Font = Enum.Font.SourceSansBold
-						expand.Visible = true
-						propNameBox.TextColor3 = Settings.Theme.Text
-						nameFrame.BackgroundTransparency = 1
-						nameFrame.Size = UDim2.new(1,0,1,0)
-						editAttributeButton.Visible = false
-
-						local showingAttrs = Settings.Properties.ShowAttributes
-						toggleAttributes.Position = UDim2.new(1,-85-leftOffset,0,0)
-						toggleAttributes.Text = (showingAttrs and "[Setting: ON]" or "[Setting: OFF]")
-						toggleAttributes.TextColor3 = Settings.Theme.Text
-						toggleAttributes.Visible = (prop.CategoryName == "Attributes")
-					else
-						local propName = prop.Name
-						local typeData = prop.ValueType
-						local typeName = typeData.Name
-						local tags = prop.Tags
-						local propObj = autoUpdateObjs[gName]
-
-						local attributeOffset = (prop.IsAttribute and 20 or 0)
-						editAttributeButton.Visible = (prop.IsAttribute and not prop.RootType)
-						toggleAttributes.Visible = false
-
-						if scaleType == 0 then
-							nameFrame.Size = UDim2.new(0,Properties.ViewWidth - leftOffset - 1,1,0)
-							valueFrame.Position = UDim2.new(0,Properties.ViewWidth,0,0)
-							valueFrame.Size = UDim2.new(0,valueWidth - attributeOffset,1,0)
-						else
-							nameFrame.Size = UDim2.new(0.5,-leftOffset - 1,1,0)
-							valueFrame.Position = UDim2.new(0.5,0,0,0)
-							valueFrame.Size = UDim2.new(0.5,-attributeOffset,1,0)
-						end
-
-						local nameArr = stringSplit(gName,".")
-						propNameBox.Text = prop.DisplayName or nameArr[#nameArr]
-						propNameBox.Font = Enum.Font.SourceSans
-						entry.BackgroundColor3 = Settings.Theme.Main2
-						valueFrame.Visible = true
-
-						expand.Visible = typeData.Category == "DataType" and Properties.ExpandableTypes[typeName] or Properties.ExpandableProps[gName]
-						propNameBox.TextColor3 = tags.ReadOnly and Settings.Theme.PlaceholderText or Settings.Theme.Text
-
-						Properties.DisplayProp(prop,i)
-						if propObj then
-							if prop.IsAttribute then
-								propCons[#propCons+1] = getAttributeChangedSignal(propObj,prop.AttributeName):Connect(function()
-									Properties.DisplayProp(prop,i)
-								end)
-							else
-								propCons[#propCons+1] = getPropChangedSignal(propObj,propName):Connect(function()
-									Properties.DisplayProp(prop,i)
-								end)
-							end
-						end
-
-						local beforeVisible = valueBox.Visible
-						local inputFullName = inputProp and (inputProp.Class.."."..inputProp.Name..(inputProp.SubName or ""))
-						if gName == inputFullName then
-							nameFrame.BackgroundColor3 = Settings.Theme.ListSelection
-							nameFrame.BackgroundTransparency = 0
-							if typeData.Category == "Class" or typeData.Category == "Enum" or typeName == "BrickColor" then
-								valueFrame.BackgroundColor3 = Settings.Theme.TextBox
-								valueFrame.BackgroundTransparency = 0
-								valueBox.Visible = true
-							else
-								inputPropVisible = true
-								local scale = (scaleType == 0 and 0 or 0.5)
-								local offset = (scaleType == 0 and Properties.ViewWidth-scrollH.Index or 0)
-								local endOffset = 0
-
-								if typeName == "Color3" or typeName == "ColorSequence" then
-									offset = offset + 22
-								end
-
-								if typeName == "NumberSequence" or typeName == "ColorSequence" then
-									endOffset = 20
-								end
-
-								inputBox.Position = UDim2.new(scale,offset,0,entry.Position.Y.Offset)
-								inputBox.Size = UDim2.new(1-scale,-offset-endOffset-attributeOffset,0,22)
-								inputBox.Visible = true
-								valueBox.Visible = false
-							end
-						else
-							nameFrame.BackgroundColor3 = Settings.Theme.Main1
-							nameFrame.BackgroundTransparency = 1
-							valueFrame.BackgroundColor3 = Settings.Theme.Main1
-							valueFrame.BackgroundTransparency = 1
-							valueBox.Visible = beforeVisible
-						end
-					end
-
-					if prop.CategoryName or Properties.ExpandableTypes[prop.ValueType and prop.ValueType.Name] or Properties.ExpandableProps[gName] then
-						if Lib.CheckMouseInGui(expand) then
-							Main.MiscIcons:DisplayByKey(expand.Icon, expanded[gName] and "Collapse_Over" or "Expand_Over")
-						else
-							Main.MiscIcons:DisplayByKey(expand.Icon, expanded[gName] and "Collapse" or "Expand")
-						end
-						expand.Visible = true
-					else
-						expand.Visible = false
-					end
-				end
-				entry.Visible = true
-			else
-				entry.Visible = false
-			end
-		end
-
-		if not inputPropVisible then
-			inputBox.Visible = false
-		end
-
-		for i = maxEntries+1,#propEntries do
-			propEntries[i].Gui:Destroy()
-			propEntries[i] = nil
-			checkboxes[i] = nil
-		end
-	end
-
-	Properties.SetProp = function(prop,val,noupdate,prevAttribute)
-		local sList = Explorer.Selection.List
-		local propName = prop.Name
-		local subName = prop.SubName
-		local propClass = prop.Class
-		local typeData = prop.ValueType
-		local typeName = typeData.Name
-		local attributeName = prop.AttributeName
-		local rootTypeData = prop.RootType
-		local rootTypeName = rootTypeData and rootTypeData.Name
-		local fullName = prop.Class.."."..prop.Name..(prop.SubName or "")
-		local Vector3 = Vector3
-
-		for i = 1,#sList do
-			local node = sList[i]
-			local obj = node.Obj
-
-			if isa(obj,propClass) then
-				pcall(function()
-					local setVal = val
-					local root
-					if prop.IsAttribute then
-						root = getAttribute(obj,attributeName)
-					else
-						root = obj[propName]
-					end
-
-					if prevAttribute then
-						if prevAttribute.ValueType.Name == typeName then
-							setVal = getAttribute(obj,prevAttribute.AttributeName) or setVal
-						end
-						setAttribute(obj,prevAttribute.AttributeName,nil)
-					end
-
-					if rootTypeName then
-						if rootTypeName == "Vector2" then
-							setVal = Vector2.new((subName == ".X" and setVal) or root.X, (subName == ".Y" and setVal) or root.Y)
-						elseif rootTypeName == "Vector3" then
-							setVal = Vector3.new((subName == ".X" and setVal) or root.X, (subName == ".Y" and setVal) or root.Y, (subName == ".Z" and setVal) or root.Z)
-						elseif rootTypeName == "UDim" then
-							setVal = UDim.new((subName == ".Scale" and setVal) or root.Scale, (subName == ".Offset" and setVal) or root.Offset)
-						elseif rootTypeName == "UDim2" then
-							local rootX,rootY = root.X,root.Y
-							local X_UDim = (subName == ".X" and setVal) or UDim.new((subName == ".X.Scale" and setVal) or rootX.Scale, (subName == ".X.Offset" and setVal) or rootX.Offset)
-							local Y_UDim = (subName == ".Y" and setVal) or UDim.new((subName == ".Y.Scale" and setVal) or rootY.Scale, (subName == ".Y.Offset" and setVal) or rootY.Offset)
-							setVal = UDim2.new(X_UDim,Y_UDim)
-						elseif rootTypeName == "CFrame" then
-							local rootPos,rootRight,rootUp,rootLook = root.Position,root.RightVector,root.UpVector,root.LookVector
-							local pos = (subName == ".Position" and setVal) or Vector3.new((subName == ".Position.X" and setVal) or rootPos.X, (subName == ".Position.Y" and setVal) or rootPos.Y, (subName == ".Position.Z" and setVal) or rootPos.Z)
-							local rightV = (subName == ".RightVector" and setVal) or Vector3.new((subName == ".RightVector.X" and setVal) or rootRight.X, (subName == ".RightVector.Y" and setVal) or rootRight.Y, (subName == ".RightVector.Z" and setVal) or rootRight.Z)
-							local upV = (subName == ".UpVector" and setVal) or Vector3.new((subName == ".UpVector.X" and setVal) or rootUp.X, (subName == ".UpVector.Y" and setVal) or rootUp.Y, (subName == ".UpVector.Z" and setVal) or rootUp.Z)
-							local lookV = (subName == ".LookVector" and setVal) or Vector3.new((subName == ".LookVector.X" and setVal) or rootLook.X, (subName == ".RightVector.Y" and setVal) or rootLook.Y, (subName == ".RightVector.Z" and setVal) or rootLook.Z)
-							setVal = CFrame.fromMatrix(pos,rightV,upV,-lookV)
-						elseif rootTypeName == "Rect" then
-							local rootMin,rootMax = root.Min,root.Max
-							local min = Vector2.new((subName == ".Min.X" and setVal) or rootMin.X, (subName == ".Min.Y" and setVal) or rootMin.Y)
-							local max = Vector2.new((subName == ".Max.X" and setVal) or rootMax.X, (subName == ".Max.Y" and setVal) or rootMax.Y)
-							setVal = Rect.new(min,max)
-						elseif rootTypeName == "PhysicalProperties" then
-							local rootProps = PhysicalProperties.new(obj.Material)
-							local density = (subName == ".Density" and setVal) or (root and root.Density) or rootProps.Density
-							local friction = (subName == ".Friction" and setVal) or (root and root.Friction) or rootProps.Friction
-							local elasticity = (subName == ".Elasticity" and setVal) or (root and root.Elasticity) or rootProps.Elasticity
-							local frictionWeight = (subName == ".FrictionWeight" and setVal) or (root and root.FrictionWeight) or rootProps.FrictionWeight
-							local elasticityWeight = (subName == ".ElasticityWeight" and setVal) or (root and root.ElasticityWeight) or rootProps.ElasticityWeight
-							setVal = PhysicalProperties.new(density,friction,elasticity,frictionWeight,elasticityWeight)
-						elseif rootTypeName == "Ray" then
-							local rootOrigin,rootDirection = root.Origin,root.Direction
-							local origin = (subName == ".Origin" and setVal) or Vector3.new((subName == ".Origin.X" and setVal) or rootOrigin.X, (subName == ".Origin.Y" and setVal) or rootOrigin.Y, (subName == ".Origin.Z" and setVal) or rootOrigin.Z)
-							local direction = (subName == ".Direction" and setVal) or Vector3.new((subName == ".Direction.X" and setVal) or rootDirection.X, (subName == ".Direction.Y" and setVal) or rootDirection.Y, (subName == ".Direction.Z" and setVal) or rootDirection.Z)
-							setVal = Ray.new(origin,direction)
-						elseif rootTypeName == "Faces" then
-							local faces = {}
-							local faceList = {"Back","Bottom","Front","Left","Right","Top"}
-							for _,face in pairs(faceList) do
-								local val
-								if subName == "."..face then
-									val = setVal
-								else
-									val = root[face]
-								end
-								if val then faces[#faces+1] = Enum.NormalId[face] end
-							end
-							setVal = Faces.new(unpack(faces))
-						elseif rootTypeName == "Axes" then
-							local axes = {}
-							local axesList = {"X","Y","Z"}
-							for _,axe in pairs(axesList) do
-								local val
-								if subName == "."..axe then
-									val = setVal
-								else
-									val = root[axe]
-								end
-								if val then axes[#axes+1] = Enum.Axis[axe] end
-							end
-							setVal = Axes.new(unpack(axes))
-						elseif rootTypeName == "NumberRange" then
-							setVal = NumberRange.new(subName == ".Min" and setVal or root.Min, subName == ".Max" and setVal or root.Max)
-						end
-					end
-
-					if typeName == "PhysicalProperties" and setVal then
-						setVal = root or PhysicalProperties.new(obj.Material)
-					end
-
-					if prop.IsAttribute then
-						setAttribute(obj,attributeName,setVal)
-					else
-						obj[propName] = setVal
-					end
-				end)
-			end
-		end
-
-		if not noupdate then
-			Properties.ComputeConflicts(prop)
-		end
-	end
-
-	Properties.InitInputBox = function()
-		inputBox = create({
-			{1,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderSizePixel=0,Name="InputBox",Size=UDim2.new(0,200,0,22),Visible=false,ZIndex=2,}},
-			{2,"TextBox",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BackgroundTransparency=1,BorderColor3=Color3.new(0.062745101749897,0.51764708757401,1),BorderSizePixel=0,ClearTextOnFocus=false,Font=3,Parent={1},PlaceholderColor3=Color3.new(0.69803923368454,0.69803923368454,0.69803923368454),Position=UDim2.new(0,3,0,0),Size=UDim2.new(1,-6,1,0),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=0,ZIndex=2,}},
-		})
-		inputTextBox = inputBox.TextBox
-		inputBox.BackgroundColor3 = Settings.Theme.TextBox
-		inputBox.Parent = Properties.Window.GuiElems.Content.List
-
-		inputTextBox.FocusLost:Connect(function()
-			if not inputProp then return end
-
-			local prop = inputProp
-			inputProp = nil
-			local val = Properties.StringToValue(prop,inputTextBox.Text)
-			if val then Properties.SetProp(prop,val) else Properties.Refresh() end
-		end)
-
-		inputTextBox.Focused:Connect(function()
-			inputTextBox.SelectionStart = 1
-			inputTextBox.CursorPosition = #inputTextBox.Text + 1
-		end)
-
-		Lib.ViewportTextBox.convert(inputTextBox)
-	end
-
-	Properties.SetInputProp = function(prop,entryIndex,special)
-		local typeData = prop.ValueType
-		local typeName = typeData.Name
-		local fullName = prop.Class.."."..prop.Name..(prop.SubName or "")
-		local propObj = autoUpdateObjs[fullName]
-		local propVal = Properties.GetPropVal(prop,propObj)
-
-		if prop.Tags.ReadOnly then return end
-
-		inputProp = prop
-		if special then
-			if special == "color" then
-				if typeName == "Color3" then
-					inputTextBox.Text = propVal and Properties.ValueToString(prop,propVal) or ""
-					Properties.DisplayColorEditor(prop,propVal)
-				elseif typeName == "BrickColor" then
-					Properties.DisplayBrickColorEditor(prop,entryIndex,propVal)
-				elseif typeName == "ColorSequence" then
-					inputTextBox.Text = propVal and Properties.ValueToString(prop,propVal) or ""
-					Properties.DisplayColorSequenceEditor(prop,propVal)
-				end
-			elseif special == "right" then
-				if typeName == "NumberSequence" then
-					inputTextBox.Text = propVal and Properties.ValueToString(prop,propVal) or ""
-					Properties.DisplayNumberSequenceEditor(prop,propVal)
-				elseif typeName == "ColorSequence" then
-					inputTextBox.Text = propVal and Properties.ValueToString(prop,propVal) or ""
-					Properties.DisplayColorSequenceEditor(prop,propVal)
-				end
-			end
-		else
-			if Properties.IsTextEditable(prop) then
-				inputTextBox.Text = propVal and Properties.ValueToString(prop,propVal) or ""
-				inputTextBox:CaptureFocus()
-			elseif typeData.Category == "Enum" then
-				Properties.DisplayEnumDropdown(entryIndex)
-			elseif typeName == "BrickColor" then
-				Properties.DisplayBrickColorEditor(prop,entryIndex,propVal)
-			end
-		end
-		Properties.Refresh()
-	end
-
-	Properties.InitSearch = function()
-		local searchBox = Properties.GuiElems.ToolBar.SearchFrame.SearchBox
-
-		Lib.ViewportTextBox.convert(searchBox)
-
-		searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-			Properties.SearchText = searchBox.Text
-			Properties.Update()
-			Properties.Refresh()
-		end)
-	end
-
-	Properties.InitEntryStuff = function()
-		Properties.EntryTemplate = create({
-			{1,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderColor3=Color3.new(0.1294117718935,0.1294117718935,0.1294117718935),Font=3,Name="Entry",Position=UDim2.new(0,1,0,1),Size=UDim2.new(0,250,0,22),Text="",TextSize=14,}},
-			{2,"Frame",{BackgroundColor3=Color3.new(0.04313725605607,0.35294118523598,0.68627452850342),BackgroundTransparency=1,BorderColor3=Color3.new(0.33725491166115,0.49019610881805,0.73725491762161),BorderSizePixel=0,Name="NameFrame",Parent={1},Position=UDim2.new(0,20,0,0),Size=UDim2.new(1,-40,1,0),}},
-			{3,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="PropName",Parent={2},Position=UDim2.new(0,2,0,0),Size=UDim2.new(1,-2,1,0),Text="Anchored",TextColor3=Color3.new(1,1,1),TextSize=14,TextTransparency=0.10000000149012,TextTruncate=1,TextXAlignment=0,}},
-			{4,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,ClipsDescendants=true,Font=3,Name="Expand",Parent={2},Position=UDim2.new(0,-20,0,1),Size=UDim2.new(0,20,0,20),Text="",TextSize=14,Visible=false,}},
-			{5,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5642383285",ImageRectOffset=Vector2.new(144,16),ImageRectSize=Vector2.new(16,16),Name="Icon",Parent={4},Position=UDim2.new(0,2,0,2),ScaleType=4,Size=UDim2.new(0,16,0,16),}},
-			{6,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=4,Name="ToggleAttributes",Parent={2},Position=UDim2.new(1,-85,0,0),Size=UDim2.new(0,85,0,22),Text="[SETTING: OFF]",TextColor3=Color3.new(1,1,1),TextSize=14,TextTransparency=0.10000000149012,Visible=false,}},
-			{7,"Frame",{BackgroundColor3=Color3.new(0.04313725605607,0.35294118523598,0.68627452850342),BackgroundTransparency=1,BorderColor3=Color3.new(0.33725491166115,0.49019607901573,0.73725491762161),BorderSizePixel=0,Name="ValueFrame",Parent={1},Position=UDim2.new(1,-100,0,0),Size=UDim2.new(0,80,1,0),}},
-			{8,"Frame",{BackgroundColor3=Color3.new(0.14117647707462,0.14117647707462,0.14117647707462),BorderColor3=Color3.new(0.33725491166115,0.49019610881805,0.73725491762161),BorderSizePixel=0,Name="Line",Parent={7},Position=UDim2.new(0,-1,0,0),Size=UDim2.new(0,1,1,0),}},
-			{9,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="ColorButton",Parent={7},Size=UDim2.new(0,20,0,22),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,Visible=false,}},
-			{10,"Frame",{BackgroundColor3=Color3.new(1,1,1),BorderColor3=Color3.new(0,0,0),Name="ColorPreview",Parent={9},Position=UDim2.new(0,5,0,6),Size=UDim2.new(0,10,0,10),}},
-			{11,"UIGradient",{Parent={10},}},
-			{12,"Frame",{BackgroundTransparency=1,Name="EnumArrow",Parent={7},Position=UDim2.new(1,-16,0,3),Size=UDim2.new(0,16,0,16),Visible=false,}},
-			{13,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={12},Position=UDim2.new(0,8,0,9),Size=UDim2.new(0,1,0,1),}},
-			{14,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={12},Position=UDim2.new(0,7,0,8),Size=UDim2.new(0,3,0,1),}},
-			{15,"Frame",{BackgroundColor3=Color3.new(0.86274510622025,0.86274510622025,0.86274510622025),BorderSizePixel=0,Parent={12},Position=UDim2.new(0,6,0,7),Size=UDim2.new(0,5,0,1),}},
-			{16,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="ValueBox",Parent={7},Position=UDim2.new(0,4,0,0),Size=UDim2.new(1,-8,1,0),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,TextTransparency=0.10000000149012,TextTruncate=1,TextXAlignment=0,}},
-			{17,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="RightButton",Parent={7},Position=UDim2.new(1,-20,0,0),Size=UDim2.new(0,20,0,22),Text="...",TextColor3=Color3.new(1,1,1),TextSize=14,Visible=false,}},
-			{18,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="SettingsButton",Parent={7},Position=UDim2.new(1,-20,0,0),Size=UDim2.new(0,20,0,22),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,Visible=false,}},
-			{19,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Name="SoundPreview",Parent={7},Size=UDim2.new(1,0,1,0),Visible=false,}},
-			{20,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="ControlButton",Parent={19},Size=UDim2.new(0,20,0,22),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,}},
-			{21,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5642383285",ImageRectOffset=Vector2.new(144,16),ImageRectSize=Vector2.new(16,16),Name="Icon",Parent={20},Position=UDim2.new(0,2,0,3),ScaleType=4,Size=UDim2.new(0,16,0,16),}},
-			{22,"Frame",{BackgroundColor3=Color3.new(0.3137255012989,0.3137255012989,0.3137255012989),BorderSizePixel=0,Name="TimeLine",Parent={19},Position=UDim2.new(0,26,0.5,-1),Size=UDim2.new(1,-34,0,2),}},
-			{23,"Frame",{BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderColor3=Color3.new(0.1294117718935,0.1294117718935,0.1294117718935),Name="Slider",Parent={22},Position=UDim2.new(0,-4,0,-8),Size=UDim2.new(0,8,0,18),}},
-			{24,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="EditAttributeButton",Parent={1},Position=UDim2.new(1,-20,0,0),Size=UDim2.new(0,20,0,22),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,}},
-			{25,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5034718180",ImageTransparency=0.20000000298023,Name="Icon",Parent={24},Position=UDim2.new(0,2,0,3),Size=UDim2.new(0,16,0,16),}},
-			{26,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderSizePixel=0,Font=3,Name="RowButton",Parent={1},Size=UDim2.new(1,0,1,0),Text="Add Attribute",TextColor3=Color3.new(1,1,1),TextSize=14,TextTransparency=0.10000000149012,Visible=false,}},
-
-		})
-
-		local fullNameFrame = Lib.Frame.new()
-		local label = Lib.Label.new()
-		label.Parent = fullNameFrame.Gui
-		label.Position = UDim2.new(0,2,0,0)
-		label.Size = UDim2.new(1,-4,1,0)
-		fullNameFrame.Visible = false
-		fullNameFrame.Parent = window.Gui
-		
-		if Settings.Window.Transparency and Settings.Window.Transparency > 0 then
-			Properties.EntryTemplate.BackgroundTransparency = 0.75
-		end
-
-		Properties.FullNameFrame = fullNameFrame
-		Properties.FullNameFrameAttach = Lib.AttachTo(fullNameFrame)
-	end
-
-	Properties.Init = function()
-		local guiItems = create({
-			{1,"Folder",{Name="Items",}},
-			{2,"Frame",{BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderSizePixel=0,Name="ToolBar",Parent={1},Size=UDim2.new(1,0,0,22),}},
-			{3,"Frame",{BackgroundColor3=Color3.new(0.14901961386204,0.14901961386204,0.14901961386204),BorderColor3=Color3.new(0.1176470592618,0.1176470592618,0.1176470592618),BorderSizePixel=0,Name="SearchFrame",Parent={2},Position=UDim2.new(0,3,0,1),Size=UDim2.new(1,-6,0,18),}},
-			{4,"TextBox",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,ClearTextOnFocus=false,Font=3,Name="SearchBox",Parent={3},PlaceholderColor3=Color3.new(0.39215689897537,0.39215689897537,0.39215689897537),PlaceholderText="Search properties",Position=UDim2.new(0,4,0,0),Size=UDim2.new(1,-24,0,18),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=0,}},
-			{5,"UICorner",{CornerRadius=UDim.new(0,2),Parent={3},}},
-			{6,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Reset",Parent={3},Position=UDim2.new(1,-17,0,1),Size=UDim2.new(0,16,0,16),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,}},
-			{7,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5034718129",ImageColor3=Color3.new(0.39215686917305,0.39215686917305,0.39215686917305),Parent={6},Size=UDim2.new(0,16,0,16),}},
-			{8,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.12549020349979,0.12549020349979,0.12549020349979),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="Refresh",Parent={2},Position=UDim2.new(1,-20,0,1),Size=UDim2.new(0,18,0,18),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,Visible=false,}},
-			{9,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://5642310344",Parent={8},Position=UDim2.new(0,3,0,3),Size=UDim2.new(0,12,0,12),}},
-			{10,"Frame",{BackgroundColor3=Color3.new(0.15686275064945,0.15686275064945,0.15686275064945),BorderSizePixel=0,Name="ScrollCorner",Parent={1},Position=UDim2.new(1,-16,1,-16),Size=UDim2.new(0,16,0,16),Visible=false,}},
-			{11,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,ClipsDescendants=true,Name="List",Parent={1},Position=UDim2.new(0,0,0,23),Size=UDim2.new(1,0,1,-23),}},
-		})
-
-		categoryOrder =  API.CategoryOrder
-		for category,_ in next,categoryOrder do
-			if not Properties.CollapsedCategories[category] then
-				expanded["CAT_"..category] = true
-			end
-		end
-		expanded["Sound.SoundId"] = true
-
-		window = Lib.Window.new()
-		Properties.Window = window
-		window:SetTitle("Properties")
-
-		toolBar = guiItems.ToolBar
-		propsFrame = guiItems.List
-
-		Properties.GuiElems.ToolBar = toolBar
-		Properties.GuiElems.PropsFrame = propsFrame
-
-		Properties.InitEntryStuff()
-
-		window.GuiElems.Main:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-			if Properties.Window:IsContentVisible() then
-				Properties.UpdateView()
-				Properties.Refresh()
-			end
-		end)
-		window.OnActivate:Connect(function()
-			Properties.UpdateView()
-			Properties.Update()
-			Properties.Refresh()
-		end)
-		window.OnRestore:Connect(function()
-			Properties.UpdateView()
-			Properties.Update()
-			Properties.Refresh()
-		end)
-
-		scrollV = Lib.ScrollBar.new()
-		scrollV.WheelIncrement = 3
-		scrollV.Gui.Position = UDim2.new(1,-16,0,23)
-		scrollV:SetScrollFrame(propsFrame)
-		scrollV.Scrolled:Connect(function()
-			Properties.Index = scrollV.Index
-			Properties.Refresh()
-		end)
-
-		scrollH = Lib.ScrollBar.new(true)
-		scrollH.Increment = 5
-		scrollH.WheelIncrement = 20
-		scrollH.Gui.Position = UDim2.new(0,0,1,-16)
-		scrollH.Scrolled:Connect(function()
-			Properties.Refresh()
-		end)
-
-		window.GuiElems.Line.Position = UDim2.new(0,0,0,22)
-		toolBar.Parent = window.GuiElems.Content
-		propsFrame.Parent = window.GuiElems.Content
-		guiItems.ScrollCorner.Parent = window.GuiElems.Content
-		scrollV.Gui.Parent = window.GuiElems.Content
-		scrollH.Gui.Parent = window.GuiElems.Content
-		Properties.InitInputBox()
-		Properties.InitSearch()
-	end
-
-	return Properties
+	return self
 end
-
-if gethsfuncs then
-	_G.moduleData = {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
-else
-	return {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
+function Reader:Set(fp) FLOAT_PRECISION = fp end
+local Strings = {
+	SUCCESS              = "%s",
+	TIMEOUT              = "-- DECOMPILER TIMEOUT",
+	COMPILATION_FAILURE  = "-- SCRIPT FAILED TO COMPILE, ERROR:\n%s",
+	UNSUPPORTED_LBC_VERSION = "-- PASSED BYTECODE IS TOO OLD AND IS NOT SUPPORTED",
+	USED_GLOBALS         = "-- USED GLOBALS: %s.\n",
+	DECOMPILER_REMARK    = "-- DECOMPILER REMARK: %s\n",
+}
+local CASE_MULTIPLIER = 227
+local Luau = {
+	OpCode = {
+		{name="NOP",type="none"},{name="BREAK",type="none"},
+		{name="LOADNIL",type="A"},{name="LOADB",type="ABC"},
+		{name="LOADN",type="AsD"},{name="LOADK",type="AD"},
+		{name="MOVE",type="AB"},
+		{name="GETGLOBAL",type="AC",aux=true},{name="SETGLOBAL",type="AC",aux=true},
+		{name="GETUPVAL",type="AB"},{name="SETUPVAL",type="AB"},
+		{name="CLOSEUPVALS",type="A"},
+		{name="GETIMPORT",type="AD",aux=true},
+		{name="GETTABLE",type="ABC"},{name="SETTABLE",type="ABC"},
+		{name="GETTABLEKS",type="ABC",aux=true},{name="SETTABLEKS",type="ABC",aux=true},
+		{name="GETTABLEN",type="ABC"},{name="SETTABLEN",type="ABC"},
+		{name="NEWCLOSURE",type="AD"},{name="NAMECALL",type="ABC",aux=true},
+		{name="CALL",type="ABC"},{name="RETURN",type="AB"},
+		{name="JUMP",type="sD"},{name="JUMPBACK",type="sD"},
+		{name="JUMPIF",type="AsD"},{name="JUMPIFNOT",type="AsD"},
+		{name="JUMPIFEQ",type="AsD",aux=true},{name="JUMPIFLE",type="AsD",aux=true},
+		{name="JUMPIFLT",type="AsD",aux=true},{name="JUMPIFNOTEQ",type="AsD",aux=true},
+		{name="JUMPIFNOTLE",type="AsD",aux=true},{name="JUMPIFNOTLT",type="AsD",aux=true},
+		{name="ADD",type="ABC"},{name="SUB",type="ABC"},{name="MUL",type="ABC"},
+		{name="DIV",type="ABC"},{name="MOD",type="ABC"},{name="POW",type="ABC"},
+		{name="ADDK",type="ABC"},{name="SUBK",type="ABC"},{name="MULK",type="ABC"},
+		{name="DIVK",type="ABC"},{name="MODK",type="ABC"},{name="POWK",type="ABC"},
+		{name="AND",type="ABC"},{name="OR",type="ABC"},
+		{name="ANDK",type="ABC"},{name="ORK",type="ABC"},
+		{name="CONCAT",type="ABC"},
+		{name="NOT",type="AB"},{name="MINUS",type="AB"},{name="LENGTH",type="AB"},
+		{name="NEWTABLE",type="AB",aux=true},{name="DUPTABLE",type="AD"},
+		{name="SETLIST",type="ABC",aux=true},
+		{name="FORNPREP",type="AsD"},{name="FORNLOOP",type="AsD"},
+		{name="FORGLOOP",type="AsD",aux=true},
+		{name="FORGPREP_INEXT",type="A"},
+		{name="FASTCALL3",type="ABC",aux=true},
+		{name="FORGPREP_NEXT",type="A"},{name="NATIVECALL",type="none"},
+		{name="GETVARARGS",type="AB"},{name="DUPCLOSURE",type="AD"},
+		{name="PREPVARARGS",type="A"},{name="LOADKX",type="A",aux=true},
+		{name="JUMPX",type="E"},{name="FASTCALL",type="AC"},
+		{name="COVERAGE",type="E"},{name="CAPTURE",type="AB"},
+		{name="SUBRK",type="ABC"},{name="DIVRK",type="ABC"},
+		{name="FASTCALL1",type="ABC"},
+		{name="FASTCALL2",type="ABC",aux=true},{name="FASTCALL2K",type="ABC",aux=true},
+		{name="FORGPREP",type="AsD"},
+		{name="JUMPXEQKNIL",type="AsD",aux=true},{name="JUMPXEQKB",type="AsD",aux=true},
+		{name="JUMPXEQKN",type="AsD",aux=true},{name="JUMPXEQKS",type="AsD",aux=true},
+		{name="IDIV",type="ABC"},{name="IDIVK",type="ABC"},
+		{name="_COUNT",type="none"},
+	},
+	BytecodeTag = {
+		LBC_VERSION_MIN=3, LBC_VERSION_MAX=6,
+		LBC_TYPE_VERSION_MIN=1, LBC_TYPE_VERSION_MAX=3,
+		LBC_CONSTANT_NIL=0, LBC_CONSTANT_BOOLEAN=1, LBC_CONSTANT_NUMBER=2,
+		LBC_CONSTANT_STRING=3, LBC_CONSTANT_IMPORT=4, LBC_CONSTANT_TABLE=5,
+		LBC_CONSTANT_CLOSURE=6, LBC_CONSTANT_VECTOR=7,
+	},
+	BytecodeType = {
+		LBC_TYPE_NIL=0,LBC_TYPE_BOOLEAN=1,LBC_TYPE_NUMBER=2,LBC_TYPE_STRING=3,
+		LBC_TYPE_TABLE=4,LBC_TYPE_FUNCTION=5,LBC_TYPE_THREAD=6,LBC_TYPE_USERDATA=7,
+		LBC_TYPE_VECTOR=8,LBC_TYPE_BUFFER=9,LBC_TYPE_ANY=15,
+		LBC_TYPE_TAGGED_USERDATA_BASE=64,LBC_TYPE_TAGGED_USERDATA_END=64+32,
+		LBC_TYPE_OPTIONAL_BIT=bit32.lshift(1,7),LBC_TYPE_INVALID=256,
+	},
+	CaptureType  = {LCT_VAL=0,LCT_REF=1,LCT_UPVAL=2},
+	BuiltinFunction = {
+		LBF_NONE=0,LBF_ASSERT=1,LBF_MATH_ABS=2,LBF_MATH_ACOS=3,LBF_MATH_ASIN=4,
+		LBF_MATH_ATAN2=5,LBF_MATH_ATAN=6,LBF_MATH_CEIL=7,LBF_MATH_COSH=8,
+		LBF_MATH_COS=9,LBF_MATH_DEG=10,LBF_MATH_EXP=11,LBF_MATH_FLOOR=12,
+		LBF_MATH_FMOD=13,LBF_MATH_FREXP=14,LBF_MATH_LDEXP=15,LBF_MATH_LOG10=16,
+		LBF_MATH_LOG=17,LBF_MATH_MAX=18,LBF_MATH_MIN=19,LBF_MATH_MODF=20,
+		LBF_MATH_POW=21,LBF_MATH_RAD=22,LBF_MATH_SINH=23,LBF_MATH_SIN=24,
+		LBF_MATH_SQRT=25,LBF_MATH_TANH=26,LBF_MATH_TAN=27,
+		LBF_BIT32_ARSHIFT=28,LBF_BIT32_BAND=29,LBF_BIT32_BNOT=30,LBF_BIT32_BOR=31,
+		LBF_BIT32_BXOR=32,LBF_BIT32_BTEST=33,LBF_BIT32_EXTRACT=34,
+		LBF_BIT32_LROTATE=35,LBF_BIT32_LSHIFT=36,LBF_BIT32_REPLACE=37,
+		LBF_BIT32_RROTATE=38,LBF_BIT32_RSHIFT=39,LBF_TYPE=40,
+		LBF_STRING_BYTE=41,LBF_STRING_CHAR=42,LBF_STRING_LEN=43,LBF_TYPEOF=44,
+		LBF_STRING_SUB=45,LBF_MATH_CLAMP=46,LBF_MATH_SIGN=47,LBF_MATH_ROUND=48,
+		LBF_RAWSET=49,LBF_RAWGET=50,LBF_RAWEQUAL=51,LBF_TABLE_INSERT=52,
+		LBF_TABLE_UNPACK=53,LBF_VECTOR=54,LBF_BIT32_COUNTLZ=55,LBF_BIT32_COUNTRZ=56,
+		LBF_SELECT_VARARG=57,LBF_RAWLEN=58,LBF_BIT32_EXTRACTK=59,
+		LBF_GETMETATABLE=60,LBF_SETMETATABLE=61,LBF_TONUMBER=62,LBF_TOSTRING=63,
+		LBF_BIT32_BYTESWAP=64,
+		LBF_BUFFER_READI8=65,LBF_BUFFER_READU8=66,LBF_BUFFER_WRITEU8=67,
+		LBF_BUFFER_READI16=68,LBF_BUFFER_READU16=69,LBF_BUFFER_WRITEU16=70,
+		LBF_BUFFER_READI32=71,LBF_BUFFER_READU32=72,LBF_BUFFER_WRITEU32=73,
+		LBF_BUFFER_READF32=74,LBF_BUFFER_WRITEF32=75,LBF_BUFFER_READF64=76,
+		LBF_BUFFER_WRITEF64=77,
+		LBF_VECTOR_MAGNITUDE=78,LBF_VECTOR_NORMALIZE=79,LBF_VECTOR_CROSS=80,
+		LBF_VECTOR_DOT=81,LBF_VECTOR_FLOOR=82,LBF_VECTOR_CEIL=83,
+		LBF_VECTOR_ABS=84,LBF_VECTOR_SIGN=85,LBF_VECTOR_CLAMP=86,
+		LBF_VECTOR_MIN=87,LBF_VECTOR_MAX=88,
+	},
+	ProtoFlag = {
+		LPF_NATIVE_MODULE  = bit32.lshift(1,0),
+		LPF_NATIVE_COLD    = bit32.lshift(1,1),
+		LPF_NATIVE_FUNCTION= bit32.lshift(1,2),
+	},
+}
+function Luau:INSN_OP(i)  return bit32.band(i,0xFF) end
+function Luau:INSN_A(i)   return bit32.band(bit32.rshift(i,8),0xFF) end
+function Luau:INSN_B(i)   return bit32.band(bit32.rshift(i,16),0xFF) end
+function Luau:INSN_C(i)   return bit32.band(bit32.rshift(i,24),0xFF) end
+function Luau:INSN_D(i)   return bit32.rshift(i,16) end
+function Luau:INSN_sD(i)
+	local D=self:INSN_D(i); return (D>0x7FFF and D<=0xFFFF) and (-(0xFFFF-D)-1) or D
 end
-end,
-["SaveInstance"] = function()
-
-local Main,Lib,Apps,Settings
-local Explorer, Properties, ScriptViewer, SaveInstance, Notebook
-local API,RMD,env,service,plr,create,createSimple
-
-local function initDeps(data)
-	Main = data.Main
-	Lib = data.Lib
-	Apps = data.Apps
-	Settings = data.Settings
-
-	API = data.API
-	RMD = data.RMD
-	env = data.env
-	service = data.service
-	plr = data.plr
-	create = data.create
-	createSimple = data.createSimple
+function Luau:INSN_E(i)   return bit32.rshift(i,8) end
+function Luau:GetBaseTypeString(t, checkOpt)
+	local BT=self.BytecodeType
+	local tag=bit32.band(t,bit32.bnot(BT.LBC_TYPE_OPTIONAL_BIT))
+	local names={[BT.LBC_TYPE_NIL]="nil",[BT.LBC_TYPE_BOOLEAN]="boolean",
+		[BT.LBC_TYPE_NUMBER]="number",[BT.LBC_TYPE_STRING]="string",
+		[BT.LBC_TYPE_TABLE]="table",[BT.LBC_TYPE_FUNCTION]="function",
+		[BT.LBC_TYPE_THREAD]="thread",[BT.LBC_TYPE_USERDATA]="userdata",
+		[BT.LBC_TYPE_VECTOR]="Vector3",[BT.LBC_TYPE_BUFFER]="buffer",
+		[BT.LBC_TYPE_ANY]="any"}
+	local r=names[tag] or "unknown"
+	if checkOpt then
+		r ..= (bit32.band(t,BT.LBC_TYPE_OPTIONAL_BIT)==0) and "" or "?"
+	end
+	return r
 end
-
-local function initAfterMain()
-	Explorer = Apps.Explorer
-	Properties = Apps.Properties
-	ScriptViewer = Apps.ScriptViewer
-	SaveInstance = Apps.SaveInstance
-	Notebook = Apps.Notebook
-end
-
-local function main()
-	local SaveInstance = {}
-	local window, ListFrame
-	local fileName = "Place_"..game.PlaceId.."_"..game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name.."_{TIMESTAMP}"
-	local Saving = false
-	
-	local SaveInstanceArgs = {
-		Decompile = true,
-		DecompileTimeout = 10,
-		DecompileIgnore = {"Chat", "CoreGui", "CorePackages"},
-		NilInstances = false,
-		RemovePlayerCharacters = true,
-		SavePlayers = false,
-		MaxThreads = 3,
-		ShowStatus = true,
-		IgnoreDefaultProps = true,
-		IsolateStarterPlayer = true
+function Luau:GetBuiltinInfo(bfid)
+	local BF=self.BuiltinFunction
+	local map={
+		[BF.LBF_NONE]="none",[BF.LBF_ASSERT]="assert",
+		[BF.LBF_TYPE]="type",[BF.LBF_TYPEOF]="typeof",
+		[BF.LBF_RAWSET]="rawset",[BF.LBF_RAWGET]="rawget",
+		[BF.LBF_RAWEQUAL]="rawequal",[BF.LBF_RAWLEN]="rawlen",
+		[BF.LBF_TABLE_UNPACK]="unpack",[BF.LBF_SELECT_VARARG]="select",
+		[BF.LBF_GETMETATABLE]="getmetatable",[BF.LBF_SETMETATABLE]="setmetatable",
+		[BF.LBF_TONUMBER]="tonumber",[BF.LBF_TOSTRING]="tostring",
+		[BF.LBF_MATH_ABS]="math.abs",[BF.LBF_MATH_ACOS]="math.acos",
+		[BF.LBF_MATH_ASIN]="math.asin",[BF.LBF_MATH_ATAN2]="math.atan2",
+		[BF.LBF_MATH_ATAN]="math.atan",[BF.LBF_MATH_CEIL]="math.ceil",
+		[BF.LBF_MATH_COSH]="math.cosh",[BF.LBF_MATH_COS]="math.cos",
+		[BF.LBF_MATH_DEG]="math.deg",[BF.LBF_MATH_EXP]="math.exp",
+		[BF.LBF_MATH_FLOOR]="math.floor",[BF.LBF_MATH_FMOD]="math.fmod",
+		[BF.LBF_MATH_FREXP]="math.frexp",[BF.LBF_MATH_LDEXP]="math.ldexp",
+		[BF.LBF_MATH_LOG10]="math.log10",[BF.LBF_MATH_LOG]="math.log",
+		[BF.LBF_MATH_MAX]="math.max",[BF.LBF_MATH_MIN]="math.min",
+		[BF.LBF_MATH_MODF]="math.modf",[BF.LBF_MATH_POW]="math.pow",
+		[BF.LBF_MATH_RAD]="math.rad",[BF.LBF_MATH_SINH]="math.sinh",
+		[BF.LBF_MATH_SIN]="math.sin",[BF.LBF_MATH_SQRT]="math.sqrt",
+		[BF.LBF_MATH_TANH]="math.tanh",[BF.LBF_MATH_TAN]="math.tan",
+		[BF.LBF_MATH_CLAMP]="math.clamp",[BF.LBF_MATH_SIGN]="math.sign",
+		[BF.LBF_MATH_ROUND]="math.round",
+		[BF.LBF_BIT32_ARSHIFT]="bit32.arshift",[BF.LBF_BIT32_BAND]="bit32.band",
+		[BF.LBF_BIT32_BNOT]="bit32.bnot",[BF.LBF_BIT32_BOR]="bit32.bor",
+		[BF.LBF_BIT32_BXOR]="bit32.bxor",[BF.LBF_BIT32_BTEST]="bit32.btest",
+		[BF.LBF_BIT32_EXTRACT]="bit32.extract",[BF.LBF_BIT32_EXTRACTK]="bit32.extract",
+		[BF.LBF_BIT32_LROTATE]="bit32.lrotate",[BF.LBF_BIT32_LSHIFT]="bit32.lshift",
+		[BF.LBF_BIT32_REPLACE]="bit32.replace",[BF.LBF_BIT32_RROTATE]="bit32.rrotate",
+		[BF.LBF_BIT32_RSHIFT]="bit32.rshift",[BF.LBF_BIT32_COUNTLZ]="bit32.countlz",
+		[BF.LBF_BIT32_COUNTRZ]="bit32.countrz",[BF.LBF_BIT32_BYTESWAP]="bit32.byteswap",
+		[BF.LBF_STRING_BYTE]="string.byte",[BF.LBF_STRING_CHAR]="string.char",
+		[BF.LBF_STRING_LEN]="string.len",[BF.LBF_STRING_SUB]="string.sub",
+		[BF.LBF_TABLE_INSERT]="table.insert",[BF.LBF_VECTOR]="Vector3.new",
+		[BF.LBF_BUFFER_READI8]="buffer.readi8",[BF.LBF_BUFFER_READU8]="buffer.readu8",
+		[BF.LBF_BUFFER_WRITEU8]="buffer.writeu8",[BF.LBF_BUFFER_READI16]="buffer.readi16",
+		[BF.LBF_BUFFER_READU16]="buffer.readu16",[BF.LBF_BUFFER_WRITEU16]="buffer.writeu16",
+		[BF.LBF_BUFFER_READI32]="buffer.readi32",[BF.LBF_BUFFER_READU32]="buffer.readu32",
+		[BF.LBF_BUFFER_WRITEU32]="buffer.writeu32",[BF.LBF_BUFFER_READF32]="buffer.readf32",
+		[BF.LBF_BUFFER_WRITEF32]="buffer.writef32",[BF.LBF_BUFFER_READF64]="buffer.readf64",
+		[BF.LBF_BUFFER_WRITEF64]="buffer.writef64",
+		[BF.LBF_VECTOR_MAGNITUDE]="vector.magnitude",[BF.LBF_VECTOR_NORMALIZE]="vector.normalize",
+		[BF.LBF_VECTOR_CROSS]="vector.cross",[BF.LBF_VECTOR_DOT]="vector.dot",
+		[BF.LBF_VECTOR_FLOOR]="vector.floor",[BF.LBF_VECTOR_CEIL]="vector.ceil",
+		[BF.LBF_VECTOR_ABS]="vector.abs",[BF.LBF_VECTOR_SIGN]="vector.sign",
+		[BF.LBF_VECTOR_CLAMP]="vector.clamp",[BF.LBF_VECTOR_MIN]="vector.min",
+		[BF.LBF_VECTOR_MAX]="vector.max",
 	}
-	
-	local function AddCheckbox(title, default)
-		local frame = Lib.Frame.new()
-		frame.Gui.Parent = ListFrame
-		frame.Gui.Transparency = 1
-		frame.Gui.Size = UDim2.new(1,0,0,20)
-		
-		local listlayout = Instance.new("UIListLayout")
-		listlayout.Parent = frame.Gui
-		listlayout.FillDirection = Enum.FillDirection.Horizontal
-		listlayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-		listlayout.VerticalAlignment = Enum.VerticalAlignment.Center
-		listlayout.Padding = UDim.new(0, 10)
-
-		local checkbox = Lib.Checkbox.new()
-		
-		checkbox.Gui.Parent = frame.Gui
-		checkbox.Gui.Size = UDim2.new(0,15,0,15)
-
-		local label = Lib.Label.new()
-		
-		label.Gui.Parent = frame.Gui
-		label.Gui.Size = UDim2.new(1, 0,1, -15)
-		label.Gui.Text = title
-		label.TextTruncate = Enum.TextTruncate.AtEnd
-		
-		checkbox:SetState(default)
-		
-		return checkbox
+	return map[bfid] or ("builtin#"..tostring(bfid))
+end
+do
+	local raw = Luau.OpCode
+	local encoded = {}
+	for i, v in raw do
+		local case = bit32.band((i-1)*CASE_MULTIPLIER, 0xFF)
+		encoded[case] = v
 	end
-	
-	local function AddTextbox(title, default, sizeX)
-		default = tostring(default)
-		local frame = Lib.Frame.new()
-		frame.Gui.Parent = ListFrame
-		frame.Gui.Transparency = 1
-		frame.Gui.Size = UDim2.new(1,0,0,20)
-
-		local listlayout = Instance.new("UIListLayout")
-		listlayout.Parent = frame.Gui
-		listlayout.FillDirection = Enum.FillDirection.Horizontal
-		listlayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-		listlayout.VerticalAlignment = Enum.VerticalAlignment.Center
-		listlayout.Padding = UDim.new(0, 10)
-
-		local textbox = Instance.new("TextBox")
-		textbox.BackgroundColor3 = Settings.Theme.TextBox
-		textbox.BorderColor3 = Settings.Theme.Outline3
-		textbox.ClearTextOnFocus = false
-		textbox.TextColor3 = Settings.Theme.Text
-		textbox.Font = Enum.Font.SourceSans
-		textbox.TextSize = 14
-		textbox.ZIndex = 2
-
-		textbox.Parent = frame.Gui
-		if sizeX and type(sizeX) == "number" then
-			textbox.Size = UDim2.new(0,sizeX,0,15)
-		else
-			textbox.Size = UDim2.new(0,45,0,15)
+	Luau.OpCode = encoded
+end
+local DEFAULT_OPTIONS = {
+	EnabledRemarks       = {ColdRemark=false, InlineRemark=true},
+	DecompilerTimeout    = 10,
+	DecompilerMode       = "disasm",
+	ReaderFloatPrecision = 7,
+	ShowDebugInformation = true,
+	ShowInstructionLines = false,
+	ShowOperationIndex   = false,
+	ShowOperationNames   = false,
+	ShowTrivialOperations= true,
+	UseTypeInfo          = true,
+	ListUsedGlobals      = true,
+	ReturnElapsedTime    = true,
+	CleanMode            = false,
+}
+local LuauCompileUserdataInfo = true
+pcall(function()
+	local ok, r = pcall(function() return game:GetFastFlag("LuauCompileUserdataInfo") end)
+	if ok then LuauCompileUserdataInfo = r end
+end)
+local LuauOpCode        = Luau.OpCode
+local LuauBytecodeTag   = Luau.BytecodeTag
+local LuauBytecodeType  = Luau.BytecodeType
+local LuauCaptureType   = Luau.CaptureType
+local LuauProtoFlag     = Luau.ProtoFlag
+local function toBoolean(v)      return v ~= 0 end
+local function toEscapedString(v)
+	if type(v) == "string" then
+		return string.format("%q", v)
+	end
+	return tostring(v)
+end
+local function formatIndexString(key)
+	if type(key) == "string" and key:match("^[%a_][%w_]*$") then
+		return "." .. key
+	end
+	return "[" .. toEscapedString(key) .. "]"
+end
+local function padLeft(v, ch, n)
+	local s = tostring(v); return string.rep(ch, math.max(0, n-#s)) .. s
+end
+local function padRight(v, ch, n)
+	local s = tostring(v); return s .. string.rep(ch, math.max(0, n-#s))
+end
+local ROBLOX_GLOBALS = {
+	"game","workspace","script","plugin","settings","shared","UserSettings",
+	"print","warn","error","assert","pcall","xpcall","require","select",
+	"pairs","ipairs","next","unpack","type","typeof","tostring","tonumber",
+	"setmetatable","getmetatable","rawset","rawget","rawequal","rawlen",
+	"math","table","string","bit32","coroutine","os","utf8","task","buffer",
+	"Instance","Enum","Vector3","Vector2","CFrame","Color3","BrickColor",
+	"UDim","UDim2","Ray","Axes","Faces","NumberRange","NumberSequence",
+	"ColorSequence","TweenInfo","RaycastParams","OverlapParams",
+	"tick","time","wait","delay","spawn","_G","_VERSION",
+}
+local ROBLOX_GLOBALS_SET = {}
+for _, v in ipairs(ROBLOX_GLOBALS) do ROBLOX_GLOBALS_SET[v] = true end
+local function isGlobal(key) return ROBLOX_GLOBALS_SET[key] == true end
+local function Decompile(bytecode, options)
+	local bytecodeVersion, typeEncodingVersion
+	Reader:Set(options.ReaderFloatPrecision)
+	local reader = Reader.new(bytecode)
+	local function disassemble()
+		if bytecodeVersion >= 4 then
+			typeEncodingVersion = reader:nextByte()
 		end
-		
-		frame.Gui.AutomaticSize = Enum.AutomaticSize.X
-		textbox.AutomaticSize = Enum.AutomaticSize.X
-
-		local label = Lib.Label.new()
-
-		label.Parent = frame.Gui
-		label.Size = UDim2.new(1, 0,1, -15)
-		label.Text = title
-		label.TextTruncate = Enum.TextTruncate.AtEnd
-
-		textbox.Text = default
-
-		return {TextBox = textbox}
-	end
-	
-	SaveInstance.Init = function()
-		window = Lib.Window.new()
-		window:SetTitle("Save Instance")
-		window:Resize(350,350)
-		SaveInstance.Window = window
-
-		ListFrame = Instance.new("ScrollingFrame")
-		ListFrame.Parent = window.GuiElems.Content
-		ListFrame.Size = UDim2.new(1, 0,1, -40)
-		ListFrame.Position = UDim2.new(0, 0, 0, 0)
-		ListFrame.Transparency = 1
-		ListFrame.CanvasSize = UDim2.new(0,0,0,0)
-		ListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-		ListFrame.ScrollBarThickness = 16
-		ListFrame.BottomImage = ""
-		ListFrame.TopImage = ""
-		ListFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 70)
-		ListFrame.ScrollBarImageTransparency = 0
-		ListFrame.ZIndex = 2
-		ListFrame.BorderSizePixel = 0
-		
-		local scrollbar = Lib.ScrollBar.new()
-		scrollbar.Gui.Parent = window.GuiElems.Content
-		scrollbar.Gui.Size = UDim2.new(1, 0,1, -40)
-		scrollbar.Gui.Up.ZIndex = 3
-		scrollbar.Gui.Down.ZIndex = 3
-		
-		ListFrame:GetPropertyChangedSignal("AbsoluteWindowSize"):Connect(function()
-			if ListFrame.AbsoluteCanvasSize ~= ListFrame.AbsoluteWindowSize then
-				scrollbar.Gui.Visible = true
-			else
-				scrollbar.Gui.Visible = false
-			end
-		end)
-		
-		local ListLayout = Instance.new("UIListLayout")
-		ListLayout.Parent = ListFrame
-		ListLayout.Padding = UDim.new(0, 5)
-		
-		local Padding = Instance.new("UIPadding")
-		Padding.Parent = ListFrame
-		Padding.PaddingBottom = UDim.new(0, 5)
-		Padding.PaddingLeft = UDim.new(0, 10)
-		Padding.PaddingRight = UDim.new(0, 10)
-		Padding.PaddingTop = UDim.new(0, 5)
-
-		local Decompile = AddCheckbox("Decompile Scripts (LocalScript and ModuleScript)", SaveInstanceArgs.Decompile)
-		Decompile.OnInput:Connect(function()
-			SaveInstanceArgs.Decompile = Decompile.Toggled
-		end)
-		
-		local decompileTimeout = AddTextbox("Decompile Timeout (s)", SaveInstanceArgs.DecompileTimeout, 15)
-		decompileTimeout.TextBox.FocusLost:Connect(function()
-			SaveInstanceArgs.DecompileTimeout = tonumber(decompileTimeout.TextBox.Text)
-		end)
-		
-		local decompileThread = AddTextbox("Decompiler Max Threads", "3", 15)
-		decompileThread.TextBox.FocusLost:Connect(function()
-			SaveInstanceArgs.MaxThreads = tonumber(decompileThread.TextBox.Text)
-		end)
-		
-		local decompileIgnore = AddTextbox("Decompile Ignore", table.concat(SaveInstanceArgs.DecompileIgnore, ","), 50)
-		decompileIgnore.TextBox.FocusLost:Connect(function()
-			local inputText = decompileIgnore.TextBox.Text
-			local rawList = string.split(inputText, ", ") or string.split(inputText, ",")
-			local finalList = {}
-
-			for _, text in ipairs(rawList) do
-				local split = string.split(text, ",") or string.split(text, ", ")
-				for _, textFound in ipairs(split) do
-					table.insert(finalList, textFound)
+		local stringTable = {}
+		local function readStringTable()
+			local n = reader:nextVarInt()
+			for i = 1, n do stringTable[i] = reader:nextString() end
+		end
+		local userdataTypes = {}
+		local function readUserdataTypes()
+			if LuauCompileUserdataInfo then
+				while true do
+					local idx = reader:nextByte()
+					if idx == 0 then break end
+					userdataTypes[idx] = reader:nextVarInt()
 				end
 			end
-			SaveInstanceArgs.DecompileIgnore = finalList
-		end)
-
-		local NilObj = AddCheckbox("Save Nil Instances", SaveInstanceArgs.NilInstances)
-		NilObj.OnInput:Connect(function()
-			SaveInstanceArgs.NilInstances = NilObj.Toggled
-		end)
-
-		local RemovePlayerChar = AddCheckbox("Remove Player Characters", SaveInstanceArgs.RemovePlayerCharacters)
-		RemovePlayerChar.OnInput:Connect(function()
-			SaveInstanceArgs.RemovePlayerCharacters = RemovePlayerChar.Toggled
-		end)
-		
-		local SavePlayerObj = AddCheckbox("Save Player Instance", SaveInstanceArgs.SavePlayers)
-		SavePlayerObj.OnInput:Connect(function()
-			SaveInstanceArgs.SavePlayers = SavePlayerObj.Toggled
-		end)
-		
-		local IsolateStarterPlr = AddCheckbox("Isolate StarterPlayer", SaveInstanceArgs.IsolateStarterPlayer)
-		IsolateStarterPlr.OnInput:Connect(function()
-			SaveInstanceArgs.IsolateStarterPlayer = IsolateStarterPlr.Toggled
-		end)
-		
-		local IgnoreDefaultProps = AddCheckbox("Ignore Default Properties", SaveInstanceArgs.IgnoreDefaultProps)
-		IgnoreDefaultProps.OnInput:Connect(function()
-			SaveInstanceArgs.IgnoreDefaultProps = IgnoreDefaultProps.Toggled
-		end)
-		
-		local ShowStat = AddCheckbox("Show Status", SaveInstanceArgs.ShowStatus)
-		ShowStat.OnInput:Connect(function()
-			SaveInstanceArgs.ShowStatus = ShowStat.Toggled
-		end)
-
-		local FilenameTextBox = Lib.ViewportTextBox.new()
-		FilenameTextBox.Gui.Parent = window.GuiElems.Content
-		FilenameTextBox.Size = UDim2.new(1,0, 0,20)
-		FilenameTextBox.Position = UDim2.new(0,0, 1,-40)
-		
-		local textpadding = Instance.new("UIPadding")
-		textpadding.Parent = FilenameTextBox.Gui
-		textpadding.PaddingLeft = UDim.new(0, 5)
-		textpadding.PaddingRight = UDim.new(0, 5)
-		
-		local BackgroundButton = Lib.Frame.new()
-		BackgroundButton.Gui.Parent = window.GuiElems.Content
-		BackgroundButton.Size = UDim2.new(1,0, 0,20)
-		BackgroundButton.Position = UDim2.new(0,0, 1,-20)
-		
-		local LabelButton = Lib.Label.new()
-		LabelButton.Gui.Parent = window.GuiElems.Content
-		LabelButton.Size = UDim2.new(1,0, 0,20)
-		LabelButton.Position = UDim2.new(0,0, 1,-20)
-		LabelButton.Gui.Text = "Save"
-		LabelButton.Gui.TextXAlignment = Enum.TextXAlignment.Center
-		
-		local Button = Instance.new("TextButton")
-		Button.Parent = BackgroundButton.Gui
-		Button.Size = UDim2.new(1,0, 1,0)
-		Button.Position = UDim2.new(0,0, 0,0)
-		Button.Transparency = 1
-		
-		FilenameTextBox.TextBox.Text = fileName
-		Button.MouseButton1Click:Connect(function()
-			local fileName = FilenameTextBox.TextBox.Text:gsub("{TIMESTAMP}", os.date("%d-%m-%Y_%H-%M-%S"))
-			window:SetTitle("Save Instance - Saving")
-			local s, result = pcall(env.saveinstance, game, fileName, SaveInstanceArgs)
-			if s then
-				window:SetTitle("Save Instance - Saved")
-			else
-				window:SetTitle("Save Instance - Error")
-				task.spawn(error("Failed to save the game: "..result))
-			end
-			task.wait(5)
-			window:SetTitle("Save Instance")
-
-		end)
-	end
-
-	return SaveInstance
-end
-
-if gethsfuncs then
-	_G.moduleData = {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
-else
-	return {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
-end
-end,
-["ScriptViewer"] = function()
-
-local Main,Lib,Apps,Settings
-local Explorer, Properties, ScriptViewer, Notebook
-local API,RMD,env,service,plr,create,createSimple
-
-local function initDeps(data)
-	Main = data.Main
-	Lib = data.Lib
-	Apps = data.Apps
-	Settings = data.Settings
-
-	API = data.API
-	RMD = data.RMD
-	env = data.env
-	service = data.service
-	plr = data.plr
-	create = data.create
-	createSimple = data.createSimple
-end
-
-local function initAfterMain()
-	Explorer = Apps.Explorer
-	Properties = Apps.Properties
-	ScriptViewer = Apps.ScriptViewer
-	Notebook = Apps.Notebook
-end
-
-local executorName = "Unknown"
-local executorVersion = "???"
-if identifyexecutor then
-	local name,ver = identifyexecutor()
-	executorName = name
-	executorVersion = ver
-elseif game:GetService("RunService"):IsStudio() then
-	executorName = "Studio"
-	executorVersion = version()
-end
-
-local function getPath(obj)
-	if obj.Parent == nil then
-		return "Nil parented"
-	else
-		return Explorer.GetInstancePath(obj)
-	end
-end
-
-local function main()
-
-	-- ── zukv2 decompiler core ──────────────────────────────────────────
-	local ZukDecompile
-	local prettyPrint
-	local cleanOutput
-	task.defer(function()
-	local FLOAT_PRECISION = 7
-	local Reader = {}
-	function Reader.new(bytecode)
-		local stream = buffer.fromstring(bytecode)
-		local cursor = 0
-		local blen   = buffer.len(stream)
-		local self   = {}
-		local function guard(n)
-			if cursor + n > blen then
-				error(string.format("Reader OOB: need %d byte(s) at offset %d (buf len %d)", n, cursor, blen), 2)
-			end
 		end
-		function self:len()       return blen end
-		function self:nextByte()
-			guard(1); local r = buffer.readu8(stream, cursor); cursor += 1; return r
-		end
-		function self:nextSignedByte()
-			guard(1); local r = buffer.readi8(stream, cursor); cursor += 1; return r
-		end
-		function self:nextBytes(count)
-			local t = {}
-			for i = 1, count do t[i] = self:nextByte() end
-			return t
-		end
-		function self:nextChar()     return string.char(self:nextByte()) end
-		function self:nextUInt32()
-			guard(4); local r = buffer.readu32(stream, cursor); cursor += 4; return r
-		end
-		function self:nextInt32()
-			guard(4); local r = buffer.readi32(stream, cursor); cursor += 4; return r
-		end
-		function self:nextFloat()
-			guard(4); local r = buffer.readf32(stream, cursor); cursor += 4
-			return tonumber(string.format("%0."..FLOAT_PRECISION.."f", r))
-		end
-		function self:nextVarInt()
-			local result = 0
-			for i = 0, 4 do
-				local b = self:nextByte()
-				result = bit32.bor(result, bit32.lshift(bit32.band(b, 0x7F), i * 7))
-				if not bit32.btest(b, 0x80) then break end
-			end
-			return result
-		end
-		function self:nextString(slen)
-			slen = slen or self:nextVarInt()
-			if slen == 0 then return "" end
-			guard(slen)
-			local r = buffer.readstring(stream, cursor, slen); cursor += slen; return r
-		end
-		function self:nextDouble()
-			guard(8); local r = buffer.readf64(stream, cursor); cursor += 8; return r
-		end
-		return self
-	end
-	function Reader:Set(fp) FLOAT_PRECISION = fp end
-	local Strings = {
-		SUCCESS              = "%s",  -- no meme header; callers add their own metadata
-		TIMEOUT              = "-- DECOMPILER TIMEOUT",
-		COMPILATION_FAILURE  = "-- SCRIPT FAILED TO COMPILE, ERROR:\n%s",
-		UNSUPPORTED_LBC_VERSION = "-- PASSED BYTECODE IS TOO OLD AND IS NOT SUPPORTED",
-		USED_GLOBALS         = "-- USED GLOBALS: %s.\n",
-		DECOMPILER_REMARK    = "-- DECOMPILER REMARK: %s\n",
-	}
-	local CASE_MULTIPLIER = 227
-	local Luau = {
-		OpCode = {
-			{name="NOP",type="none"},{name="BREAK",type="none"},
-			{name="LOADNIL",type="A"},{name="LOADB",type="ABC"},
-			{name="LOADN",type="AsD"},{name="LOADK",type="AD"},
-			{name="MOVE",type="AB"},
-			{name="GETGLOBAL",type="AC",aux=true},{name="SETGLOBAL",type="AC",aux=true},
-			{name="GETUPVAL",type="AB"},{name="SETUPVAL",type="AB"},
-			{name="CLOSEUPVALS",type="A"},
-			{name="GETIMPORT",type="AD",aux=true},
-			{name="GETTABLE",type="ABC"},{name="SETTABLE",type="ABC"},
-			{name="GETTABLEKS",type="ABC",aux=true},{name="SETTABLEKS",type="ABC",aux=true},
-			{name="GETTABLEN",type="ABC"},{name="SETTABLEN",type="ABC"},
-			{name="NEWCLOSURE",type="AD"},{name="NAMECALL",type="ABC",aux=true},
-			{name="CALL",type="ABC"},{name="RETURN",type="AB"},
-			{name="JUMP",type="sD"},{name="JUMPBACK",type="sD"},
-			{name="JUMPIF",type="AsD"},{name="JUMPIFNOT",type="AsD"},
-			{name="JUMPIFEQ",type="AsD",aux=true},{name="JUMPIFLE",type="AsD",aux=true},
-			{name="JUMPIFLT",type="AsD",aux=true},{name="JUMPIFNOTEQ",type="AsD",aux=true},
-			{name="JUMPIFNOTLE",type="AsD",aux=true},{name="JUMPIFNOTLT",type="AsD",aux=true},
-			{name="ADD",type="ABC"},{name="SUB",type="ABC"},{name="MUL",type="ABC"},
-			{name="DIV",type="ABC"},{name="MOD",type="ABC"},{name="POW",type="ABC"},
-			{name="ADDK",type="ABC"},{name="SUBK",type="ABC"},{name="MULK",type="ABC"},
-			{name="DIVK",type="ABC"},{name="MODK",type="ABC"},{name="POWK",type="ABC"},
-			{name="AND",type="ABC"},{name="OR",type="ABC"},
-			{name="ANDK",type="ABC"},{name="ORK",type="ABC"},
-			{name="CONCAT",type="ABC"},
-			{name="NOT",type="AB"},{name="MINUS",type="AB"},{name="LENGTH",type="AB"},
-			{name="NEWTABLE",type="AB",aux=true},{name="DUPTABLE",type="AD"},
-			{name="SETLIST",type="ABC",aux=true},
-			{name="FORNPREP",type="AsD"},{name="FORNLOOP",type="AsD"},
-			{name="FORGLOOP",type="AsD",aux=true},
-			{name="FORGPREP_INEXT",type="A"},
-			{name="FASTCALL3",type="ABC",aux=true},
-			{name="FORGPREP_NEXT",type="A"},{name="NATIVECALL",type="none"},
-			{name="GETVARARGS",type="AB"},{name="DUPCLOSURE",type="AD"},
-			{name="PREPVARARGS",type="A"},{name="LOADKX",type="A",aux=true},
-			{name="JUMPX",type="E"},{name="FASTCALL",type="AC"},
-			{name="COVERAGE",type="E"},{name="CAPTURE",type="AB"},
-			{name="SUBRK",type="ABC"},{name="DIVRK",type="ABC"},
-			{name="FASTCALL1",type="ABC"},
-			{name="FASTCALL2",type="ABC",aux=true},{name="FASTCALL2K",type="ABC",aux=true},
-			{name="FORGPREP",type="AsD"},
-			{name="JUMPXEQKNIL",type="AsD",aux=true},{name="JUMPXEQKB",type="AsD",aux=true},
-			{name="JUMPXEQKN",type="AsD",aux=true},{name="JUMPXEQKS",type="AsD",aux=true},
-			{name="IDIV",type="ABC"},{name="IDIVK",type="ABC"},
-			{name="_COUNT",type="none"},
-		},
-		BytecodeTag = {
-			LBC_VERSION_MIN=3, LBC_VERSION_MAX=6,
-			LBC_TYPE_VERSION_MIN=1, LBC_TYPE_VERSION_MAX=3,
-			LBC_CONSTANT_NIL=0, LBC_CONSTANT_BOOLEAN=1, LBC_CONSTANT_NUMBER=2,
-			LBC_CONSTANT_STRING=3, LBC_CONSTANT_IMPORT=4, LBC_CONSTANT_TABLE=5,
-			LBC_CONSTANT_CLOSURE=6, LBC_CONSTANT_VECTOR=7,
-		},
-		BytecodeType = {
-			LBC_TYPE_NIL=0,LBC_TYPE_BOOLEAN=1,LBC_TYPE_NUMBER=2,LBC_TYPE_STRING=3,
-			LBC_TYPE_TABLE=4,LBC_TYPE_FUNCTION=5,LBC_TYPE_THREAD=6,LBC_TYPE_USERDATA=7,
-			LBC_TYPE_VECTOR=8,LBC_TYPE_BUFFER=9,LBC_TYPE_ANY=15,
-			LBC_TYPE_TAGGED_USERDATA_BASE=64,LBC_TYPE_TAGGED_USERDATA_END=64+32,
-			LBC_TYPE_OPTIONAL_BIT=bit32.lshift(1,7),LBC_TYPE_INVALID=256,
-		},
-		CaptureType  = {LCT_VAL=0,LCT_REF=1,LCT_UPVAL=2},
-		BuiltinFunction = {
-			LBF_NONE=0,LBF_ASSERT=1,LBF_MATH_ABS=2,LBF_MATH_ACOS=3,LBF_MATH_ASIN=4,
-			LBF_MATH_ATAN2=5,LBF_MATH_ATAN=6,LBF_MATH_CEIL=7,LBF_MATH_COSH=8,
-			LBF_MATH_COS=9,LBF_MATH_DEG=10,LBF_MATH_EXP=11,LBF_MATH_FLOOR=12,
-			LBF_MATH_FMOD=13,LBF_MATH_FREXP=14,LBF_MATH_LDEXP=15,LBF_MATH_LOG10=16,
-			LBF_MATH_LOG=17,LBF_MATH_MAX=18,LBF_MATH_MIN=19,LBF_MATH_MODF=20,
-			LBF_MATH_POW=21,LBF_MATH_RAD=22,LBF_MATH_SINH=23,LBF_MATH_SIN=24,
-			LBF_MATH_SQRT=25,LBF_MATH_TANH=26,LBF_MATH_TAN=27,
-			LBF_BIT32_ARSHIFT=28,LBF_BIT32_BAND=29,LBF_BIT32_BNOT=30,LBF_BIT32_BOR=31,
-			LBF_BIT32_BXOR=32,LBF_BIT32_BTEST=33,LBF_BIT32_EXTRACT=34,
-			LBF_BIT32_LROTATE=35,LBF_BIT32_LSHIFT=36,LBF_BIT32_REPLACE=37,
-			LBF_BIT32_RROTATE=38,LBF_BIT32_RSHIFT=39,LBF_TYPE=40,
-			LBF_STRING_BYTE=41,LBF_STRING_CHAR=42,LBF_STRING_LEN=43,LBF_TYPEOF=44,
-			LBF_STRING_SUB=45,LBF_MATH_CLAMP=46,LBF_MATH_SIGN=47,LBF_MATH_ROUND=48,
-			LBF_RAWSET=49,LBF_RAWGET=50,LBF_RAWEQUAL=51,LBF_TABLE_INSERT=52,
-			LBF_TABLE_UNPACK=53,LBF_VECTOR=54,LBF_BIT32_COUNTLZ=55,LBF_BIT32_COUNTRZ=56,
-			LBF_SELECT_VARARG=57,LBF_RAWLEN=58,LBF_BIT32_EXTRACTK=59,
-			LBF_GETMETATABLE=60,LBF_SETMETATABLE=61,LBF_TONUMBER=62,LBF_TOSTRING=63,
-			LBF_BIT32_BYTESWAP=64,
-			LBF_BUFFER_READI8=65,LBF_BUFFER_READU8=66,LBF_BUFFER_WRITEU8=67,
-			LBF_BUFFER_READI16=68,LBF_BUFFER_READU16=69,LBF_BUFFER_WRITEU16=70,
-			LBF_BUFFER_READI32=71,LBF_BUFFER_READU32=72,LBF_BUFFER_WRITEU32=73,
-			LBF_BUFFER_READF32=74,LBF_BUFFER_WRITEF32=75,LBF_BUFFER_READF64=76,
-			LBF_BUFFER_WRITEF64=77,
-			LBF_VECTOR_MAGNITUDE=78,LBF_VECTOR_NORMALIZE=79,LBF_VECTOR_CROSS=80,
-			LBF_VECTOR_DOT=81,LBF_VECTOR_FLOOR=82,LBF_VECTOR_CEIL=83,
-			LBF_VECTOR_ABS=84,LBF_VECTOR_SIGN=85,LBF_VECTOR_CLAMP=86,
-			LBF_VECTOR_MIN=87,LBF_VECTOR_MAX=88,
-		},
-		ProtoFlag = {
-			LPF_NATIVE_MODULE  = bit32.lshift(1,0),
-			LPF_NATIVE_COLD    = bit32.lshift(1,1),
-			LPF_NATIVE_FUNCTION= bit32.lshift(1,2),
-		},
-	}
-	function Luau:INSN_OP(i)  return bit32.band(i,0xFF) end
-	function Luau:INSN_A(i)   return bit32.band(bit32.rshift(i,8),0xFF) end
-	function Luau:INSN_B(i)   return bit32.band(bit32.rshift(i,16),0xFF) end
-	function Luau:INSN_C(i)   return bit32.band(bit32.rshift(i,24),0xFF) end
-	function Luau:INSN_D(i)   return bit32.rshift(i,16) end
-	function Luau:INSN_sD(i)
-		local D=self:INSN_D(i); return (D>0x7FFF and D<=0xFFFF) and (-(0xFFFF-D)-1) or D
-	end
-	function Luau:INSN_E(i)   return bit32.rshift(i,8) end
-	function Luau:GetBaseTypeString(t, checkOpt)
-		local BT=self.BytecodeType
-		local tag=bit32.band(t,bit32.bnot(BT.LBC_TYPE_OPTIONAL_BIT))
-		local names={[BT.LBC_TYPE_NIL]="nil",[BT.LBC_TYPE_BOOLEAN]="boolean",
-			[BT.LBC_TYPE_NUMBER]="number",[BT.LBC_TYPE_STRING]="string",
-			[BT.LBC_TYPE_TABLE]="table",[BT.LBC_TYPE_FUNCTION]="function",
-			[BT.LBC_TYPE_THREAD]="thread",[BT.LBC_TYPE_USERDATA]="userdata",
-			[BT.LBC_TYPE_VECTOR]="Vector3",[BT.LBC_TYPE_BUFFER]="buffer",
-			[BT.LBC_TYPE_ANY]="any"}
-		local r=names[tag] or "unknown"
-		if checkOpt then
-			r ..= (bit32.band(t,BT.LBC_TYPE_OPTIONAL_BIT)==0) and "" or "?"
-		end
-		return r
-	end
-	function Luau:GetBuiltinInfo(bfid)
-		local BF=self.BuiltinFunction
-		local map={
-			[BF.LBF_NONE]="none",[BF.LBF_ASSERT]="assert",
-			[BF.LBF_TYPE]="type",[BF.LBF_TYPEOF]="typeof",
-			[BF.LBF_RAWSET]="rawset",[BF.LBF_RAWGET]="rawget",
-			[BF.LBF_RAWEQUAL]="rawequal",[BF.LBF_RAWLEN]="rawlen",
-			[BF.LBF_TABLE_UNPACK]="unpack",[BF.LBF_SELECT_VARARG]="select",
-			[BF.LBF_GETMETATABLE]="getmetatable",[BF.LBF_SETMETATABLE]="setmetatable",
-			[BF.LBF_TONUMBER]="tonumber",[BF.LBF_TOSTRING]="tostring",
-			[BF.LBF_MATH_ABS]="math.abs",[BF.LBF_MATH_ACOS]="math.acos",
-			[BF.LBF_MATH_ASIN]="math.asin",[BF.LBF_MATH_ATAN2]="math.atan2",
-			[BF.LBF_MATH_ATAN]="math.atan",[BF.LBF_MATH_CEIL]="math.ceil",
-			[BF.LBF_MATH_COSH]="math.cosh",[BF.LBF_MATH_COS]="math.cos",
-			[BF.LBF_MATH_DEG]="math.deg",[BF.LBF_MATH_EXP]="math.exp",
-			[BF.LBF_MATH_FLOOR]="math.floor",[BF.LBF_MATH_FMOD]="math.fmod",
-			[BF.LBF_MATH_FREXP]="math.frexp",[BF.LBF_MATH_LDEXP]="math.ldexp",
-			[BF.LBF_MATH_LOG10]="math.log10",[BF.LBF_MATH_LOG]="math.log",
-			[BF.LBF_MATH_MAX]="math.max",[BF.LBF_MATH_MIN]="math.min",
-			[BF.LBF_MATH_MODF]="math.modf",[BF.LBF_MATH_POW]="math.pow",
-			[BF.LBF_MATH_RAD]="math.rad",[BF.LBF_MATH_SINH]="math.sinh",
-			[BF.LBF_MATH_SIN]="math.sin",[BF.LBF_MATH_SQRT]="math.sqrt",
-			[BF.LBF_MATH_TANH]="math.tanh",[BF.LBF_MATH_TAN]="math.tan",
-			[BF.LBF_MATH_CLAMP]="math.clamp",[BF.LBF_MATH_SIGN]="math.sign",
-			[BF.LBF_MATH_ROUND]="math.round",
-			[BF.LBF_BIT32_ARSHIFT]="bit32.arshift",[BF.LBF_BIT32_BAND]="bit32.band",
-			[BF.LBF_BIT32_BNOT]="bit32.bnot",[BF.LBF_BIT32_BOR]="bit32.bor",
-			[BF.LBF_BIT32_BXOR]="bit32.bxor",[BF.LBF_BIT32_BTEST]="bit32.btest",
-			[BF.LBF_BIT32_EXTRACT]="bit32.extract",[BF.LBF_BIT32_EXTRACTK]="bit32.extract",
-			[BF.LBF_BIT32_LROTATE]="bit32.lrotate",[BF.LBF_BIT32_LSHIFT]="bit32.lshift",
-			[BF.LBF_BIT32_REPLACE]="bit32.replace",[BF.LBF_BIT32_RROTATE]="bit32.rrotate",
-			[BF.LBF_BIT32_RSHIFT]="bit32.rshift",[BF.LBF_BIT32_COUNTLZ]="bit32.countlz",
-			[BF.LBF_BIT32_COUNTRZ]="bit32.countrz",[BF.LBF_BIT32_BYTESWAP]="bit32.byteswap",
-			[BF.LBF_STRING_BYTE]="string.byte",[BF.LBF_STRING_CHAR]="string.char",
-			[BF.LBF_STRING_LEN]="string.len",[BF.LBF_STRING_SUB]="string.sub",
-			[BF.LBF_TABLE_INSERT]="table.insert",[BF.LBF_VECTOR]="Vector3.new",
-			[BF.LBF_BUFFER_READI8]="buffer.readi8",[BF.LBF_BUFFER_READU8]="buffer.readu8",
-			[BF.LBF_BUFFER_WRITEU8]="buffer.writeu8",[BF.LBF_BUFFER_READI16]="buffer.readi16",
-			[BF.LBF_BUFFER_READU16]="buffer.readu16",[BF.LBF_BUFFER_WRITEU16]="buffer.writeu16",
-			[BF.LBF_BUFFER_READI32]="buffer.readi32",[BF.LBF_BUFFER_READU32]="buffer.readu32",
-			[BF.LBF_BUFFER_WRITEU32]="buffer.writeu32",[BF.LBF_BUFFER_READF32]="buffer.readf32",
-			[BF.LBF_BUFFER_WRITEF32]="buffer.writef32",[BF.LBF_BUFFER_READF64]="buffer.readf64",
-			[BF.LBF_BUFFER_WRITEF64]="buffer.writef64",
-			[BF.LBF_VECTOR_MAGNITUDE]="vector.magnitude",[BF.LBF_VECTOR_NORMALIZE]="vector.normalize",
-			[BF.LBF_VECTOR_CROSS]="vector.cross",[BF.LBF_VECTOR_DOT]="vector.dot",
-			[BF.LBF_VECTOR_FLOOR]="vector.floor",[BF.LBF_VECTOR_CEIL]="vector.ceil",
-			[BF.LBF_VECTOR_ABS]="vector.abs",[BF.LBF_VECTOR_SIGN]="vector.sign",
-			[BF.LBF_VECTOR_CLAMP]="vector.clamp",[BF.LBF_VECTOR_MIN]="vector.min",
-			[BF.LBF_VECTOR_MAX]="vector.max",
-		}
-		return map[bfid] or ("builtin#"..tostring(bfid))
-	end
-	do
-		local raw = Luau.OpCode
-		local encoded = {}
-		for i, v in raw do
-			local case = bit32.band((i-1)*CASE_MULTIPLIER, 0xFF)
-			encoded[case] = v
-		end
-		Luau.OpCode = encoded
-	end
-	local DEFAULT_OPTIONS = {
-		EnabledRemarks       = {ColdRemark=false, InlineRemark=true},
-		DecompilerTimeout    = 10,
-		DecompilerMode       = "lift",
-		ReaderFloatPrecision = 7,
-		ShowDebugInformation = false,
-		ShowInstructionLines = false,
-		ShowOperationIndex   = false,
-		ShowOperationNames   = false,
-		ShowTrivialOperations= false,
-		UseTypeInfo          = true,
-		ListUsedGlobals      = true,
-		ReturnElapsedTime    = false,
-		CleanMode            = true,  -- strip prefix, use debug names, suppress boilerplate
-	}
-	local LuauCompileUserdataInfo = true
-	pcall(function()
-		local ok, r = pcall(function() return game:GetFastFlag("LuauCompileUserdataInfo") end)
-		if ok then LuauCompileUserdataInfo = r end
-	end)
-	local LuauOpCode        = Luau.OpCode
-	local LuauBytecodeTag   = Luau.BytecodeTag
-	local LuauBytecodeType  = Luau.BytecodeType
-	local LuauCaptureType   = Luau.CaptureType
-	local LuauProtoFlag     = Luau.ProtoFlag
-	local function toBoolean(v)      return v ~= 0 end
-	local function toEscapedString(v)
-		if type(v) == "string" then
-			return string.format("%q", v)
-		end
-		return tostring(v)
-	end
-	local function formatIndexString(key)
-		if type(key) == "string" and key:match("^[%a_][%w_]*$") then
-			return "." .. key
-		end
-		return "[" .. toEscapedString(key) .. "]"
-	end
-	local function padLeft(v, ch, n)
-		local s = tostring(v); return string.rep(ch, math.max(0, n-#s)) .. s
-	end
-	local function padRight(v, ch, n)
-		local s = tostring(v); return s .. string.rep(ch, math.max(0, n-#s))
-	end
-	local ROBLOX_GLOBALS = {
-		"game","workspace","script","plugin","settings","shared","UserSettings",
-		"print","warn","error","assert","pcall","xpcall","require","select",
-		"pairs","ipairs","next","unpack","type","typeof","tostring","tonumber",
-		"setmetatable","getmetatable","rawset","rawget","rawequal","rawlen",
-		"math","table","string","bit32","coroutine","os","utf8","task","buffer",
-		"Instance","Enum","Vector3","Vector2","CFrame","Color3","BrickColor",
-		"UDim","UDim2","Ray","Axes","Faces","NumberRange","NumberSequence",
-		"ColorSequence","TweenInfo","RaycastParams","OverlapParams",
-		"tick","time","wait","delay","spawn","_G","_VERSION",
-	}
-	local function isGlobal(key)
-		for _, v in ipairs(ROBLOX_GLOBALS) do if v == key then return true end end
-		return false
-	end
-	local function Decompile(bytecode, options)
-		local bytecodeVersion, typeEncodingVersion
-		Reader:Set(options.ReaderFloatPrecision)
-		local reader = Reader.new(bytecode)
-		local function disassemble()
-			if bytecodeVersion >= 4 then
-				typeEncodingVersion = reader:nextByte()
-			end
-			local stringTable = {}
-			local function readStringTable()
-				local n = reader:nextVarInt()
-				for i = 1, n do stringTable[i] = reader:nextString() end
-			end
-			local userdataTypes = {}
-			local function readUserdataTypes()
-				if LuauCompileUserdataInfo then
-					while true do
-						local idx = reader:nextByte()
-						if idx == 0 then break end
-						userdataTypes[idx] = reader:nextVarInt()
-					end
-				end
-			end
-			local protoTable = {}
-			local function readProtoTable()
-				local n = reader:nextVarInt()
-				for i = 1, n do
-					local protoId = i - 1
-					local proto = {
-						id=protoId, instructions={}, constants={},
-						captures={}, innerProtos={}, instructionLineInfo={},
-					}
-					protoTable[protoId] = proto
-					proto.maxStackSize  = reader:nextByte()
-					proto.numParams     = reader:nextByte()
-					proto.numUpvalues   = reader:nextByte()
-					proto.isVarArg      = toBoolean(reader:nextByte())
-					if bytecodeVersion >= 4 then
-						proto.flags = reader:nextByte()
-						local resultTypedParams, resultTypedUpvalues, resultTypedLocals = {}, {}, {}
-						local allTypeInfoSize = reader:nextVarInt()
-						local hasTypeInfo = allTypeInfoSize > 0
-						proto.hasTypeInfo = hasTypeInfo
-						if hasTypeInfo then
-							local totalTypedParams   = allTypeInfoSize
-							local totalTypedUpvalues = 0
-							local totalTypedLocals   = 0
-							if typeEncodingVersion and typeEncodingVersion > 1 then
-								totalTypedParams   = reader:nextVarInt()
-								totalTypedUpvalues = reader:nextVarInt()
-								totalTypedLocals   = reader:nextVarInt()
-							end
-							if totalTypedParams > 0 then
-								resultTypedParams = reader:nextBytes(totalTypedParams)
-								table.remove(resultTypedParams, 1)
-								table.remove(resultTypedParams, 1)
-							end
-							for j = 1, totalTypedUpvalues do
-								resultTypedUpvalues[j] = {type=reader:nextByte()}
-							end
-							for j = 1, totalTypedLocals do
-								local lt  = reader:nextByte()
-								local lr  = reader:nextByte()
-								local lsp = reader:nextVarInt() + 1
-								local lep = reader:nextVarInt() + lsp - 1
-								resultTypedLocals[j] = {type=lt, register=lr, startPC=lsp}
-							end
+		local protoTable = {}
+		local function readProtoTable()
+			local n = reader:nextVarInt()
+			for i = 1, n do
+				local protoId = i - 1
+				local proto = {
+					id=protoId, instructions={}, constants={},
+					captures={}, innerProtos={}, instructionLineInfo={},
+				}
+				protoTable[protoId] = proto
+				proto.maxStackSize  = reader:nextByte()
+				proto.numParams     = reader:nextByte()
+				proto.numUpvalues   = reader:nextByte()
+				proto.isVarArg      = toBoolean(reader:nextByte())
+				if bytecodeVersion >= 4 then
+					proto.flags = reader:nextByte()
+					local resultTypedParams, resultTypedUpvalues, resultTypedLocals = {}, {}, {}
+					local allTypeInfoSize = reader:nextVarInt()
+					local hasTypeInfo = allTypeInfoSize > 0
+					proto.hasTypeInfo = hasTypeInfo
+					if hasTypeInfo then
+						local totalTypedParams   = allTypeInfoSize
+						local totalTypedUpvalues = 0
+						local totalTypedLocals   = 0
+						if typeEncodingVersion and typeEncodingVersion > 1 then
+							totalTypedParams   = reader:nextVarInt()
+							totalTypedUpvalues = reader:nextVarInt()
+							totalTypedLocals   = reader:nextVarInt()
 						end
-						proto.typedParams   = resultTypedParams
-						proto.typedUpvalues = resultTypedUpvalues
-						proto.typedLocals   = resultTypedLocals
+						if totalTypedParams > 0 then
+							resultTypedParams = reader:nextBytes(totalTypedParams)
+							table.remove(resultTypedParams, 1)
+							table.remove(resultTypedParams, 1)
+						end
+						for j = 1, totalTypedUpvalues do
+							resultTypedUpvalues[j] = {type=reader:nextByte()}
+						end
+						for j = 1, totalTypedLocals do
+							local lt  = reader:nextByte()
+							local lr  = reader:nextByte()
+							local lsp = reader:nextVarInt() + 1
+							local lep = reader:nextVarInt() + lsp - 1
+							resultTypedLocals[j] = {type=lt, register=lr, startPC=lsp}
+						end
 					end
-					proto.sizeInstructions = reader:nextVarInt()
+					proto.typedParams   = resultTypedParams
+					proto.typedUpvalues = resultTypedUpvalues
+					proto.typedLocals   = resultTypedLocals
+				end
+				proto.sizeInstructions = reader:nextVarInt()
+				for j = 1, proto.sizeInstructions do
+					proto.instructions[j] = reader:nextUInt32()
+				end
+				proto.sizeConstants = reader:nextVarInt()
+				for j = 1, proto.sizeConstants do
+					local constType  = reader:nextByte()
+					local constValue
+					local BT = LuauBytecodeTag
+					if constType == BT.LBC_CONSTANT_BOOLEAN then
+						constValue = toBoolean(reader:nextByte())
+					elseif constType == BT.LBC_CONSTANT_NUMBER then
+						constValue = reader:nextDouble()
+					elseif constType == BT.LBC_CONSTANT_STRING then
+						constValue = stringTable[reader:nextVarInt()]
+					elseif constType == BT.LBC_CONSTANT_IMPORT then
+						local id = reader:nextUInt32()
+						local idxCount = bit32.rshift(id, 30)
+						local ci1 = bit32.band(bit32.rshift(id,20), 0x3FF)
+						local ci2 = bit32.band(bit32.rshift(id,10), 0x3FF)
+						local ci3 = bit32.band(id, 0x3FF)
+						local tag = ""
+						local function kv(idx) return proto.constants[idx+1] end
+						if     idxCount == 1 then tag = tostring(kv(ci1) and kv(ci1).value or "")
+						elseif idxCount == 2 then tag = tostring(kv(ci1) and kv(ci1).value or "")
+							.."."..tostring(kv(ci2) and kv(ci2).value or "")
+						elseif idxCount == 3 then tag = tostring(kv(ci1) and kv(ci1).value or "")
+							.."."..tostring(kv(ci2) and kv(ci2).value or "")
+							.."."..tostring(kv(ci3) and kv(ci3).value or "")
+						end
+						constValue = tag
+					elseif constType == BT.LBC_CONSTANT_TABLE then
+						local sz = reader:nextVarInt()
+						local keys = {}
+						for k = 1, sz do keys[k] = reader:nextVarInt()+1 end
+						constValue = {size=sz, keys=keys}
+					elseif constType == BT.LBC_CONSTANT_CLOSURE then
+						constValue = reader:nextVarInt() + 1
+					elseif constType == BT.LBC_CONSTANT_VECTOR then
+						local x,y,z,w = reader:nextFloat(),reader:nextFloat(),reader:nextFloat(),reader:nextFloat()
+						constValue = w == 0 and ("Vector3.new("..x..","..y..","..z..")")
+							or ("vector.create("..x..","..y..","..z..","..w..")")
+					end
+					proto.constants[j] = {type=constType, value=constValue}
+				end
+				proto.sizeInnerProtos = reader:nextVarInt()
+				for j = 1, proto.sizeInnerProtos do
+					proto.innerProtos[j] = protoTable[reader:nextVarInt()]
+				end
+				proto.lineDefined = reader:nextVarInt()
+				local nameId = reader:nextVarInt()
+				proto.name = stringTable[nameId]
+				local hasLineInfo = toBoolean(reader:nextByte())
+				proto.hasLineInfo = hasLineInfo
+				if hasLineInfo then
+					local lgap = reader:nextByte()
+					local baselineSize = bit32.rshift(proto.sizeInstructions-1, lgap)+1
+					local smallLineInfo, absLineInfo = {}, {}
+					local lastOffset, lastLine = 0, 0
 					for j = 1, proto.sizeInstructions do
-						proto.instructions[j] = reader:nextUInt32()
+						local b = reader:nextSignedByte()
+						lastOffset += b
+						smallLineInfo[j] = lastOffset
 					end
-					proto.sizeConstants = reader:nextVarInt()
-					for j = 1, proto.sizeConstants do
-						local constType  = reader:nextByte()
-						local constValue
-						local BT = LuauBytecodeTag
-						if constType == BT.LBC_CONSTANT_BOOLEAN then
-							constValue = toBoolean(reader:nextByte())
-						elseif constType == BT.LBC_CONSTANT_NUMBER then
-							constValue = reader:nextDouble()
-						elseif constType == BT.LBC_CONSTANT_STRING then
-							constValue = stringTable[reader:nextVarInt()]
-						elseif constType == BT.LBC_CONSTANT_IMPORT then
-							local id = reader:nextUInt32()
-							local idxCount = bit32.rshift(id, 30)
-							local ci1 = bit32.band(bit32.rshift(id,20), 0x3FF)
-							local ci2 = bit32.band(bit32.rshift(id,10), 0x3FF)
-							local ci3 = bit32.band(id, 0x3FF)
-							local tag = ""
-							local function kv(idx) return proto.constants[idx+1] end
-							if     idxCount == 1 then tag = tostring(kv(ci1) and kv(ci1).value or "")
-							elseif idxCount == 2 then tag = tostring(kv(ci1) and kv(ci1).value or "")
-								.."."..tostring(kv(ci2) and kv(ci2).value or "")
-							elseif idxCount == 3 then tag = tostring(kv(ci1) and kv(ci1).value or "")
-								.."."..tostring(kv(ci2) and kv(ci2).value or "")
-								.."."..tostring(kv(ci3) and kv(ci3).value or "")
-							end
-							constValue = tag
-						elseif constType == BT.LBC_CONSTANT_TABLE then
-							local sz = reader:nextVarInt()
-							local keys = {}
-							for k = 1, sz do keys[k] = reader:nextVarInt()+1 end
-							constValue = {size=sz, keys=keys}
-						elseif constType == BT.LBC_CONSTANT_CLOSURE then
-							constValue = reader:nextVarInt() + 1
-						elseif constType == BT.LBC_CONSTANT_VECTOR then
-							local x,y,z,w = reader:nextFloat(),reader:nextFloat(),reader:nextFloat(),reader:nextFloat()
-							constValue = w == 0 and ("Vector3.new("..x..","..y..","..z..")")
-								or ("vector.create("..x..","..y..","..z..","..w..")")
-						end
-						proto.constants[j] = {type=constType, value=constValue}
+					for j = 1, baselineSize do
+						local lc = lastLine + reader:nextInt32()
+						absLineInfo[j-1] = lc
+						lastLine = lc
 					end
-					proto.sizeInnerProtos = reader:nextVarInt()
-					for j = 1, proto.sizeInnerProtos do
-						proto.innerProtos[j] = protoTable[reader:nextVarInt()]
+					local resultLineInfo = {}
+					for j, line in ipairs(smallLineInfo) do
+						local absIdx = bit32.rshift(j-1, lgap)
+						local absLine = absLineInfo[absIdx]
+						local rl = line + absLine
+						if lgap <= 1 and (-line == absLine) then
+							rl += absLineInfo[absIdx+1] or 0
+						end
+						if rl <= 0 then rl += 0x100 end
+						resultLineInfo[j] = rl
 					end
-					proto.lineDefined = reader:nextVarInt()
-					local nameId = reader:nextVarInt()
-					proto.name = stringTable[nameId]
-					local hasLineInfo = toBoolean(reader:nextByte())
-					proto.hasLineInfo = hasLineInfo
-					if hasLineInfo then
-						local lgap = reader:nextByte()
-						local baselineSize = bit32.rshift(proto.sizeInstructions-1, lgap)+1
-						local smallLineInfo, absLineInfo = {}, {}
-						local lastOffset, lastLine = 0, 0
-						for j = 1, proto.sizeInstructions do
-							local b = reader:nextSignedByte()
-							lastOffset += b
-							smallLineInfo[j] = lastOffset
-						end
-						for j = 1, baselineSize do
-							local lc = lastLine + reader:nextInt32()
-							absLineInfo[j-1] = lc
-							lastLine = lc
-						end
-						local resultLineInfo = {}
-						for j, line in ipairs(smallLineInfo) do
-							local absIdx = bit32.rshift(j-1, lgap)
-							local absLine = absLineInfo[absIdx]
-							local rl = line + absLine
-							if lgap <= 1 and (-line == absLine) then
-								rl += absLineInfo[absIdx+1] or 0
-							end
-							if rl <= 0 then rl += 0x100 end
-							resultLineInfo[j] = rl
-						end
-						proto.lineInfoSize = lgap
-						proto.instructionLineInfo = resultLineInfo
+					proto.lineInfoSize = lgap
+					proto.instructionLineInfo = resultLineInfo
+				end
+				local hasDebugInfo = toBoolean(reader:nextByte())
+				proto.hasDebugInfo = hasDebugInfo
+				if hasDebugInfo then
+					local totalLocals = reader:nextVarInt()
+					local debugLocals = {}
+					for j = 1, totalLocals do
+						debugLocals[j] = {
+							name     = stringTable[reader:nextVarInt()],
+							startPC  = reader:nextVarInt(),
+							endPC    = reader:nextVarInt(),
+							register = reader:nextByte(),
+						}
 					end
-					local hasDebugInfo = toBoolean(reader:nextByte())
-					proto.hasDebugInfo = hasDebugInfo
-					if hasDebugInfo then
-						local totalLocals = reader:nextVarInt()
-						local debugLocals = {}
-						for j = 1, totalLocals do
-							debugLocals[j] = {
-								name     = stringTable[reader:nextVarInt()],
-								startPC  = reader:nextVarInt(),
-								endPC    = reader:nextVarInt(),
-								register = reader:nextByte(),
-							}
+					proto.debugLocals = debugLocals
+					local totalUpvals = reader:nextVarInt()
+					local debugUpvalues = {}
+					for j = 1, totalUpvals do
+						debugUpvalues[j] = {name=stringTable[reader:nextVarInt()]}
+					end
+					proto.debugUpvalues = debugUpvalues
+				end
+			end
+		end
+		readStringTable()
+		if bytecodeVersion and bytecodeVersion > 5 then readUserdataTypes() end
+		readProtoTable()
+		local mainProtoId = reader:nextVarInt()
+		return mainProtoId, protoTable
+	end
+	local function organize()
+		local mainProtoId, protoTable = disassemble()
+		local mainProto = protoTable[mainProtoId]
+		mainProto.main = true
+		local registerActions = {}
+		local function baseProto(proto)
+			local protoRegisterActions = {}
+			registerActions[proto.id] = {proto=proto, actions=protoRegisterActions}
+			local instructions = proto.instructions
+			local innerProtos  = proto.innerProtos
+			local constants    = proto.constants
+			local captures     = proto.captures
+			local flags        = proto.flags
+			local function collectCaptures(baseIdx, p)
+				local nup = p.numUpvalues
+				if nup > 0 then
+					local _c = p.captures
+					for j = 1, nup do
+						local cap = instructions[baseIdx + j]
+						local ctype = Luau:INSN_A(cap)
+						local sreg  = Luau:INSN_B(cap)
+						if ctype == LuauCaptureType.LCT_VAL or ctype == LuauCaptureType.LCT_REF then
+							_c[j-1] = sreg
+						elseif ctype == LuauCaptureType.LCT_UPVAL then
+							_c[j-1] = captures[sreg]
 						end
-						proto.debugLocals = debugLocals
-						local totalUpvals = reader:nextVarInt()
-						local debugUpvalues = {}
-						for j = 1, totalUpvals do
-							debugUpvalues[j] = {name=stringTable[reader:nextVarInt()]}
-						end
-						proto.debugUpvalues = debugUpvalues
 					end
 				end
 			end
-			readStringTable()
-			if bytecodeVersion and bytecodeVersion > 5 then readUserdataTypes() end
-			readProtoTable()
-			local mainProtoId = reader:nextVarInt()
-			return mainProtoId, protoTable
-		end
-		local function organize()
-			local mainProtoId, protoTable = disassemble()
-			local mainProto = protoTable[mainProtoId]
-			mainProto.main = true
-			local registerActions = {}
-			local function baseProto(proto)
-				local protoRegisterActions = {}
-				registerActions[proto.id] = {proto=proto, actions=protoRegisterActions}
-				local instructions = proto.instructions
-				local innerProtos  = proto.innerProtos
-				local constants    = proto.constants
-				local captures     = proto.captures
-				local flags        = proto.flags
-				local function collectCaptures(baseIdx, p)
-					local nup = p.numUpvalues
-					if nup > 0 then
-						local _c = p.captures
-						for j = 1, nup do
-							local cap = instructions[baseIdx + j]
-							local ctype = Luau:INSN_A(cap)
-							local sreg  = Luau:INSN_B(cap)
-							if ctype == LuauCaptureType.LCT_VAL or ctype == LuauCaptureType.LCT_REF then
-								_c[j-1] = sreg
-							elseif ctype == LuauCaptureType.LCT_UPVAL then
-								_c[j-1] = captures[sreg]
-							end
-						end
-					end
+			local function writeFlags()
+				if type(flags) == "table" then return end
+				local rawFlags = type(flags) == "number" and flags or 0
+				local df = {}
+				if proto.main then
+					df.native = toBoolean(bit32.band(rawFlags, LuauProtoFlag.LPF_NATIVE_MODULE))
+				else
+					df.native = toBoolean(bit32.band(rawFlags, LuauProtoFlag.LPF_NATIVE_FUNCTION))
+					df.cold   = toBoolean(bit32.band(rawFlags, LuauProtoFlag.LPF_NATIVE_COLD))
 				end
-				local function writeFlags()
-					-- guard: flags may already be a table if proto visited twice (DUPCLOSURE)
-					if type(flags) == "table" then return end
-					local rawFlags = type(flags) == "number" and flags or 0
-					local df = {}
-					if proto.main then
-						df.native = toBoolean(bit32.band(rawFlags, LuauProtoFlag.LPF_NATIVE_MODULE))
-					else
-						df.native = toBoolean(bit32.band(rawFlags, LuauProtoFlag.LPF_NATIVE_FUNCTION))
-						df.cold   = toBoolean(bit32.band(rawFlags, LuauProtoFlag.LPF_NATIVE_COLD))
-					end
-					flags = df; proto.flags = df
+				flags = df; proto.flags = df
+			end
+			local function writeInstructions()
+				local auxSkip = false
+				local function reg(act, regs, extra, hide)
+					table.insert(protoRegisterActions, {
+						usedRegisters=regs or {}, extraData=extra,
+						opCode=act, hide=hide
+					})
 				end
-				local function writeInstructions()
-					local auxSkip = false
-					local function reg(act, regs, extra, hide)
-						table.insert(protoRegisterActions, {
-							usedRegisters=regs or {}, extraData=extra,
-							opCode=act, hide=hide
-						})
+				for idx, instruction in ipairs(instructions) do
+					if auxSkip then auxSkip=false; continue end
+					local oci = LuauOpCode[Luau:INSN_OP(instruction)]
+					if not oci then continue end
+					local opn  = oci.name
+					local opt  = oci.type
+					local isAux= oci.aux == true
+					local A,B,C,sD,D,E,aux
+					if     opt=="A"   then A=Luau:INSN_A(instruction)
+					elseif opt=="E"   then E=Luau:INSN_E(instruction)
+					elseif opt=="AB"  then A=Luau:INSN_A(instruction); B=Luau:INSN_B(instruction)
+					elseif opt=="AC"  then A=Luau:INSN_A(instruction); C=Luau:INSN_C(instruction)
+					elseif opt=="ABC" then A=Luau:INSN_A(instruction); B=Luau:INSN_B(instruction); C=Luau:INSN_C(instruction)
+					elseif opt=="AD"  then A=Luau:INSN_A(instruction); D=Luau:INSN_D(instruction)
+					elseif opt=="AsD" then A=Luau:INSN_A(instruction); sD=Luau:INSN_sD(instruction)
+					elseif opt=="sD"  then sD=Luau:INSN_sD(instruction)
 					end
-					for idx, instruction in ipairs(instructions) do
-						if auxSkip then auxSkip=false; continue end
-						local oci = LuauOpCode[Luau:INSN_OP(instruction)]
-						if not oci then continue end
-						local opn  = oci.name
-						local opt  = oci.type
-						local isAux= oci.aux == true
-						local A,B,C,sD,D,E,aux
-						if     opt=="A"   then A=Luau:INSN_A(instruction)
-						elseif opt=="E"   then E=Luau:INSN_E(instruction)
-						elseif opt=="AB"  then A=Luau:INSN_A(instruction); B=Luau:INSN_B(instruction)
-						elseif opt=="AC"  then A=Luau:INSN_A(instruction); C=Luau:INSN_C(instruction)
-						elseif opt=="ABC" then A=Luau:INSN_A(instruction); B=Luau:INSN_B(instruction); C=Luau:INSN_C(instruction)
-						elseif opt=="AD"  then A=Luau:INSN_A(instruction); D=Luau:INSN_D(instruction)
-						elseif opt=="AsD" then A=Luau:INSN_A(instruction); sD=Luau:INSN_sD(instruction)
-						elseif opt=="sD"  then sD=Luau:INSN_sD(instruction)
-						end
-						if isAux then
-							auxSkip=true; reg(oci,nil,nil,true)
-							aux=instructions[idx+1]
-						end
-						local st = not options.ShowTrivialOperations
-						if opn=="NOP" or opn=="BREAK" or opn=="NATIVECALL" then reg(oci,nil,nil,st)
-						elseif opn=="LOADNIL" then reg(oci,{A})
-						elseif opn=="LOADB"   then reg(oci,{A},{B,C})
-						elseif opn=="LOADN"   then reg(oci,{A},{sD})
-						elseif opn=="LOADK"   then reg(oci,{A},{D})
-						elseif opn=="MOVE"    then reg(oci,{A,B})
-						elseif opn=="GETGLOBAL" or opn=="SETGLOBAL" then reg(oci,{A},{aux})
-						elseif opn=="GETUPVAL" or opn=="SETUPVAL"  then reg(oci,{A},{B})
-						elseif opn=="CLOSEUPVALS" then reg(oci,{A},nil,st)
-						elseif opn=="GETIMPORT" then reg(oci,{A},{D,aux})
-						elseif opn=="GETTABLE" or opn=="SETTABLE" then reg(oci,{A,B,C})
-						elseif opn=="GETTABLEKS" or opn=="SETTABLEKS" then reg(oci,{A,B},{C,aux})
-						elseif opn=="GETTABLEN" or opn=="SETTABLEN" then reg(oci,{A,B},{C})
-						elseif opn=="NEWCLOSURE" then
-							reg(oci,{A},{D})
-							local p2=innerProtos[D+1]
-							if p2 then collectCaptures(idx,p2); baseProto(p2) end
-						elseif opn=="DUPCLOSURE" then
-							reg(oci,{A},{D})
-							local c=constants[D+1]
-							if c then local p2=protoTable[c.value-1]; if p2 then collectCaptures(idx,p2); baseProto(p2) end end
-						elseif opn=="NAMECALL"  then reg(oci,{A,B},{C,aux},st)
-						elseif opn=="CALL"      then reg(oci,{A},{B,C})
-						elseif opn=="RETURN"    then reg(oci,{A},{B})
-						elseif opn=="JUMP" or opn=="JUMPBACK" then reg(oci,{},{sD})
-						elseif opn=="JUMPIF" or opn=="JUMPIFNOT" then reg(oci,{A},{sD})
-						elseif opn=="JUMPIFEQ" or opn=="JUMPIFLE" or opn=="JUMPIFLT"
-						    or opn=="JUMPIFNOTEQ" or opn=="JUMPIFNOTLE" or opn=="JUMPIFNOTLT" then
-							reg(oci,{A,aux},{sD})
-						elseif opn=="ADD" or opn=="SUB" or opn=="MUL" or opn=="DIV"
-						    or opn=="MOD" or opn=="POW" then reg(oci,{A,B,C})
-						elseif opn=="ADDK" or opn=="SUBK" or opn=="MULK" or opn=="DIVK"
-						    or opn=="MODK" or opn=="POWK" then reg(oci,{A,B},{C})
-						elseif opn=="AND" or opn=="OR" then reg(oci,{A,B,C})
-						elseif opn=="ANDK" or opn=="ORK" then reg(oci,{A,B},{C})
-						elseif opn=="CONCAT" then
+					if isAux then
+						auxSkip=true; reg(oci,nil,nil,true)
+						aux=instructions[idx+1]
+					end
+					local st = not options.ShowTrivialOperations
+					if opn=="NOP" or opn=="BREAK" or opn=="NATIVECALL" then reg(oci,nil,nil,st)
+					elseif opn=="LOADNIL" then reg(oci,{A})
+					elseif opn=="LOADB"   then reg(oci,{A},{B,C})
+					elseif opn=="LOADN"   then reg(oci,{A},{sD})
+					elseif opn=="LOADK"   then reg(oci,{A},{D})
+					elseif opn=="MOVE"    then reg(oci,{A,B})
+					elseif opn=="GETGLOBAL" or opn=="SETGLOBAL" then reg(oci,{A},{aux})
+					elseif opn=="GETUPVAL" or opn=="SETUPVAL"  then reg(oci,{A},{B})
+					elseif opn=="CLOSEUPVALS" then reg(oci,{A},nil,st)
+					elseif opn=="GETIMPORT" then reg(oci,{A},{D,aux})
+					elseif opn=="GETTABLE" or opn=="SETTABLE" then reg(oci,{A,B,C})
+					elseif opn=="GETTABLEKS" or opn=="SETTABLEKS" then reg(oci,{A,B},{C,aux})
+					elseif opn=="GETTABLEN" or opn=="SETTABLEN" then reg(oci,{A,B},{C})
+					elseif opn=="NEWCLOSURE" then
+						reg(oci,{A},{D})
+						local p2=innerProtos[D+1]
+						if p2 then collectCaptures(idx,p2); baseProto(p2) end
+					elseif opn=="DUPCLOSURE" then
+						reg(oci,{A},{D})
+						local c=constants[D+1]
+						if c then local p2=protoTable[c.value-1]; if p2 then collectCaptures(idx,p2); baseProto(p2) end end
+					elseif opn=="NAMECALL"  then reg(oci,{A,B},{C,aux},st)
+					elseif opn=="CALL"      then reg(oci,{A},{B,C})
+					elseif opn=="RETURN"    then reg(oci,{A},{B})
+					elseif opn=="JUMP" or opn=="JUMPBACK" then reg(oci,{},{sD})
+					elseif opn=="JUMPIF" or opn=="JUMPIFNOT" then reg(oci,{A},{sD})
+					elseif opn=="JUMPIFEQ" or opn=="JUMPIFLE" or opn=="JUMPIFLT"
+					    or opn=="JUMPIFNOTEQ" or opn=="JUMPIFNOTLE" or opn=="JUMPIFNOTLT" then
+						reg(oci,{A,aux},{sD})
+					elseif opn=="ADD" or opn=="SUB" or opn=="MUL" or opn=="DIV"
+					    or opn=="MOD" or opn=="POW" then reg(oci,{A,B,C})
+					elseif opn=="ADDK" or opn=="SUBK" or opn=="MULK" or opn=="DIVK"
+					    or opn=="MODK" or opn=="POWK" then reg(oci,{A,B},{C})
+					elseif opn=="AND" or opn=="OR" then reg(oci,{A,B,C})
+					elseif opn=="ANDK" or opn=="ORK" then reg(oci,{A,B},{C})
+					elseif opn=="CONCAT" then
+						local regs={A}
+						for r=B,C do table.insert(regs,r) end
+						reg(oci,regs)
+					elseif opn=="NOT" or opn=="MINUS" or opn=="LENGTH" then reg(oci,{A,B})
+					elseif opn=="NEWTABLE" then reg(oci,{A},{B,aux})
+					elseif opn=="DUPTABLE" then reg(oci,{A},{D})
+					elseif opn=="SETLIST"  then
+						if C~=0 then
+							local regs={A,B}
+							for k=1,C-2 do table.insert(regs,A+k) end
+							reg(oci,regs,{aux,C})
+						else reg(oci,{A,B},{aux,C}) end
+					elseif opn=="FORNPREP" then reg(oci,{A,A+1,A+2},{sD})
+					elseif opn=="FORNLOOP" then reg(oci,{A},{sD})
+					elseif opn=="FORGLOOP" then
+						local nv=bit32.band(aux or 0,0xFF)
+						local regs={}
+						for k=1,nv do table.insert(regs,A+k) end
+						reg(oci,regs,{sD,aux})
+					elseif opn=="FORGPREP_INEXT" or opn=="FORGPREP_NEXT" then reg(oci,{A,A+1})
+					elseif opn=="FORGPREP"  then reg(oci,{A},{sD})
+					elseif opn=="GETVARARGS" then
+						if B~=0 then
 							local regs={A}
-							for r=B,C do table.insert(regs,r) end
-							reg(oci,regs)
-						elseif opn=="NOT" or opn=="MINUS" or opn=="LENGTH" then reg(oci,{A,B})
-						elseif opn=="NEWTABLE" then reg(oci,{A},{B,aux})
-						elseif opn=="DUPTABLE" then reg(oci,{A},{D})
-						elseif opn=="SETLIST"  then
-							if C~=0 then
-								local regs={A,B}
-								for k=1,C-2 do table.insert(regs,A+k) end
-								reg(oci,regs,{aux,C})
-							else reg(oci,{A,B},{aux,C}) end
-						elseif opn=="FORNPREP" then reg(oci,{A,A+1,A+2},{sD})
-						elseif opn=="FORNLOOP" then reg(oci,{A},{sD})
-						elseif opn=="FORGLOOP" then
-							local nv=bit32.band(aux or 0,0xFF)
-							local regs={}
-							for k=1,nv do table.insert(regs,A+k) end
-							reg(oci,regs,{sD,aux})
-						elseif opn=="FORGPREP_INEXT" or opn=="FORGPREP_NEXT" then reg(oci,{A,A+1})
-						elseif opn=="FORGPREP"  then reg(oci,{A},{sD})
-						elseif opn=="GETVARARGS" then
-							if B~=0 then
-								local regs={A}
-								for k=0,B-1 do table.insert(regs,A+k) end
-								reg(oci,regs,{B})
-							else reg(oci,{A},{B}) end
-						elseif opn=="PREPVARARGS" then reg(oci,{},{A},st)
-						elseif opn=="LOADKX"  then reg(oci,{A},{aux})
-						elseif opn=="JUMPX"   then reg(oci,{},{E})
-						elseif opn=="COVERAGE" then reg(oci,{},{E},st)
-						elseif opn=="JUMPXEQKNIL" or opn=="JUMPXEQKB"
-						    or opn=="JUMPXEQKN"   or opn=="JUMPXEQKS" then
-							reg(oci,{A},{sD,aux})
-						elseif opn=="CAPTURE" then reg(oci,nil,nil,st)
-						elseif opn=="SUBRK" or opn=="DIVRK" then reg(oci,{A,C},{B})
-						elseif opn=="IDIV"  then reg(oci,{A,B,C})
-						elseif opn=="IDIVK" then reg(oci,{A,B},{C})
-						elseif opn=="FASTCALL"  then reg(oci,{},{A,C},st)
-						elseif opn=="FASTCALL1" then reg(oci,{B},{A,C},st)
-						elseif opn=="FASTCALL2" then
-							local r2=bit32.band(aux or 0,0xFF)
-							reg(oci,{B,r2},{A,C},st)
-						elseif opn=="FASTCALL2K" then reg(oci,{B},{A,C,aux},st)
-						elseif opn=="FASTCALL3" then
-							local r2=bit32.band(aux or 0,0xFF)
-							local r3=bit32.rshift(r2,8)
-							reg(oci,{B,r2,r3},{A,C},st)
-						end
+							for k=0,B-1 do table.insert(regs,A+k) end
+							reg(oci,regs,{B})
+						else reg(oci,{A},{B}) end
+					elseif opn=="PREPVARARGS" then reg(oci,{},{A},st)
+					elseif opn=="LOADKX"  then reg(oci,{A},{aux})
+					elseif opn=="JUMPX"   then reg(oci,{},{E})
+					elseif opn=="COVERAGE" then reg(oci,{},{E},st)
+					elseif opn=="JUMPXEQKNIL" or opn=="JUMPXEQKB"
+					    or opn=="JUMPXEQKN"   or opn=="JUMPXEQKS" then
+						reg(oci,{A},{sD,aux})
+					elseif opn=="CAPTURE" then reg(oci,nil,nil,st)
+					elseif opn=="SUBRK" or opn=="DIVRK" then reg(oci,{A,C},{B})
+					elseif opn=="IDIV"  then reg(oci,{A,B,C})
+					elseif opn=="IDIVK" then reg(oci,{A,B},{C})
+					elseif opn=="FASTCALL"  then reg(oci,{},{A,C},st)
+					elseif opn=="FASTCALL1" then reg(oci,{B},{A,C},st)
+					elseif opn=="FASTCALL2" then
+						local r2=bit32.band(aux or 0,0xFF)
+						reg(oci,{B,r2},{A,C},st)
+					elseif opn=="FASTCALL2K" then reg(oci,{B},{A,C,aux},st)
+					elseif opn=="FASTCALL3" then
+						local r2=bit32.band(aux or 0,0xFF)
+						local r3=bit32.rshift(r2,8)
+						reg(oci,{B,r2,r3},{A,C},st)
 					end
 				end
-				writeFlags()
-				writeInstructions()
 			end
-			baseProto(mainProto)
-			return mainProtoId, registerActions, protoTable
+			writeFlags()
+			writeInstructions()
 		end
-		local function finalize(mainProtoId, registerActions, protoTable)
-			local finalResult = ""
-			local totalParameters = 0
-			local usedGlobals    = {}   -- ordered list for display
-			local usedGlobalsSet = {}   -- set for O(1) duplicate check
-			local function isValidGlobal(key)
-				if usedGlobalsSet[key] then return false end
-				return not isGlobal(key)
+		baseProto(mainProto)
+		return mainProtoId, registerActions, protoTable
+	end
+	local function finalize(mainProtoId, registerActions, protoTable)
+		local finalResult = ""
+		local totalParameters = 0
+		local usedGlobals    = {}
+		local usedGlobalsSet = {}
+		local function isValidGlobal(key)
+			if usedGlobalsSet[key] then return false end
+			return not isGlobal(key)
+		end
+		local function processResult(res)
+			local embed = ""
+			if options.ListUsedGlobals and #usedGlobals > 0 then
+				embed = string.format(Strings.USED_GLOBALS, table.concat(usedGlobals, ", "))
 			end
-			local function processResult(res)
-				local embed = ""
-				if options.ListUsedGlobals and #usedGlobals > 0 then
-					embed = string.format(Strings.USED_GLOBALS, table.concat(usedGlobals, ", "))
+			return embed .. res
+		end
+		if options.DecompilerMode == "disasm" then
+			local resultParts = {}
+			local function emit(s) resultParts[#resultParts + 1] = s end
+			local function writeActions(protoActions)
+				local actions  = protoActions.actions
+				local proto    = protoActions.proto
+				local lineInfo = proto.instructionLineInfo
+				local inner    = proto.innerProtos
+				local consts   = proto.constants
+				local caps     = proto.captures
+				local pflags   = proto.flags
+				local numParams= proto.numParams
+				local jumpMarkers = {}
+				local function makeJump(idx) idx-=1; jumpMarkers[idx]=(jumpMarkers[idx] or 0)+1 end
+				totalParameters += numParams
+				if proto.main and pflags and pflags.native then emit("--!native\n") end
+				local function buildRegNames(instrIdx)
+					local names = {}
+					if proto.debugLocals then
+						for _, dl in ipairs(proto.debugLocals) do
+							if instrIdx >= dl.startPC and instrIdx <= dl.endPC then
+								names[dl.register] = dl.name
+							end
+						end
+					end
+					return names
 				end
-				return embed .. res
-			end
-			if options.DecompilerMode == "disasm" then
-				local resultParts = {}
-				local function emit(s) resultParts[#resultParts + 1] = s end
-				local function writeActions(protoActions)
-					local actions  = protoActions.actions
-					local proto    = protoActions.proto
-					local lineInfo = proto.instructionLineInfo
-					local inner    = proto.innerProtos
-					local consts   = proto.constants
-					local caps     = proto.captures
-					local pflags   = proto.flags
-					local numParams= proto.numParams
-					local jumpMarkers = {}
-					local function makeJump(idx) idx-=1; jumpMarkers[idx]=(jumpMarkers[idx] or 0)+1 end
-					totalParameters += numParams
-					if proto.main and pflags and pflags.native then emit("--!native\n") end
-	
-					-- ── Debug name lookups ────────────────────────────────────────────
-					-- Build register-name map from debugLocals: reg → name at a given PC
-					local function buildRegNames(instrIdx)
-						local names = {}
-						if proto.debugLocals then
-							for _, dl in ipairs(proto.debugLocals) do
-								if instrIdx >= dl.startPC and instrIdx <= dl.endPC then
-									names[dl.register] = dl.name
-								end
-							end
+				local function fmtUpv(r)
+					if r == nil then return "upv_unknown" end
+					local du = proto.debugUpvalues
+					if du then
+						local entry = du[r + 1]
+						if entry and entry.name and entry.name ~= "" then
+							return entry.name
 						end
-						return names
 					end
-					-- Upvalue names from debugUpvalues
-					local function fmtUpv(r)
-						if r == nil then return "upv_unknown" end
-						local du = proto.debugUpvalues
-						if du then
-							local entry = du[r + 1]
-							if entry and entry.name and entry.name ~= "" then
-								return entry.name
+					local capturedReg = caps[r]
+					if capturedReg ~= nil and proto.debugLocals then
+						for _, dl in ipairs(proto.debugLocals) do
+							if dl.register == capturedReg and dl.name and dl.name ~= "" then
+								return dl.name
 							end
 						end
-						local capturedReg = caps[r]
-						if capturedReg ~= nil and proto.debugLocals then
-							for _, dl in ipairs(proto.debugLocals) do
-								if dl.register == capturedReg and dl.name and dl.name ~= "" then
-									return dl.name
-								end
-							end
-						end
-						return "upv_" .. tostring(r)
 					end
-					-- Register name: prefer debug name, fall back to p/v scheme
-					local regNameCache = {}
-					local function fmtReg(r, instrIdx)
-						if instrIdx and proto.debugLocals then
-							local cached = regNameCache[instrIdx]
-							if not cached then
-								cached = buildRegNames(instrIdx)
-								regNameCache[instrIdx] = cached
-							end
-							if cached[r] and cached[r] ~= "" then
-								return cached[r]
-							end
+					return "upv_" .. tostring(r)
+				end
+				local regNameCache = {}
+				local function fmtReg(r, instrIdx)
+					if instrIdx and proto.debugLocals then
+						local cached = regNameCache[instrIdx]
+						if not cached then
+							cached = buildRegNames(instrIdx)
+							regNameCache[instrIdx] = cached
 						end
-						local pr = r+1
-						if pr < numParams+1 then
-							return "p"..((totalParameters-numParams)+pr)
+						if cached[r] and cached[r] ~= "" then
+							return cached[r]
 						end
-						return "v"..(r-numParams)
 					end
-					-- Param name helper (for fmtProto)
-					local function paramName(j)
-						if proto.debugLocals then
-							for _, dl in ipairs(proto.debugLocals) do
-								if dl.startPC == 0 and dl.register == j-1 then
-									return dl.name
-								end
-							end
-						end
-						return "p"..(totalParameters+j)
+					local pr = r+1
+					if pr < numParams+1 then
+						return "p"..((totalParameters-numParams)+pr)
 					end
-					local function fmtConst(k)
-						if not k then return "nil" end
-						if k.type == LuauBytecodeTag.LBC_CONSTANT_VECTOR then
-							return tostring(k.value)
+					return "v"..(r-numParams)
+				end
+				local function paramName(j)
+					if proto.debugLocals then
+						for _, dl in ipairs(proto.debugLocals) do
+							if dl.startPC == 0 and dl.register == j-1 then
+								return dl.name
+							end
 						end
-						if type(tonumber(k.value))=="number" then
-							return tostring(tonumber(string.format("%0."..options.ReaderFloatPrecision.."f", k.value)))
-						end
-						return toEscapedString(k.value)
 					end
-					local function fmtProto(p)
-						local body=""
-						if p.flags and p.flags.native then
-							if p.flags.cold and options.EnabledRemarks.ColdRemark then
-								body ..= string.format(Strings.DECOMPILER_REMARK,
-									"This function is marked cold and is not compiled natively")
-							end
-							body ..= "@native "
-						end
-						if p.name then body="local function "..p.name
-						else body="function" end
-						body ..= "("
-						for j=1,p.numParams do
-							local pb=paramName(j)
-							if p.hasTypeInfo and options.UseTypeInfo and p.typedParams and p.typedParams[j] then
-								pb ..= ": "..Luau:GetBaseTypeString(p.typedParams[j],true)
-							end
-							if j~=p.numParams then pb ..= ", " end
-							body ..= pb
-						end
-						if p.isVarArg then
-							body ..= (p.numParams>0) and ", ..." or "..."
-						end
-						body ..= ")\n"
-						if options.ShowDebugInformation then
-							body ..= "-- proto pool id: "..p.id.."\n"
-							body ..= "-- num upvalues: "..p.numUpvalues.."\n"
-							body ..= "-- num inner protos: "..(p.sizeInnerProtos or 0).."\n"
-							body ..= "-- size instructions: "..(p.sizeInstructions or 0).."\n"
-							body ..= "-- size constants: "..(p.sizeConstants or 0).."\n"
-							body ..= "-- lineinfo gap: "..(p.lineInfoSize or "n/a").."\n"
-							body ..= "-- max stack size: "..p.maxStackSize.."\n"
-							body ..= "-- is typed: "..tostring(p.hasTypeInfo).."\n"
-						end
-						return body
+					return "p"..(totalParameters+j)
+				end
+				local function fmtConst(k)
+					if not k then return "nil" end
+					if k.type == LuauBytecodeTag.LBC_CONSTANT_VECTOR then
+						return tostring(k.value)
 					end
-					local function writeProto(reg, p)
-						local body=fmtProto(p)
-						if p.name then
-							emit("\n"..body)
-							writeActions(registerActions[p.id])
-							if not options.CleanMode then
-								emit("end\n"..fmtReg(reg).." = "..p.name)
-							else
-								emit("end")
-							end
+					if type(tonumber(k.value))=="number" then
+						return tostring(tonumber(string.format("%0."..options.ReaderFloatPrecision.."f", k.value)))
+					end
+					return toEscapedString(k.value)
+				end
+				local function fmtProto(p)
+					local body=""
+					if p.flags and p.flags.native then
+						if p.flags.cold and options.EnabledRemarks.ColdRemark then
+							body ..= string.format(Strings.DECOMPILER_REMARK,
+								"This function is marked cold and is not compiled natively")
+						end
+						body ..= "@native "
+					end
+					if p.name then body="local function "..p.name
+					else body="function" end
+					body ..= "("
+					for j=1,p.numParams do
+						local pb=paramName(j)
+						if p.hasTypeInfo and options.UseTypeInfo and p.typedParams and p.typedParams[j] then
+							pb ..= ": "..Luau:GetBaseTypeString(p.typedParams[j],true)
+						end
+						if j~=p.numParams then pb ..= ", " end
+						body ..= pb
+					end
+					if p.isVarArg then
+						body ..= (p.numParams>0) and ", ..." or "..."
+					end
+					body ..= ")\n"
+					if options.ShowDebugInformation then
+						body ..= "-- proto pool id: "..p.id.."\n"
+						body ..= "-- num upvalues: "..p.numUpvalues.."\n"
+						body ..= "-- num inner protos: "..(p.sizeInnerProtos or 0).."\n"
+						body ..= "-- size instructions: "..(p.sizeInstructions or 0).."\n"
+						body ..= "-- size constants: "..(p.sizeConstants or 0).."\n"
+						body ..= "-- lineinfo gap: "..(p.lineInfoSize or "n/a").."\n"
+						body ..= "-- max stack size: "..p.maxStackSize.."\n"
+						body ..= "-- is typed: "..tostring(p.hasTypeInfo).."\n"
+					end
+					return body
+				end
+				local function writeProto(reg, p)
+					local body=fmtProto(p)
+					if p.name then
+						emit("\n"..body)
+						writeActions(registerActions[p.id])
+						if not options.CleanMode then
+							emit("end\n"..fmtReg(reg).." = "..p.name)
 						else
-							emit(fmtReg(reg).." = "..body)
-							writeActions(registerActions[p.id])
 							emit("end")
 						end
-					end
-					-- Instructions that are pure VM bookkeeping in clean mode
-					local CLEAN_SUPPRESS = {
-						CLOSEUPVALS=true, PREPVARARGS=true, COVERAGE=true,
-						CAPTURE=true, FASTCALL=true, FASTCALL1=true,
-						FASTCALL2=true, FASTCALL2K=true, FASTCALL3=true,
-						JUMPX=true, NOP=true, JUMPBACK=true,
-					}
-					for i, action in ipairs(actions) do
-						if action.hide then continue end
-						local ur  = action.usedRegisters
-						local ed  = action.extraData
-						local oci = action.opCode
-						if not oci then continue end
-						local opn = oci.name
-						-- clean mode: skip pure bookkeeping ops
-						if options.CleanMode and CLEAN_SUPPRESS[opn] then continue end
-						-- clean mode: skip bare RETURN with no value at end of proto
-						if options.CleanMode and opn == "RETURN" then
-							local b = ed and ed[1] or 0
-							if b == 1 then continue end  -- RETURN with B=1 means return nothing
-						end
-						-- clean mode: skip MOVE that just wires up a closure assignment
-						-- (those are handled inside writeProto already)
-						if options.CleanMode and opn == "MOVE" and
-						   i > 1 and actions[i-1] and
-						   (actions[i-1].opCode.name == "NEWCLOSURE" or
-						    actions[i-1].opCode.name == "DUPCLOSURE") then
-							continue
-						end
-						-- resolve register names at this instruction index
-						local function R(r) return fmtReg(r, i) end
-						local function handleJumps()
-							local n = jumpMarkers[i]
-							if n then
-								jumpMarkers[i]=nil
-							for _=1,n do emit("end\n") end
-	
-							end
-						end
-						if not options.CleanMode then
-							if options.ShowOperationIndex then
-								emit("["..padLeft(i,"0",3).."] ")
-							end
-							if options.ShowInstructionLines and lineInfo and lineInfo[i] then
-								emit(":"..padLeft(lineInfo[i],"0",3)..":")
-							end
-							if options.ShowOperationNames then
-								emit(padRight(opn," ",15))
-							end
-						end
-						if opn=="LOADNIL" then emit(R(ur[1]).." = nil")
-	
-						elseif opn=="LOADB" then
-							emit(R(ur[1]).." = "..toEscapedString(toBoolean(ed[1])))
-	
-							if ed[2]~=0 then emit(" +"..ed[2]) end
-	
-						elseif opn=="LOADN" then emit(R(ur[1]).." = "..ed[1])
-	
-						elseif opn=="LOADK" then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="MOVE"  then emit(R(ur[1]).." = "..R(ur[2]))
-	
-						elseif opn=="GETGLOBAL" then
-							local gk=tostring(consts[ed[1]+1] and consts[ed[1]+1].value or "")
-							if options.ListUsedGlobals and isValidGlobal(gk) then
-								table.insert(usedGlobals,gk); usedGlobalsSet[gk]=true
-							end
-							emit(R(ur[1]).." = "..gk)
-	
-						elseif opn=="SETGLOBAL" then
-							local gk=tostring(consts[ed[1]+1] and consts[ed[1]+1].value or "")
-							if options.ListUsedGlobals and isValidGlobal(gk) then
-								table.insert(usedGlobals,gk); usedGlobalsSet[gk]=true
-							end
-							emit(gk.." = "..R(ur[1]))
-	
-						elseif opn=="GETUPVAL" then
-							local slot=ed[1]; local rc=caps[slot]
-							emit(R(ur[1]).." = "..fmtUpv(rc))
-	
-						elseif opn=="SETUPVAL" then
-							local slot=ed[1]; local rc=caps[slot]
-							emit(fmtUpv(rc).." = "..R(ur[1]))
-	
-						elseif opn=="CLOSEUPVALS" then emit("-- clear captures from back until: "..ur[1])
-	
-						elseif opn=="GETIMPORT" then
-							local imp=tostring(consts[ed[1]+1] and consts[ed[1]+1].value or "")
-							imp=imp:gsub("%.%.+","."):gsub("^%.",""):gsub("%.$","")
-							local totalIdx = bit32.rshift(ed[2] or 0, 30)
-							if totalIdx==1 and options.ListUsedGlobals and isValidGlobal(imp) then
-								table.insert(usedGlobals,imp); usedGlobalsSet[imp]=true
-							end
-							emit(R(ur[1]).." = "..imp)
-	
-						elseif opn=="GETTABLE" then
-							emit(R(ur[1]).." = "..R(ur[2]).."["..R(ur[3]).."]")
-	
-						elseif opn=="SETTABLE" then
-							emit(R(ur[2]).."["..R(ur[3]).."] = "..R(ur[1]))
-	
-						elseif opn=="GETTABLEKS" then
-							local key = consts[ed[2]+1] and consts[ed[2]+1].value
-							emit(R(ur[1]).." = "..R(ur[2])..formatIndexString(key))
-	
-						elseif opn=="SETTABLEKS" then
-							local key = consts[ed[2]+1] and consts[ed[2]+1].value
-							emit(R(ur[2])..formatIndexString(key).." = "..R(ur[1]))
-	
-						elseif opn=="GETTABLEN" then
-							emit(R(ur[1]).." = "..R(ur[2]).."["..(ed[1]+1).."]")
-	
-						elseif opn=="SETTABLEN" then
-							emit(R(ur[2]).."["..(ed[1]+1).."] = "..R(ur[1]))
-	
-						elseif opn=="NEWCLOSURE" then
-							local p2=inner[ed[1]+1]; if p2 then writeProto(ur[1],p2) end
-						elseif opn=="DUPCLOSURE" then
-							local c=consts[ed[1]+1]
-							if c then
-								local p2=protoTable[c.value-1]; if p2 then writeProto(ur[1],p2) end
-							end
-						elseif opn=="NAMECALL" then
-							if not options.CleanMode then
-								local method=tostring(consts[ed[2]+1] and consts[ed[2]+1].value or "")
-								emit("-- :"..method)
-							end
-	
-						elseif opn=="CALL" then
-							local baseR=ur[1]
-							local nArgs=ed[1]-1; local nRes=ed[2]-1
-							local nmMethod=""; local argOff=0
-							local prev=actions[i-1]
-							if prev and prev.opCode and prev.opCode.name=="NAMECALL" then
-								nmMethod=":"..tostring(consts[prev.extraData[2]+1] and consts[prev.extraData[2]+1].value or "")
-								nArgs-=1; argOff+=1
-							end
-							local callBody=""
-							if nRes==-1 then
-								callBody=""  -- multret: result count unknown, no LHS
-							elseif nRes>0 then
-								local rb=""
-								for k=1,nRes do
-									rb..=R(baseR+k-1)
-									if k~=nRes then rb..=", " end
-								end
-								callBody=rb.." = "
-							end
-							callBody ..= R(baseR)..nmMethod.."("
-							if nArgs==-1 then callBody..="..."
-							elseif nArgs>0 then
-								local ab=""
-								for k=1,nArgs do
-									ab..=R(baseR+k+argOff)
-									if k~=nArgs then ab..=", " end
-								end
-								callBody..=ab
-							end
-							callBody..=")"
-							emit(callBody)
-	
-						elseif opn=="RETURN" then
-							local baseR=ur[1]; local tot=ed[1]-2
-							local rb=""
-							if tot==-2 then rb=" "..R(baseR)..", ..."
-							elseif tot>-1 then
-								rb=" "
-								for k=0,tot do
-									rb..=R(baseR+k)
-									if k~=tot then rb..=", " end
-								end
-							end
-							emit("return"..rb)
-	
-						elseif opn=="JUMP" then emit("-- jump to #"..(i+ed[1]))
-	
-						elseif opn=="JUMPBACK" then emit("-- jump back to #"..(i+ed[1]+1))
-	
-						elseif opn=="JUMPIF" then
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if not "..R(ur[1]).." then -- goto #"..ei)
-	
-						elseif opn=="JUMPIFNOT" then
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if "..R(ur[1]).." then -- goto #"..ei)
-	
-						elseif opn=="JUMPIFEQ" then
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if "..R(ur[1]).." == "..R(ur[2]).." then -- goto #"..ei)
-	
-						elseif opn=="JUMPIFLE" then
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if "..R(ur[1]).." >= "..R(ur[2]).." then -- goto #"..ei)
-	
-						elseif opn=="JUMPIFLT" then
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if "..R(ur[1]).." > "..R(ur[2]).." then -- goto #"..ei)
-	
-						elseif opn=="JUMPIFNOTEQ" then
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if "..R(ur[1]).." ~= "..R(ur[2]).." then -- goto #"..ei)
-	
-						elseif opn=="JUMPIFNOTLE" then
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if "..R(ur[1]).." <= "..R(ur[2]).." then -- goto #"..ei)
-	
-						elseif opn=="JUMPIFNOTLT" then
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if "..R(ur[1]).." < "..R(ur[2]).." then -- goto #"..ei)
-	
-						elseif opn=="ADD"  then emit(R(ur[1]).." = "..R(ur[2]).." + "..R(ur[3]))
-	
-						elseif opn=="SUB"  then emit(R(ur[1]).." = "..R(ur[2]).." - "..R(ur[3]))
-	
-						elseif opn=="MUL"  then emit(R(ur[1]).." = "..R(ur[2]).." * "..R(ur[3]))
-	
-						elseif opn=="DIV"  then emit(R(ur[1]).." = "..R(ur[2]).." / "..R(ur[3]))
-	
-						elseif opn=="MOD"  then emit(R(ur[1]).." = "..R(ur[2]).." % "..R(ur[3]))
-	
-						elseif opn=="POW"  then emit(R(ur[1]).." = "..R(ur[2]).." ^ "..R(ur[3]))
-	
-						elseif opn=="ADDK" then emit(R(ur[1]).." = "..R(ur[2]).." + "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="SUBK" then emit(R(ur[1]).." = "..R(ur[2]).." - "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="MULK" then emit(R(ur[1]).." = "..R(ur[2]).." * "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="DIVK" then emit(R(ur[1]).." = "..R(ur[2]).." / "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="MODK" then emit(R(ur[1]).." = "..R(ur[2]).." % "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="POWK" then emit(R(ur[1]).." = "..R(ur[2]).." ^ "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="AND"  then emit(R(ur[1]).." = "..R(ur[2]).." and "..R(ur[3]))
-	
-						elseif opn=="OR"   then emit(R(ur[1]).." = "..R(ur[2]).." or "..R(ur[3]))
-	
-						elseif opn=="ANDK" then emit(R(ur[1]).." = "..R(ur[2]).." and "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="ORK"  then emit(R(ur[1]).." = "..R(ur[2]).." or "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="CONCAT" then
-							local tgt=table.remove(ur,1)
-							local cb=""
-							for k,r in ipairs(ur) do
-								cb..=fmtReg(r); if k~=#ur then cb..=" .. " end
-							end
-							emit(R(tgt).." = "..cb)
-	
-						elseif opn=="NOT"    then emit(R(ur[1]).." = not "..R(ur[2]))
-	
-						elseif opn=="MINUS"  then emit(R(ur[1]).." = -"..R(ur[2]))
-	
-						elseif opn=="LENGTH" then emit(R(ur[1]).." = #"..R(ur[2]))
-	
-						elseif opn=="NEWTABLE" then
-							emit(R(ur[1]).." = {}")
-	
-							if options.ShowDebugInformation and ed[2] and ed[2]>0 then
-								emit(" ")
-	
-							end
-						elseif opn=="DUPTABLE" then
-							local cv=consts[ed[1]+1]
-							if cv and type(cv.value)=="table" then
-								local tb="{"
-								for k=1,cv.value.size do
-									tb..=fmtConst(consts[cv.value.keys[k]])
-									if k~=cv.value.size then tb..=", " end
-								end
-								emit(R(ur[1]).." = {} -- "..tb.."}")
-	
-							else emit(R(ur[1]).." = {}") end
-	
-						elseif opn=="SETLIST" then
-							local tgt=ur[1]; local src=ur[2]
-							local si=ed[1]; local vc=ed[2]
-							if vc==0 then
-								emit(R(tgt).."["..si.."] = [...]")
-	
-							else
-								local tot2=#ur-1; local cb=""
-								for k=1,tot2 do
-									cb..=R(ur[k]).."["..(si+k-1).."] = "..R(src+k-1)
-									if k~=tot2 then cb..="\n" end
-								end
-								emit(cb)
-	
-							end
-						elseif opn=="FORNPREP" then
-							emit("for "..R(ur[3]).." = "..R(ur[3])..", "..R(ur[1])..", "..R(ur[2]).." do -- end at #"..(i+ed[1]))
-						elseif opn=="FORNLOOP" then
-							emit("end -- iterate + jump to #"..(i+ed[1]))
-	
-						elseif opn=="FORGLOOP" then
-							emit("end -- iterate + jump to #"..(i+ed[1]))
-	
-						elseif opn=="FORGPREP_INEXT" then
-							local base=ur[1]  -- A=iter A+1=state A+2=ctrl; vars at A+3,A+4
-							emit("for "..R(base+3)..", "..R(base+4).." in ipairs("..R(base)..") do")
-	
-						elseif opn=="FORGPREP_NEXT" then
-							local base=ur[1]  -- A=iter A+1=state A+2=ctrl; vars at A+3,A+4
-							emit("for "..R(base+3)..", "..R(base+4).." in pairs("..R(base)..") do")
-	
-						elseif opn=="FORGPREP" then
-							local ei=i+ed[1]+2
-							local ea=actions[ei]
-							local vb=""
-							if ea and ea.usedRegisters and #ea.usedRegisters > 0 then
-								for k,r in ipairs(ea.usedRegisters) do
-									vb..=fmtReg(r, ei); if k~=#ea.usedRegisters then vb..=", " end
-								end
-							else
-								local baseReg=ur[1]; local nVars=2
-								if ea and ea.extraData and ea.extraData[2] then
-									nVars=math.max(1, bit32.band(ea.extraData[2], 0xFF))
-								end
-								local parts={}
-								for k=1,nVars do parts[k]=fmtReg(baseReg+2+(k-1), i) end
-								vb=table.concat(parts, ", ")
-							end
-							emit("for "..vb.." in "..R(ur[1]).." do -- end at #"..ei)
-	
-						elseif opn=="GETVARARGS" then
-							local vc2=ed[1]-1
-							local rb=""
-							if vc2==-1 then rb=R(ur[1])
-							else
-								for k=1,vc2 do
-									rb..=R(ur[k]); if k~=vc2 then rb..=", " end
-								end
-							end
-							emit(rb.." = ...")
-	
-						elseif opn=="PREPVARARGS" then emit("-- ... ; number of fixed args: "..ed[1])
-	
-						elseif opn=="LOADKX" then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="JUMPX"    then emit("-- jump to #"..(i+ed[1]))
-	
-						elseif opn=="COVERAGE" then emit("-- coverage ("..ed[1]..")")
-	
-						elseif opn=="JUMPXEQKNIL" then
-							local rev=bit32.rshift(ed[2] or 0,0x1F)~=1
-							local sign=rev and "~=" or "=="
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if "..R(ur[1]).." "..sign.." nil then -- goto #"..ei)
-	
-						elseif opn=="JUMPXEQKB" then
-							local val=tostring(toBoolean(bit32.band(ed[2] or 0,1)))
-							local rev=bit32.rshift(ed[2] or 0,0x1F)~=1
-							local sign=rev and "~=" or "=="
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if "..R(ur[1]).." "..sign.." "..val.." then -- goto #"..ei)
-	
-						elseif opn=="JUMPXEQKN" or opn=="JUMPXEQKS" then
-							local cidx=bit32.band(ed[2] or 0,0xFFFFFF)
-							local val=fmtConst(consts[cidx+1])
-							local rev=bit32.rshift(ed[2] or 0,0x1F)~=1
-							local sign=rev and "~=" or "=="
-							local ei=i+ed[1]; makeJump(ei)
-							emit("if "..R(ur[1]).." "..sign.." "..val.." then -- goto #"..ei)
-	
-						elseif opn=="CAPTURE"  then emit("-- upvalue capture")
-	
-						elseif opn=="SUBRK"    then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]).." - "..R(ur[2]))
-	
-						elseif opn=="DIVRK"    then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]).." / "..R(ur[2]))
-	
-						elseif opn=="IDIV"     then emit(R(ur[1]).." = "..R(ur[2]).." // "..R(ur[3]))
-	
-						elseif opn=="IDIVK"    then emit(R(ur[1]).." = "..R(ur[2]).." // "..fmtConst(consts[ed[1]+1]))
-	
-						elseif opn=="FASTCALL" then emit("-- FASTCALL; "..Luau:GetBuiltinInfo(ed[1]).."()")
-	
-						elseif opn=="FASTCALL1" then emit("-- FASTCALL1; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..")")
-	
-						elseif opn=="FASTCALL2" then emit("-- FASTCALL2; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..", "..R(ur[2])..")")
-	
-						elseif opn=="FASTCALL2K" then
-							emit("-- FASTCALL2K; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..", "..fmtConst(consts[(ed[3] or 0)+1])..")")
-	
-						elseif opn=="FASTCALL3" then
-							emit("-- FASTCALL3; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..", "..R(ur[2])..", "..R(ur[3])..")")
-	
-						end
-						emit("\n")
-	
-						handleJumps()
+					else
+						emit(fmtReg(reg).." = "..body)
+						writeActions(registerActions[p.id])
+						emit("end")
 					end
 				end
-				writeActions(registerActions[mainProtoId])
-				finalResult = processResult(table.concat(resultParts))
-			elseif options.DecompilerMode == "lift" then
+				local CLEAN_SUPPRESS = {
+					CLOSEUPVALS=true, PREPVARARGS=true, COVERAGE=true,
+					CAPTURE=true, FASTCALL=true, FASTCALL1=true,
+					FASTCALL2=true, FASTCALL2K=true, FASTCALL3=true,
+					JUMPX=true, NOP=true, JUMPBACK=true,
+				}
+				for i, action in ipairs(actions) do
+					if action.hide then continue end
+					local ur  = action.usedRegisters
+					local ed  = action.extraData
+					local oci = action.opCode
+					if not oci then continue end
+					local opn = oci.name
+					if options.CleanMode and CLEAN_SUPPRESS[opn] then continue end
+					if options.CleanMode and opn == "RETURN" then
+						local b = ed and ed[1] or 0
+						if b == 1 then continue end
+					end
+					if options.CleanMode and opn == "MOVE" and
+					   i > 1 and actions[i-1] and
+					   (actions[i-1].opCode.name == "NEWCLOSURE" or
+					    actions[i-1].opCode.name == "DUPCLOSURE") then
+						continue
+					end
+					local function R(r) return fmtReg(r, i) end
+					local function handleJumps()
+						local n = jumpMarkers[i]
+						if n then
+							jumpMarkers[i]=nil
+						for _=1,n do emit("end\n") end
+						end
+					end
+					if not options.CleanMode then
+						if options.ShowOperationIndex then
+							emit("["..padLeft(i,"0",3).."] ")
+						end
+						if options.ShowInstructionLines and lineInfo and lineInfo[i] then
+							emit(":"..padLeft(lineInfo[i],"0",3)..":")
+						end
+						if options.ShowOperationNames then
+							emit(padRight(opn," ",15))
+						end
+					end
+					if opn=="LOADNIL" then emit(R(ur[1]).." = nil")
+					elseif opn=="LOADB" then
+						emit(R(ur[1]).." = "..toEscapedString(toBoolean(ed[1])))
+						if ed[2]~=0 then emit(" +"..ed[2]) end
+					elseif opn=="LOADN" then emit(R(ur[1]).." = "..ed[1])
+					elseif opn=="LOADK" then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="MOVE"  then emit(R(ur[1]).." = "..R(ur[2]))
+					elseif opn=="GETGLOBAL" then
+						local gk=tostring(consts[ed[1]+1] and consts[ed[1]+1].value or "")
+						if options.ListUsedGlobals and isValidGlobal(gk) then
+							table.insert(usedGlobals,gk); usedGlobalsSet[gk]=true
+						end
+						emit(R(ur[1]).." = "..gk)
+					elseif opn=="SETGLOBAL" then
+						local gk=tostring(consts[ed[1]+1] and consts[ed[1]+1].value or "")
+						if options.ListUsedGlobals and isValidGlobal(gk) then
+							table.insert(usedGlobals,gk); usedGlobalsSet[gk]=true
+						end
+						emit(gk.." = "..R(ur[1]))
+					elseif opn=="GETUPVAL" then
+						local slot=ed[1]; local rc=caps[slot]
+						emit(R(ur[1]).." = "..fmtUpv(rc))
+					elseif opn=="SETUPVAL" then
+						local slot=ed[1]; local rc=caps[slot]
+						emit(fmtUpv(rc).." = "..R(ur[1]))
+					elseif opn=="CLOSEUPVALS" then emit("-- clear captures from back until: "..ur[1])
+					elseif opn=="GETIMPORT" then
+						local imp=tostring(consts[ed[1]+1] and consts[ed[1]+1].value or "")
+						imp=imp:gsub("%.%.+","."):gsub("^%.",""):gsub("%.$","")
+						local totalIdx = bit32.rshift(ed[2] or 0, 30)
+						if totalIdx==1 and options.ListUsedGlobals and isValidGlobal(imp) then
+							table.insert(usedGlobals,imp); usedGlobalsSet[imp]=true
+						end
+						emit(R(ur[1]).." = "..imp)
+					elseif opn=="GETTABLE" then
+						emit(R(ur[1]).." = "..R(ur[2]).."["..R(ur[3]).."]")
+					elseif opn=="SETTABLE" then
+						emit(R(ur[2]).."["..R(ur[3]).."] = "..R(ur[1]))
+					elseif opn=="GETTABLEKS" then
+						local key = consts[ed[2]+1] and consts[ed[2]+1].value
+						emit(R(ur[1]).." = "..R(ur[2])..formatIndexString(key))
+					elseif opn=="SETTABLEKS" then
+						local key = consts[ed[2]+1] and consts[ed[2]+1].value
+						emit(R(ur[2])..formatIndexString(key).." = "..R(ur[1]))
+					elseif opn=="GETTABLEN" then
+						emit(R(ur[1]).." = "..R(ur[2]).."["..(ed[1]+1).."]")
+					elseif opn=="SETTABLEN" then
+						emit(R(ur[2]).."["..(ed[1]+1).."] = "..R(ur[1]))
+					elseif opn=="NEWCLOSURE" then
+						local p2=inner[ed[1]+1]; if p2 then writeProto(ur[1],p2) end
+					elseif opn=="DUPCLOSURE" then
+						local c=consts[ed[1]+1]
+						if c then
+							local p2=protoTable[c.value-1]; if p2 then writeProto(ur[1],p2) end
+						end
+					elseif opn=="NAMECALL" then
+						if not options.CleanMode then
+							local method=tostring(consts[ed[2]+1] and consts[ed[2]+1].value or "")
+							emit("-- :"..method)
+						end
+					elseif opn=="CALL" then
+						local baseR=ur[1]
+						local nArgs=ed[1]-1; local nRes=ed[2]-1
+						local nmMethod=""; local argOff=0
+						local prev=actions[i-1]
+						if prev and prev.opCode and prev.opCode.name=="NAMECALL" then
+							nmMethod=":"..tostring(consts[prev.extraData[2]+1] and consts[prev.extraData[2]+1].value or "")
+							nArgs-=1; argOff+=1
+						end
+						local callBody=""
+						if nRes==-1 then
+							callBody=""
+						elseif nRes>0 then
+							local rb=""
+							for k=1,nRes do
+								rb..=R(baseR+k-1)
+								if k~=nRes then rb..=", " end
+							end
+							callBody=rb.." = "
+						end
+						callBody ..= R(baseR)..nmMethod.."("
+						if nArgs==-1 then callBody..="..."
+						elseif nArgs>0 then
+							local ab=""
+							for k=1,nArgs do
+								ab..=R(baseR+k+argOff)
+								if k~=nArgs then ab..=", " end
+							end
+							callBody..=ab
+						end
+						callBody..=")"
+						emit(callBody)
+					elseif opn=="RETURN" then
+						local baseR=ur[1]; local tot=ed[1]-2
+						local rb=""
+						if tot==-2 then rb=" "..R(baseR)..", ..."
+						elseif tot>-1 then
+							rb=" "
+							for k=0,tot do
+								rb..=R(baseR+k)
+								if k~=tot then rb..=", " end
+							end
+						end
+						emit("return"..rb)
+					elseif opn=="JUMP" then emit("-- jump to #"..(i+ed[1]))
+					elseif opn=="JUMPBACK" then emit("-- jump back to #"..(i+ed[1]+1))
+					elseif opn=="JUMPIF" then
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if not "..R(ur[1]).." then -- goto #"..ei)
+					elseif opn=="JUMPIFNOT" then
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if "..R(ur[1]).." then -- goto #"..ei)
+					elseif opn=="JUMPIFEQ" then
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if "..R(ur[1]).." == "..R(ur[2]).." then -- goto #"..ei)
+					elseif opn=="JUMPIFLE" then
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if "..R(ur[1]).." >= "..R(ur[2]).." then -- goto #"..ei)
+					elseif opn=="JUMPIFLT" then
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if "..R(ur[1]).." > "..R(ur[2]).." then -- goto #"..ei)
+					elseif opn=="JUMPIFNOTEQ" then
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if "..R(ur[1]).." ~= "..R(ur[2]).." then -- goto #"..ei)
+					elseif opn=="JUMPIFNOTLE" then
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if "..R(ur[1]).." <= "..R(ur[2]).." then -- goto #"..ei)
+					elseif opn=="JUMPIFNOTLT" then
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if "..R(ur[1]).." < "..R(ur[2]).." then -- goto #"..ei)
+					elseif opn=="ADD"  then emit(R(ur[1]).." = "..R(ur[2]).." + "..R(ur[3]))
+					elseif opn=="SUB"  then emit(R(ur[1]).." = "..R(ur[2]).." - "..R(ur[3]))
+					elseif opn=="MUL"  then emit(R(ur[1]).." = "..R(ur[2]).." * "..R(ur[3]))
+					elseif opn=="DIV"  then emit(R(ur[1]).." = "..R(ur[2]).." / "..R(ur[3]))
+					elseif opn=="MOD"  then emit(R(ur[1]).." = "..R(ur[2]).." % "..R(ur[3]))
+					elseif opn=="POW"  then emit(R(ur[1]).." = "..R(ur[2]).." ^ "..R(ur[3]))
+					elseif opn=="ADDK" then emit(R(ur[1]).." = "..R(ur[2]).." + "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="SUBK" then emit(R(ur[1]).." = "..R(ur[2]).." - "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="MULK" then emit(R(ur[1]).." = "..R(ur[2]).." * "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="DIVK" then emit(R(ur[1]).." = "..R(ur[2]).." / "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="MODK" then emit(R(ur[1]).." = "..R(ur[2]).." % "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="POWK" then emit(R(ur[1]).." = "..R(ur[2]).." ^ "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="AND"  then emit(R(ur[1]).." = "..R(ur[2]).." and "..R(ur[3]))
+					elseif opn=="OR"   then emit(R(ur[1]).." = "..R(ur[2]).." or "..R(ur[3]))
+					elseif opn=="ANDK" then emit(R(ur[1]).." = "..R(ur[2]).." and "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="ORK"  then emit(R(ur[1]).." = "..R(ur[2]).." or "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="CONCAT" then
+						local tgt=table.remove(ur,1)
+						local cb=""
+						for k,r in ipairs(ur) do
+							cb..=fmtReg(r); if k~=#ur then cb..=" .. " end
+						end
+						emit(R(tgt).." = "..cb)
+					elseif opn=="NOT"    then emit(R(ur[1]).." = not "..R(ur[2]))
+					elseif opn=="MINUS"  then emit(R(ur[1]).." = -"..R(ur[2]))
+					elseif opn=="LENGTH" then emit(R(ur[1]).." = #"..R(ur[2]))
+					elseif opn=="NEWTABLE" then
+						emit(R(ur[1]).." = {}")
+						if options.ShowDebugInformation and ed[2] and ed[2]>0 then
+							emit(" ")
+						end
+					elseif opn=="DUPTABLE" then
+						local cv=consts[ed[1]+1]
+						if cv and type(cv.value)=="table" then
+							local tb="{"
+							for k=1,cv.value.size do
+								tb..=fmtConst(consts[cv.value.keys[k]])
+								if k~=cv.value.size then tb..=", " end
+							end
+							emit(R(ur[1]).." = {} -- "..tb.."}")
+						else emit(R(ur[1]).." = {}") end
+					elseif opn=="SETLIST" then
+						local tgt=ur[1]; local src=ur[2]
+						local si=ed[1]; local vc=ed[2]
+						if vc==0 then
+							emit(R(tgt).."["..si.."] = [...]")
+						else
+							local tot2=#ur-1; local cb=""
+							for k=1,tot2 do
+								cb..=R(ur[k]).."["..(si+k-1).."] = "..R(src+k-1)
+								if k~=tot2 then cb..="\n" end
+							end
+							emit(cb)
+						end
+					elseif opn=="FORNPREP" then
+						emit("for "..R(ur[3]).." = "..R(ur[3])..", "..R(ur[1])..", "..R(ur[2]).." do -- end at #"..(i+ed[1]))
+					elseif opn=="FORNLOOP" then
+						emit("end -- iterate + jump to #"..(i+ed[1]))
+					elseif opn=="FORGLOOP" then
+						emit("end -- iterate + jump to #"..(i+ed[1]))
+					elseif opn=="FORGPREP_INEXT" then
+						local base=ur[1]
+						emit("for "..R(base+3)..", "..R(base+4).." in ipairs("..R(base)..") do")
+					elseif opn=="FORGPREP_NEXT" then
+						local base=ur[1]
+						emit("for "..R(base+3)..", "..R(base+4).." in pairs("..R(base)..") do")
+					elseif opn=="FORGPREP" then
+						local ei=i+ed[1]+2
+						local ea=actions[ei]
+						local vb=""
+						if ea and ea.usedRegisters and #ea.usedRegisters > 0 then
+							for k,r in ipairs(ea.usedRegisters) do
+								vb..=fmtReg(r, ei); if k~=#ea.usedRegisters then vb..=", " end
+							end
+						else
+							local baseReg=ur[1]; local nVars=2
+							if ea and ea.extraData and ea.extraData[2] then
+								nVars=math.max(1, bit32.band(ea.extraData[2], 0xFF))
+							end
+							local parts={}
+							for k=1,nVars do parts[k]=fmtReg(baseReg+2+(k-1), i) end
+							vb=table.concat(parts, ", ")
+						end
+						emit("for "..vb.." in "..R(ur[1]).." do -- end at #"..ei)
+					elseif opn=="GETVARARGS" then
+						local vc2=ed[1]-1
+						local rb=""
+						if vc2==-1 then rb=R(ur[1])
+						else
+							for k=1,vc2 do
+								rb..=R(ur[k]); if k~=vc2 then rb..=", " end
+							end
+						end
+						emit(rb.." = ...")
+					elseif opn=="PREPVARARGS" then emit("-- ... ; number of fixed args: "..ed[1])
+					elseif opn=="LOADKX" then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="JUMPX"    then emit("-- jump to #"..(i+ed[1]))
+					elseif opn=="COVERAGE" then emit("-- coverage ("..ed[1]..")")
+					elseif opn=="JUMPXEQKNIL" then
+						local rev=bit32.rshift(ed[2] or 0,0x1F)~=1
+						local sign=rev and "~=" or "=="
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if "..R(ur[1]).." "..sign.." nil then -- goto #"..ei)
+					elseif opn=="JUMPXEQKB" then
+						local val=tostring(toBoolean(bit32.band(ed[2] or 0,1)))
+						local rev=bit32.rshift(ed[2] or 0,0x1F)~=1
+						local sign=rev and "~=" or "=="
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if "..R(ur[1]).." "..sign.." "..val.." then -- goto #"..ei)
+					elseif opn=="JUMPXEQKN" or opn=="JUMPXEQKS" then
+						local cidx=bit32.band(ed[2] or 0,0xFFFFFF)
+						local val=fmtConst(consts[cidx+1])
+						local rev=bit32.rshift(ed[2] or 0,0x1F)~=1
+						local sign=rev and "~=" or "=="
+						local ei=i+ed[1]; makeJump(ei)
+						emit("if "..R(ur[1]).." "..sign.." "..val.." then -- goto #"..ei)
+					elseif opn=="CAPTURE"  then emit("-- upvalue capture")
+					elseif opn=="SUBRK"    then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]).." - "..R(ur[2]))
+					elseif opn=="DIVRK"    then emit(R(ur[1]).." = "..fmtConst(consts[ed[1]+1]).." / "..R(ur[2]))
+					elseif opn=="IDIV"     then emit(R(ur[1]).." = "..R(ur[2]).." // "..R(ur[3]))
+					elseif opn=="IDIVK"    then emit(R(ur[1]).." = "..R(ur[2]).." // "..fmtConst(consts[ed[1]+1]))
+					elseif opn=="FASTCALL" then emit("-- FASTCALL; "..Luau:GetBuiltinInfo(ed[1]).."()")
+					elseif opn=="FASTCALL1" then emit("-- FASTCALL1; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..")")
+					elseif opn=="FASTCALL2" then emit("-- FASTCALL2; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..", "..R(ur[2])..")")
+					elseif opn=="FASTCALL2K" then
+						emit("-- FASTCALL2K; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..", "..fmtConst(consts[(ed[3] or 0)+1])..")")
+					elseif opn=="FASTCALL3" then
+						emit("-- FASTCALL3; "..Luau:GetBuiltinInfo(ed[1]).."("..R(ur[1])..", "..R(ur[2])..", "..R(ur[3])..")")
+					end
+					emit("\n")
+					handleJumps()
+				end
+			end
+			writeActions(registerActions[mainProtoId])
+			finalResult = processResult(table.concat(resultParts))
+elseif options.DecompilerMode == "lift" then
     local resultParts = {}
     local function emit(s) resultParts[#resultParts + 1] = s end
     local indent = 0
@@ -17750,2069 +1692,3946 @@ local function main()
         end
         emitProto(mainProtoActions, true)
     end
-    finalResult = processResult(table.concat(resultParts))
-			else
-				finalResult = processResult("-- one day..")
+    finalResult = processResult(table.concat(resultParts))		end
+		return finalResult
+	end
+	local function manager(proceed, issue)
+		if proceed then
+			local startTime = os.clock()
+			local result
+			local ok, res = pcall(function() return finalize(organize()) end)
+			result = ok and res or ("-- RUNTIME ERROR:\n-- " .. tostring(res))
+			if (os.clock() - startTime) >= options.DecompilerTimeout then
+				return Strings.TIMEOUT
 			end
-			return finalResult
-		end
-		local function manager(proceed, issue)
-			if proceed then
-				local startTime = os.clock()
-				local result
-				local ok, res = pcall(function() return finalize(organize()) end)
-				result = ok and res or ("-- RUNTIME ERROR:\n-- " .. tostring(res))
-				if (os.clock() - startTime) >= options.DecompilerTimeout then
-					return Strings.TIMEOUT
-				end
-				return string.format(Strings.SUCCESS, result)
-			else
-				if issue == "COMPILATION_FAILURE" then
-					local len = reader:len()-1
-					return string.format(Strings.COMPILATION_FAILURE, reader:nextString(len))
-				elseif issue == "UNSUPPORTED_LBC_VERSION" then
-					return Strings.UNSUPPORTED_LBC_VERSION
-				end
-			end
-		end
-		bytecodeVersion = reader:nextByte()
-		if bytecodeVersion == 0 then
-			return manager(false, "COMPILATION_FAILURE")
-		elseif bytecodeVersion >= LuauBytecodeTag.LBC_VERSION_MIN
-		   and bytecodeVersion <= LuauBytecodeTag.LBC_VERSION_MAX then
-			return manager(true)
+			return string.format(Strings.SUCCESS, result)
 		else
-			return manager(false, "UNSUPPORTED_LBC_VERSION")
+			if issue == "COMPILATION_FAILURE" then
+				local len = reader:len()-1
+				return string.format(Strings.COMPILATION_FAILURE, reader:nextString(len))
+			elseif issue == "UNSUPPORTED_LBC_VERSION" then
+				return Strings.UNSUPPORTED_LBC_VERSION
+			end
 		end
 	end
-	local CONST_TYPE = {
-		[0]="nil",[1]="boolean",[2]="number(f64)",[3]="string",
-		[4]="import",[5]="table",[6]="closure",[7]="number(f32)",[8]="number(i16)"
-	}
-	local function parseProto(p, stringTable, depth)
-		local result = {
-			depth=depth or 0, maxStack=p:nextByte(), numParams=p:nextByte(),
-			numUpvals=p:nextByte(), isVararg=p:nextByte()~=0, flags=p:nextByte(),
-			constants={}, protos={}, upvalues={}, debugName="", strings={}, imports={},
-		}
-		local typeSize = p:nextVarInt()
-		if typeSize>0 then for _=1,typeSize do p:nextByte() end end
-		local instrCount = p:nextVarInt()
-		for _=1,instrCount do p:nextUInt32() end
-		local constCount = p:nextVarInt()
-		for i=1,constCount do
-			local kind=p:nextByte()
-			local name=CONST_TYPE[kind] or ("unknown("..kind..")")
-			local value
-			if     kind==0 then value="nil"
-			elseif kind==1 then value=p:nextByte()~=0 and "true" or "false"
-			elseif kind==2 then value=tostring(p:nextDouble())
-			elseif kind==7 then value=tostring(p:nextFloat())
-			elseif kind==8 then
-				local lo,hi=p:nextByte(),p:nextByte()
-				local n=lo+hi*256; if n>=32768 then n=n-65536 end; value=tostring(n)
-			elseif kind==3 then
-				local idx=p:nextVarInt()
-				value=stringTable[idx] or ("<string #"..idx..">")
-				table.insert(result.strings,value)
-			elseif kind==4 then
-				local id=p:nextUInt32()
-				local k0=bit32.band(bit32.rshift(id,20),0x3FF)
-				local k1=bit32.band(bit32.rshift(id,10),0x3FF)
-				local k2=bit32.band(id,0x3FF)
-				local parts={}
-				for _,k in ipairs({k0,k1,k2}) do
-					if stringTable[k] then table.insert(parts,stringTable[k]) end
-				end
-				value=table.concat(parts,"."); table.insert(result.imports,value)
-			elseif kind==5 then
-				local keys,ks=p:nextVarInt(),{}
-				for _=1,keys do
-					local kidx=p:nextVarInt(); table.insert(ks,stringTable[kidx] or "?")
-				end
-				value="{"..table.concat(ks,", ").."}"
-			elseif kind==6 then value="<proto #"..p:nextVarInt()..">"
-			else value="?" end
-			table.insert(result.constants,{kind=name,value=value,index=i-1})
-		end
-		local protoCount=p:nextVarInt()
-		for i=1,protoCount do
-			local ok,inner=pcall(parseProto,p,stringTable,depth+1)
-			table.insert(result.protos,ok and inner or {error=tostring(inner),depth=depth+1})
-		end
-		local hasLines=p:nextByte()
-		if hasLines~=0 then
-			local lgap=p:nextByte()
-			local intervalCount=bit32.rshift(instrCount-1,lgap)+1
-			for _=1,intervalCount do p:nextByte() end
-			for _=1,instrCount do p:nextByte() end
-		end
-		local hasDebug=p:nextByte()
-		if hasDebug~=0 then
-			local nameIdx=p:nextVarInt()
-			result.debugName=stringTable[nameIdx] or ""
-			local lc=p:nextVarInt()
-			for _=1,lc do p:nextVarInt();p:nextVarInt();p:nextVarInt();p:nextByte() end
-			local uc=p:nextVarInt()
-			for j=1,uc do
-				local ui=p:nextVarInt()
-				table.insert(result.upvalues,stringTable[ui] or ("upval_"..j))
-			end
-		end
-		return result
+	bytecodeVersion = reader:nextByte()
+	if bytecodeVersion == 0 then
+		return manager(false, "COMPILATION_FAILURE")
+	elseif bytecodeVersion >= LuauBytecodeTag.LBC_VERSION_MIN
+	   and bytecodeVersion <= LuauBytecodeTag.LBC_VERSION_MAX then
+		return manager(true)
+	else
+		return manager(false, "UNSUPPORTED_LBC_VERSION")
 	end
-	local function parseBytecode(bytes)
-		local reader2=Reader.new(bytes)
-		local ver=reader2:nextByte()
-		if ver==0 then return nil,"Compile error: "..reader2:nextString(reader2:len()-1) end
-		local typesVer=reader2:nextByte()
-		local stringCount=reader2:nextVarInt()
-		local stringTable={}
-		for i=1,stringCount do
-			local len=reader2:nextVarInt(); stringTable[i]=reader2:nextString(len)
-		end
-		local protoCount=reader2:nextVarInt()
-		local protos={}
-		for i=1,protoCount do
-			local ok,proto=pcall(parseProto,reader2,stringTable,0)
-			table.insert(protos,ok and proto or {error=tostring(proto),depth=0})
-		end
-		local entryProto=reader2:nextVarInt()
-		return {version=ver,typesVersion=typesVer,
-			stringTable=stringTable,protos=protos,entryProto=entryProto}
-	end
-	local function buildReport(parsed, scriptName)
-		local lines={}
-		local function w(s) table.insert(lines,s or "") end
-		w("_zukatechzukatech_zukatechzukatechhzukatech_")
-		w("  code reconstructor — "..(scriptName or "unknown"))
-		w("_zukatechzukatech_zukatechzukatechhzukatech_")
-		w("  Luau version : "..parsed.version)
-		w("  Types version: "..parsed.typesVersion)
-		w("  Proto count  : "..#parsed.protos)
-		w("  Entry proto  : #"..parsed.entryProto)
-		w("  Strings total: "..#parsed.stringTable)
-		w("")
-		w("── STRING TABLE ─────────────────────────────────────")
-		for i,s in ipairs(parsed.stringTable) do w(string.format("  [%3d] %q",i,s)) end
-		w("")
-		local function walkProto(proto,idx)
-			if proto.error then w("  [Proto #"..idx.."] PARSE ERROR: "..proto.error); return end
-			local ind=string.rep("  ",proto.depth+1)
-			local dn=proto.debugName~="" and (" '"..proto.debugName.."'") or ""
-			w(string.format("%s── Proto #%d%s",ind,idx,dn))
-			w(string.format("%s   params=%d  upvals=%d  maxStack=%d  vararg=%s",
-				ind,proto.numParams,proto.numUpvals,proto.maxStack,tostring(proto.isVararg)))
-			if #proto.upvalues>0 then w(ind.."   Upvalues: "..table.concat(proto.upvalues,", ")) end
-			if #proto.imports>0  then
-				w(ind.."   Imports:")
-				for _,imp in ipairs(proto.imports) do w(ind.."     "..imp) end
-			end
-			if #proto.strings>0  then
-				w(ind.."   String literals:")
-				for _,s in ipairs(proto.strings) do w(ind..'     "'..s..'"') end
-			end
-			if #proto.constants>0 then
-				w(ind.."   All constants:")
-				for _,c in ipairs(proto.constants) do
-					w(string.format("%s     [%2d] %-14s %s",ind,c.index,c.kind,tostring(c.value)))
-				end
-			end
-			w("")
-			for i2,inner in ipairs(proto.protos) do walkProto(inner,i2) end
-		end
-		w("── PROTO TREE ───────────────────────────────────────")
-		for i,proto in ipairs(parsed.protos) do walkProto(proto,i) end
-		return table.concat(lines,"\n")
-	end
-
-	local function _ppImpl(text)
-		local result = {}
-		local depth  = 0
-	
-		local DEDENT_BEFORE      = { ["end"]=true, ["until"]=true }
-		local INDENT_AFTER       = { ["then"]=true, ["do"]=true, ["repeat"]=true }
-		local DEDENT_THEN_INDENT = { ["else"]=true, ["elseif"]=true }
-	
-		local function stripStrings(s)
-			-- remove string literals then line comments to get bare keyword tokens
-			s = s:gsub('"[^"\\]*(?:\\.[^"\\]*)*"', '""')
-			s = s:gsub("'[^'\\]*(?:\\.[^'\\]*)*'", "''")
-			s = s:gsub("%-%-.*$", "")  -- strip trailing comment
-			return s
-		end
-	
-		local function firstWord(s)
-			return (stripStrings(s):match("^%s*([%a_][%w_]*)")) or ""
-		end
-	
-		local function containsOpener(s)
-			local clean = stripStrings(s)
-			-- elseif/else are already handled by DEDENT_THEN_INDENT; don't double-indent
-			local fw = clean:match("^%s*([%a_][%w_]*)")
-			if fw == "elseif" or fw == "else" then return false end
-			for w in clean:gmatch("[%a_][%w_]*") do
-				if INDENT_AFTER[w] then return true end
-				if w == "function" then return true end
-			end
-			return false
-		end
-	
-		for line in (text .. "\n"):gmatch("[^\n]*\n") do
-			local bare = line:gsub("\n$", "")
-			if bare == "" then
-				result[#result + 1] = "\n"; continue
-			end
-	
-			-- strip disasm prefix: [NNN] :NNN: OPNAME<spaces>
-			local expr = bare:match("^%[%d+%]%s*:?%d*:?%s*%u[%u_]*%s+(.*)") or bare
-	
-			local kw = firstWord(expr)
-	
-			if DEDENT_THEN_INDENT[kw] then
-				depth = math.max(0, depth - 1)
-				result[#result + 1] = string.rep("    ", depth) .. bare .. "\n"
-				depth += 1
-	
-			elseif DEDENT_BEFORE[kw] then
-				depth = math.max(0, depth - 1)
-				result[#result + 1] = string.rep("    ", depth) .. bare .. "\n"
-	
-			else
-				result[#result + 1] = string.rep("    ", depth) .. bare .. "\n"
-				if containsOpener(expr) then depth += 1 end
-			end
-		end
-	
-		return table.concat(result)
-	end
-
-	local function _coImpl(text)
-		local rawLines = {}
-		for line in (text .. "\n"):gmatch("[^\n]*\n") do
-			rawLines[#rawLines + 1] = line:gsub("\n$", "")
-		end
-
-		local function escpat(s)
-			return s:gsub("([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
-		end
-
-		local function nextNonBlank(start)
-			local j = start
-			while j <= #rawLines and (rawLines[j] == nil or rawLines[j]:match("^%s*$")) do
-				j += 1
-			end
-			return j
-		end
-
-		-- Pass 1: collapse single-use constant loads into the next usage line
-		-- Handles: strings, numbers, booleans, nil, and bare name/import paths
-		-- e.g. v2 = "RunService" / v0 = v0:GetService(v2) → v0 = v0:GetService("RunService")
-		local function tryCollapse(i)
-			local line = rawLines[i]
-			if line == nil then return false end
-			local reg, lit = line:match('^%s*(v%d+) = (".-")%s*$')
-			if not reg then reg, lit = line:match('^%s*(v%d+) = (%-?%d+%.?%d*)%s*$') end
-			if not reg then reg, lit = line:match('^%s*(v%d+) = (true)%s*$') end
-			if not reg then reg, lit = line:match('^%s*(v%d+) = (false)%s*$') end
-			if not reg then reg, lit = line:match('^%s*(v%d+) = (nil)%s*$') end
-			-- bare import/global paths like: v2 = game.Players.LocalPlayer
-			if not reg then reg, lit = line:match('^%s*(v%d+) = ([%a_][%w_%.]+)%s*$') end
-			if not reg then return false end
-			local j = nextNonBlank(i + 1)
-			if j > #rawLines or rawLines[j] == nil then return false end
-			local nextLine = rawLines[j]
-			local ep = escpat(reg)
-			local count = 0
-			for _ in nextLine:gmatch(ep) do count += 1 end
-			if count ~= 1 then return false end
-			if nextLine:match("^%s*" .. ep .. "%s*=") then return false end
-			for k = i + 1, j - 1 do
-				local mid = rawLines[k]
-				if mid and mid:match("^%s*" .. ep .. "%s*=") then return false end
-			end
-			rawLines[j] = nextLine:gsub(ep, lit, 1)
-			rawLines[i] = nil
-			return true
-		end
-		for _ = 1, 8 do  -- more passes for deeper constant chains
-			for i = 1, #rawLines do tryCollapse(i) end
-		end
-
-		-- Pass 1b: fold single-use field/index accesses
-		-- e.g. v3 = v2.Players / use(v3)  →  use(v2.Players)
-		local function tryFoldField(i)
-			local line = rawLines[i]
-			if not line then return false end
-			local lreg, src, field = line:match('^%s*(v%d+) = (v%d+)%.([%a_][%w_]*)%s*$')
-			if not lreg then
-				lreg, src, field = line:match('^%s*(v%d+) = (v%d+)%[(.-)%]%s*$')
-				if lreg then field = "[" .. field .. "]" else return false end
-			else
-				field = "." .. field
-			end
-			local j = nextNonBlank(i + 1)
-			if j > #rawLines then return false end
-			local nextLine = rawLines[j]
-			local epSrc = escpat(src)
-			local epReg = escpat(lreg)
-			local count = 0
-			for _ in nextLine:gmatch(epReg) do count += 1 end
-			if count ~= 1 then return false end
-			if nextLine:match("^%s*" .. epReg .. "%s*=") then return false end
-			for k = i + 1, j - 1 do
-				local mid = rawLines[k]
-				if mid and mid:match("^%s*" .. epSrc .. "%s*=") then return false end
-			end
-			if src:match("^upv_") then return false end
-			rawLines[j] = nextLine:gsub(epReg, src .. field, 1)
-			rawLines[i] = nil
-			return true
-		end
-		for _ = 1, 6 do
-			for i = 1, #rawLines do tryFoldField(i) end
-		end
-
-		-- Pass 2: strip comment noise
-		local pass2 = {}
-		for idx = 1, #rawLines do
-			local line = rawLines[idx]
-			if line == nil then continue end
-			local stripped = line:match("^%s*(.-)%s*$")
-			if stripped:match("^%-%- goto #%d+$") then continue end
-			if stripped:match("^%-%- jump") then continue end
-			line = line:gsub("%s*%-%- goto #%d+$", "")
-			line = line:gsub("%s*%-%- end at #%d+$", "")
-			line = line:gsub("%s*%-%- iterate %+ jump to #%d+$", "")
-			pass2[#pass2 + 1] = line
-		end
-
-		-- Pass 3: drop vN = nil lines immediately before a for loop
-		local pass3 = {}
-		local i = 1
-		while i <= #pass2 do
-			local line = pass2[i]
-			local nxt  = pass2[i + 1]
-			local s    = line and line:match("^%s*(.-)%s*$") or ""
-			local isNilInit = s:match("^v%d+ = nil") ~= nil
-			local nextIsFor = nxt and nxt:match("^%s*for%s+v%d+") ~= nil
-			if isNilInit and nextIsFor then
-				i += 1
-			else
-				pass3[#pass3 + 1] = line
-				i += 1
-			end
-		end
-
-		-- Pass 4: insert `local` on first assignment of each vN register
-		local seen = {}
-		local pass4 = {}
-		for _, line in ipairs(pass3) do
-			local reg = line:match("^%s*(v%d+)%s*=")
-			if reg and not seen[reg] then
-				seen[reg] = true
-				line = line:gsub("^(%s*)(v%d+%s*=)", "%1local %2", 1)
-			end
-			pass4[#pass4 + 1] = line
-		end
-
-		-- Pass 5: collapse runs of multiple blank lines into one
-		local final = {}
-		local lastBlank = false
-		for _, line in ipairs(pass4) do
-			local isBlank = line:match("^%s*$") ~= nil
-			if isBlank and lastBlank then continue end
-			lastBlank = isBlank
-			final[#final + 1] = line
-		end
-
-		return table.concat(final, "\n")
-	end
-
-		ZukDecompile = Decompile
-		prettyPrint  = _ppImpl
-		cleanOutput  = _coImpl
-		getgenv()._ZUK_DECOMPILE    = Decompile
-		getgenv()._ZUK_PRETTYPRINT  = _ppImpl
-		getgenv()._ZUK_CLEANOUTPUT  = _coImpl
-	end)
-	-- ─────────────────────────────────────────────────────────────────
-
-	local ScriptViewer = {}
-	local window, codeFrame
-	
-	local execute, clear, dumpbtn
-	
-	local PreviousScr = nil
-	
-	ScriptViewer.DumpFunctions = function(scr)
-
-		local getgc = getgc or get_gc_objects
-		local getupvalues = (debug and debug.getupvalues) or getupvalues or getupvals
-		local getconstants = (debug and debug.getconstants) or getconstants or getconsts
-		local getinfo = (debug and (debug.getinfo or debug.info)) or getinfo
-		local original = ("\n-- // Function Dumper made by King.Kevin\n-- // Script Path: %s\n\n--[["):format(getPath(scr))
-		local dump = original
-		local functions, function_count, data_base = {}, 0, {}
-		function functions:add_to_dump(str, indentation, new_line)
-			local new_line = new_line or true
-			dump = dump .. ("%s%s%s"):format(string.rep("		", indentation), tostring(str), new_line and "\n" or "")
-		end
-		function functions:get_function_name(func)
-			local n = getinfo(func).name
-			return n ~= "" and n or "Unknown Name"
-		end
-		function functions:dump_table(input, indent, index)
-			local indent = indent < 0 and 0 or indent
-			functions:add_to_dump(("%s [%s] %s"):format(tostring(index), tostring(typeof(input)), tostring(input)), indent - 1)
-			local count = 0
-			for index, value in pairs(input) do
-				count = count + 1
-				if type(value) == "function" then
-					functions:add_to_dump(("%d [function] = %s"):format(count, functions:get_function_name(value)), indent)
-				elseif type(value) == "table" then
-					if not data_base[value] then
-						data_base[value] = true
-						functions:add_to_dump(("%d [table]:"):format(count), indent)
-						functions:dump_table(value, indent + 1, index)
-					else
-						functions:add_to_dump(("%d [table] (Recursive table detected)"):format(count), indent)
-					end
-				else
-					functions:add_to_dump(("%d [%s] = %s"):format(count, tostring(typeof(value)), tostring(value)), indent)
-				end
-			end
-		end
-		function functions:dump_function(input, indent)
-			functions:add_to_dump(("\nFunction Dump: %s"):format(functions:get_function_name(input)), indent)
-			functions:add_to_dump(("\nFunction Upvalues: %s"):format(functions:get_function_name(input)), indent)
-			for index, upvalue in pairs(getupvalues(input)) do
-				if type(upvalue) == "function" then
-					functions:add_to_dump(("%d [function] = %s"):format(index, functions:get_function_name(upvalue)), indent + 1)
-				elseif type(upvalue) == "table" then
-					if not data_base[upvalue] then
-						data_base[upvalue] = true
-						functions:add_to_dump(("%d [table]:"):format(index), indent + 1)
-						functions:dump_table(upvalue, indent + 2, index)
-					else
-						functions:add_to_dump(("%d [table] (Recursive table detected)"):format(index), indent + 1)
-					end
-				else
-					functions:add_to_dump(("%d [%s] = %s"):format(index, tostring(typeof(upvalue)), tostring(upvalue)), indent + 1)
-				end
-			end
-			functions:add_to_dump(("\nFunction Constants: %s"):format(functions:get_function_name(input)), indent)
-			for index, constant in pairs(getconstants(input)) do
-				if type(constant) == "function" then
-					functions:add_to_dump(("%d [function] = %s"):format(index, functions:get_function_name(constant)), indent + 1)
-				elseif type(constant) == "table" then
-					if not data_base[constant] then
-						data_base[constant] = true
-						functions:add_to_dump(("%d [table]:"):format(index), indent + 1)
-						functions:dump_table(constant, indent + 2, index)
-					else
-						functions:add_to_dump(("%d [table] (Recursive table detected)"):format(index), indent + 1)
-					end
-				else
-					functions:add_to_dump(("%d [%s] = %s"):format(index, tostring(typeof(constant)), tostring(constant)), indent + 1)
-				end
-			end
-		end
-		for _, _function in pairs(env.getgc()) do
-			if typeof(_function) == "function" and getfenv(_function).script and getfenv(_function).script == scr then
-				functions:dump_function(_function, 0)
-				functions:add_to_dump("\n" .. ("="):rep(100), 0, false)
-			end
-		end
-		local source = codeFrame:GetText()
-
-		if dump ~= original then source = source .. dump .. "]]" end
-		codeFrame:SetText(source)
-		
-		window:Show()
-	end
-
-
-
-	ScriptViewer.Init = function()
-		window = Lib.Window.new()
-		window:SetTitle("Notepad")
-		window:Resize(500,400)
-		ScriptViewer.Window = window
-        ScriptViewer.Editor = codeFrame
-
-		codeFrame = Lib.CodeFrame.new()
-        getgenv()._DEX_INTERNAL_EDITOR = codeFrame
-		codeFrame.Frame.Position = UDim2.new(0,0,0,20)
-		codeFrame.Frame.Size = UDim2.new(1,0,1,-40)
-		codeFrame.Frame.Parent = window.GuiElems.Content
-		
-		local copy = Instance.new("TextButton",window.GuiElems.Content)
-		copy.BackgroundTransparency = 1
-		copy.Size = UDim2.new(0.33,0,0,20)
-		copy.Position = UDim2.new(0,0,0,0)
-		copy.Text = "Copy to Clipboard"
-		
-		if env.setclipboard then
-			copy.TextColor3 = Color3.new(1,1,1)
-			copy.Interactable = true
-		else
-			copy.TextColor3 = Color3.new(0.5,0.5,0.5)
-			copy.Interactable = false
-		end
-
-		copy.MouseButton1Click:Connect(function()
-			local source = codeFrame:GetText()
-			env.setclipboard(source)
-		end)
-
-		local save = Instance.new("TextButton",window.GuiElems.Content)
-		save.BackgroundTransparency = 1
-		save.Size = UDim2.new(0.33,0,0,20)
-		save.Position = UDim2.new(0.33,0,0,0)
-		save.Text = "Save to File"
-		save.TextColor3 = Color3.new(1,1,1)
-		
-		if env.writefile then
-			save.TextColor3 = Color3.new(1,1,1)
-			save.Interactable = true
-		else
-			save.TextColor3 = Color3.new(0.5,0.5,0.5)
-
-		end
-
-		save.MouseButton1Click:Connect(function()
-			local source = codeFrame:GetText()
-			local filename = "Place_"..game.PlaceId.."_Script_"..os.time()..".txt"
-
-			Lib.SaveAsPrompt(filename,source)
-
-		end)
-		
-		dumpbtn = Instance.new("TextButton",window.GuiElems.Content)
-		dumpbtn.BackgroundTransparency = 1
-		dumpbtn.Position = UDim2.new(0.7,0,0,0)
-		dumpbtn.Size = UDim2.new(0.3,0,0,20)
-		dumpbtn.Text = "Dump Functions"
-		dumpbtn.TextColor3 = Color3.new(0.5,0.5,0.5)
-		
-		if env.getgc then
-			dumpbtn.TextColor3 = Color3.new(1,1,1)
-			dumpbtn.Interactable = true
-		else
-			dumpbtn.TextColor3 = Color3.new(0.5,0.5,0.5)
-			dumpbtn.Interactable = false
-		end
-
-		dumpbtn.MouseButton1Click:Connect(function()
-			if PreviousScr ~= nil then
-				pcall(ScriptViewer.DumpFunctions, PreviousScr)
-			end
-		end)
-
-		execute = Instance.new("TextButton",window.GuiElems.Content)
-		execute.BackgroundTransparency = 1
-		execute.Size = UDim2.new(0.5,0,0,20)
-		execute.Position = UDim2.new(0,0,1,-20)
-		execute.Text = "Execute"
-		execute.TextColor3 = Color3.new(1,1,1)
-		
-		if env.loadstring then
-			execute.TextColor3 = Color3.new(1,1,1)
-			execute.Interactable = true
-		else
-			execute.TextColor3 = Color3.new(0.5,0.5,0.5)
-			execute.Interactable = false
-		end
-
-		execute.MouseButton1Click:Connect(function()
-			local source = codeFrame:GetText()
-			env.loadstring(source)()
-		end)
-
-		clear = Instance.new("TextButton",window.GuiElems.Content)
-		clear.BackgroundTransparency = 1
-		clear.Size = UDim2.new(0.5,0,0,20)
-		clear.Position = UDim2.new(0.5,0,1,-20)
-		clear.Text = "Clear"
-		clear.TextColor3 = Color3.new(1,1,1)
-
-		clear.MouseButton1Click:Connect(function()
-			codeFrame:SetText("")
-		end)
-	end
-	
-	-- ViewRaw: display arbitrary text in the Notepad/ScriptViewer without decompiling
-	ScriptViewer.ViewRaw = function(source)
-		codeFrame:SetText(source or "")
-		window:Show()
-	end
-
-	ScriptViewer.ViewScript = function(scr)
-		local oldtick = tick()
-
-		-- ── zukv2 path: getscriptbytecode → our disassembler ────────────────
-		local source = nil
-		-- if ZukDecompile hasn't initialised yet (task.defer still pending), wait one frame
-		if not ZukDecompile then
-			local deadline = tick() + 5
-			repeat task.wait() until (ZukDecompile and cleanOutput) or tick() > deadline
-		end
-		local okBC, bytecode = pcall(getscriptbytecode, scr)
-		-- CorePackages/CoreGui: instance-level getscriptbytecode returns nothing
-		-- because the service is locked. Find the loaded closure via getloadedmodules()
-		-- and call getscriptbytecode on that instead.
-		if (not bytecode or bytecode == "") and getloadedmodules then
-			local ok2, mods = pcall(getloadedmodules)
-			if ok2 and mods then
-				for _, mod in ipairs(mods) do
-					local ok3, name = pcall(function() return mod.Name end)
-					if ok3 and name == scr.Name then
-						local ok4, fullA = pcall(function() return mod:GetFullName() end)
-						local ok5, fullB = pcall(function() return scr:GetFullName() end)
-						local match = (ok4 and ok5 and fullA == fullB) or (not ok4 or not ok5)
-						if match then
-							local ok6, bc = pcall(getscriptbytecode, mod)
-							if ok6 and bc and bc ~= "" then
-								bytecode = bc; okBC = true
-								break
-							end
-						end
-					end
-				end
-			end
-		end
-		if ZukDecompile and okBC and bytecode and bytecode ~= "" then
-			local opts = {
-				DecompilerMode        = "disasm",
-				DecompilerTimeout     = 15,
-				ReaderFloatPrecision  = 7,
-				CleanMode             = true,
-				ShowDebugInformation  = false,
-				ShowTrivialOperations = false,
-				ShowInstructionLines  = false,
-				ShowOperationIndex    = false,
-				ShowOperationNames    = false,
-				ListUsedGlobals       = true,
-				UseTypeInfo           = true,
-				EnabledRemarks        = {ColdRemark=false, InlineRemark=true},
-				ReturnElapsedTime     = false,
-			}
-			local okD, result = pcall(ZukDecompile, bytecode, opts)
-			if okD and result then
-				source = "-- Script Path: "..getPath(scr).."\n"
-				source = source.."-- Took "..tostring(math.floor((tick()-oldtick)*100)/100).."s\n"
-				source = source.."-- Decompiled with zukv2 - we're so back. \n\n"
-				source = source..cleanOutput(prettyPrint(result))
-				PreviousScr = scr
-				dumpbtn.TextColor3 = Color3.new(1,1,1)
-			end
-		end
-
-		if not source then
-			source = "-- Unable to view source.\n"
-			source = source.."-- Script Path: "..getPath(scr).."\n"
-			source = source.."-- Reason: getscriptbytecode() returned nothing or decompiler failed.\n"
-			source = source.."-- Executor: "..executorName.." ("..executorVersion..")"
-			PreviousScr = nil
-			dumpbtn.TextColor3 = Color3.new(0.5,0.5,0.5)
-		end
-
-		codeFrame:SetText(source)
-		window:Show()
-	end
-
-	return ScriptViewer
 end
-
-if gethsfuncs then
-	_G.moduleData = {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
-else
-	return {InitDeps = initDeps, InitAfterMain = initAfterMain, Main = main}
-end
-end,
+local CONST_TYPE = {
+	[0]="nil",[1]="boolean",[2]="number(f64)",[3]="string",
+	[4]="import",[5]="table",[6]="closure",[7]="number(f32)",[8]="number(i16)"
 }
-local oldgame = oldgame or game
-
-cloneref = cloneref or function(ref)
-	if not getreg then return ref end
-	
-	local InstanceList
-	
-	local a = Instance.new("Part")
-	for _, c in pairs(getreg()) do
-		if type(c) == "table" and #c then
-			if rawget(c, "__mode") == "kvs" then
-				for d, e in pairs(c) do
-					if e == a then
-						InstanceList = c
-						break
-					end
-				end
-			end
-		end
-	end
-	local f = {}
-	function f.invalidate(g)
-		if not InstanceList then
-			return
-		end
-		for b, c in pairs(InstanceList) do
-			if c == g then
-				InstanceList[b] = nil
-				return g
-			end
-		end
-	end
-	return f.invalidate
-end
-
-local isFsSupported = readfile and writefile and isfile and isfolder and listfiles and delfile and delfolder
-
-local Main, Explorer, Properties, ScriptViewer, Console, SaveInstance, ModelViewer, DefaultSettings, Notebook, Serializer, Lib local ggv = getgenv or nil
-local API, RMD
-
-DefaultSettings = (function()
-	local rgb = Color3.fromRGB
-	
-	return {
-		Explorer = {
-			_Recurse = true,
-			Sorting = true,
-			TeleportToOffset = Vector3.new(0,0,0),
-			ClickToRename = true,
-			AutoUpdateSearch = true,
-			AutoUpdateMode = 0,
-			PartSelectionBox = true,
-			GuiSelectionBox = true,
-			CopyPathUseGetChildren = true
-		},
-		Properties = {
-			_Recurse = true,
-			MaxConflictCheck = 50,
-			ShowDeprecated = true,
-			ShowHidden = false,
-			ClearOnFocus = false,
-			LoadstringInput = true,
-			NumberRounding = 3,
-			ShowAttributes = true,
-			MaxAttributes = 50,
-			ScaleType = 0
-		},
-		Theme = {
-			_Recurse = true,
-			Main1 = rgb(52,52,52),
-			Main2 = rgb(45,45,45),
-			Outline1 = rgb(33,33,33),
-			Outline2 = rgb(55,55,55),
-			Outline3 = rgb(30,30,30),
-			TextBox = rgb(38,38,38),
-			Menu = rgb(32,32,32),
-			ListSelection = rgb(11,90,175),
-			Button = rgb(60,60,60),
-			ButtonHover = rgb(68,68,68),
-			ButtonPress = rgb(40,40,40),
-			Highlight = rgb(75,75,75),
-			Text = rgb(255,255,255),
-			PlaceholderText = rgb(100,100,100),
-			Important = rgb(255,0,0),
-			ExplorerIconMap = "",
-			MiscIconMap = "",
-			Syntax = {
-				Text = rgb(204,204,204),
-				Background = rgb(36,36,36),
-				Selection = rgb(255,255,255),
-				SelectionBack = rgb(11,90,175),
-				Operator = rgb(204,204,204),
-				Number = rgb(255,198,0),
-				String = rgb(173,241,149),
-				Comment = rgb(102,102,102),
-				Keyword = rgb(248,109,124),
-				Error = rgb(255,0,0),
-				FindBackground = rgb(141,118,0),
-				MatchingWord = rgb(85,85,85),
-				BuiltIn = rgb(132,214,247),
-				CurrentLine = rgb(45,50,65),
-				LocalMethod = rgb(253,251,172),
-				LocalProperty = rgb(97,161,241),
-				Nil = rgb(255,198,0),
-				Bool = rgb(255,198,0),
-				Function = rgb(248,109,124),
-				Local = rgb(248,109,124),
-				Self = rgb(248,109,124),
-				FunctionName = rgb(253,251,172),
-				Bracket = rgb(204,204,204)
-			},
-		},
-		Window = {
-			TitleOnMiddle = false,
-			Transparency = .2
-		},
-		RemoteBlockWriteAttribute = false,
-		ClassIcon = "NewDark",
-
+local function parseProto(p, stringTable, depth)
+	local result = {
+		depth=depth or 0, maxStack=p:nextByte(), numParams=p:nextByte(),
+		numUpvals=p:nextByte(), isVararg=p:nextByte()~=0, flags=p:nextByte(),
+		constants={}, protos={}, upvalues={}, debugName="", strings={}, imports={},
 	}
-end)()
-
-local Settings = DefaultSettings or {}
-local Apps = {}
-local env = {}
-
-local service = setmetatable({},{__index = function(self,name)
-	local serv = cloneref(game:GetService(name))
-	self[name] = serv
-	return serv
-end})
-local plr = service.Players.LocalPlayer or service.Players.PlayerAdded:wait()
-
-local create = function(data)
-	local insts = {}
-	for i,v in pairs(data) do insts[v[1]] = Instance.new(v[2]) end
-
-	for _,v in pairs(data) do
-		for prop,val in pairs(v[3]) do
-			if type(val) == "table" then
-				insts[v[1]][prop] = insts[val[1]]
-			else
-				insts[v[1]][prop] = val
+	local typeSize = p:nextVarInt()
+	if typeSize>0 then for _=1,typeSize do p:nextByte() end end
+	local instrCount = p:nextVarInt()
+	for _=1,instrCount do p:nextUInt32() end
+	local constCount = p:nextVarInt()
+	for i=1,constCount do
+		local kind=p:nextByte()
+		local name=CONST_TYPE[kind] or ("unknown("..kind..")")
+		local value
+		if     kind==0 then value="nil"
+		elseif kind==1 then value=p:nextByte()~=0 and "true" or "false"
+		elseif kind==2 then value=tostring(p:nextDouble())
+		elseif kind==7 then value=tostring(p:nextFloat())
+		elseif kind==8 then
+			local lo,hi=p:nextByte(),p:nextByte()
+			local n=lo+hi*256; if n>=32768 then n=n-65536 end; value=tostring(n)
+		elseif kind==3 then
+			local idx=p:nextVarInt()
+			value=stringTable[idx] or ("<string #"..idx..">")
+			table.insert(result.strings,value)
+		elseif kind==4 then
+			local id=p:nextUInt32()
+			local k0=bit32.band(bit32.rshift(id,20),0x3FF)
+			local k1=bit32.band(bit32.rshift(id,10),0x3FF)
+			local k2=bit32.band(id,0x3FF)
+			local parts={}
+			for _,k in ipairs({k0,k1,k2}) do
+				if stringTable[k] then table.insert(parts,stringTable[k]) end
 			end
+			value=table.concat(parts,"."); table.insert(result.imports,value)
+		elseif kind==5 then
+			local keys,ks=p:nextVarInt(),{}
+			for _=1,keys do
+				local kidx=p:nextVarInt(); table.insert(ks,stringTable[kidx] or "?")
+			end
+			value="{"..table.concat(ks,", ").."}"
+		elseif kind==6 then value="<proto #"..p:nextVarInt()..">"
+		else value="?" end
+		table.insert(result.constants,{kind=name,value=value,index=i-1})
+	end
+	local protoCount=p:nextVarInt()
+	for i=1,protoCount do
+		local ok,inner=pcall(parseProto,p,stringTable,depth+1)
+		table.insert(result.protos,ok and inner or {error=tostring(inner),depth=depth+1})
+	end
+	local hasLines=p:nextByte()
+	if hasLines~=0 then
+		local lgap=p:nextByte()
+		local intervalCount=bit32.rshift(instrCount-1,lgap)+1
+		for _=1,intervalCount do p:nextByte() end
+		for _=1,instrCount do p:nextByte() end
+	end
+	local hasDebug=p:nextByte()
+	if hasDebug~=0 then
+		local nameIdx=p:nextVarInt()
+		result.debugName=stringTable[nameIdx] or ""
+		local lc=p:nextVarInt()
+		for _=1,lc do p:nextVarInt();p:nextVarInt();p:nextVarInt();p:nextByte() end
+		local uc=p:nextVarInt()
+		for j=1,uc do
+			local ui=p:nextVarInt()
+			table.insert(result.upvalues,stringTable[ui] or ("upval_"..j))
 		end
 	end
-
-	return insts[1]
+	return result
 end
-
-local createSimple = function(class,props)
-	local inst = Instance.new(class)
-	for i,v in next,props do
-		inst[i] = v
+local function parseBytecode(bytes)
+	local reader2=Reader.new(bytes)
+	local ver=reader2:nextByte()
+	if ver==0 then return nil,"Compile error: "..reader2:nextString(reader2:len()-1) end
+	local typesVer=reader2:nextByte()
+	local stringCount=reader2:nextVarInt()
+	local stringTable={}
+	for i=1,stringCount do
+		local len=reader2:nextVarInt(); stringTable[i]=reader2:nextString(len)
 	end
-	return inst
+	local protoCount=reader2:nextVarInt()
+	local protos={}
+	for i=1,protoCount do
+		local ok,proto=pcall(parseProto,reader2,stringTable,0)
+		table.insert(protos,ok and proto or {error=tostring(proto),depth=0})
+	end
+	local entryProto=reader2:nextVarInt()
+	return {version=ver,typesVersion=typesVer,
+		stringTable=stringTable,protos=protos,entryProto=entryProto}
 end
-
-Main = (function()
-	local Main = {}
-
-	Main.ModuleList = {"Explorer","Properties","ScriptViewer","Console","SaveInstance","ModelViewer"}
-	Main.Elevated = false
-	Main.AllowDraggableOnMobile = true
-	Main.MissingEnv = {}
-	Main.Version = "2.2"
-	Main.Mouse = plr:GetMouse()
-	Main.AppControls = {}
-	Main.Apps = Apps
-	Main.MenuApps = {}
-	Main.GitRepoName = "AZYsGithub/DexPlusPlus"
-
-	Main.DisplayOrders = {
-		SideWindow = 8,
-		Window = 10,
-		Menu = 100000,
-		Core = 101000
-	}
-
-	Main.GetRandomString = function()
-		local output = ""
-		for i = 2, 25 do
-			output = output .. string.char(math.random(1,250))
+local function buildReport(parsed, scriptName)
+	local lines={}
+	local function w(s) table.insert(lines,s or "") end
+	w("_zukatechzukatech_zukatechzukatechhzukatech_")
+	w("  code reconstructor — "..(scriptName or "unknown"))
+	w("_zukatechzukatech_zukatechzukatechhzukatech_")
+	w("  Luau version : "..parsed.version)
+	w("  Types version: "..parsed.typesVersion)
+	w("  Proto count  : "..#parsed.protos)
+	w("  Entry proto  : #"..parsed.entryProto)
+	w("  Strings total: "..#parsed.stringTable)
+	for i,s in ipairs(parsed.stringTable) do w(string.format("  [%3d] %q",i,s)) end
+	local function walkProto(proto,idx)
+		if proto.error then w("  [Proto #"..idx.."] PARSE ERROR: "..proto.error); return end
+		local ind=string.rep("  ",proto.depth+1)
+		local dn=proto.debugName~="" and (" '"..proto.debugName.."'") or ""
+		w(string.format("%s── Proto #%d%s",ind,idx,dn))
+		w(string.format("%s   params=%d  upvals=%d  maxStack=%d  vararg=%s",
+			ind,proto.numParams,proto.numUpvals,proto.maxStack,tostring(proto.isVararg)))
+		if #proto.upvalues>0 then w(ind.."   Upvalues: "..table.concat(proto.upvalues,", ")) end
+		if #proto.imports>0  then
+			w(ind.."   Imports:")
+			for _,imp in ipairs(proto.imports) do w(ind.."     "..imp) end
 		end
-		
-		return output
+		if #proto.strings>0  then
+			w(ind.."   String literals:")
+			for _,s in ipairs(proto.strings) do w(ind..'     "'..s..'"') end
+		end
+		if #proto.constants>0 then
+			w(ind.."   All constants:")
+			for _,c in ipairs(proto.constants) do
+				w(string.format("%s     [%2d] %-14s %s",ind,c.index,c.kind,tostring(c.value)))
+			end
+		end
+		w("")
+		for i2,inner in ipairs(proto.protos) do walkProto(inner,i2) end
 	end
-	
-	Main.SecureGui = function(gui)
-
-		gui.Name = Main.GetRandomString()
-
-		if gethui then
-			gui.Parent = gethui()
-		elseif syn and syn.protect_gui then
-			syn.protect_gui(gui)
-			gui.Parent = service.CoreGui
-		elseif protect_gui then
-			protect_gui(gui)
-			gui.Parent = service.CoreGui
-		elseif protectgui then
-			protectgui(gui)
-			gui.Parent = service.CoreGui
+	w("- PROTO TREE -")
+	for i,proto in ipairs(parsed.protos) do walkProto(proto,i) end
+	return table.concat(lines,"\n")
+end
+local function _ppImpl(text)
+	local result = {}
+	local depth  = 0
+	local DEDENT_BEFORE      = { ["end"]=true, ["until"]=true }
+	local INDENT_AFTER       = { ["then"]=true, ["do"]=true, ["repeat"]=true }
+	local DEDENT_THEN_INDENT = { ["else"]=true, ["elseif"]=true }
+	local function stripStrings(s)
+		s = s:gsub('"[^"\\]*(?:\\.[^"\\]*)*"', '""')
+		s = s:gsub("'[^'\\]*(?:\\.[^'\\]*)*'", "''")
+		s = s:gsub("%-%-.*$", "")
+		return s
+	end
+	local function firstWord(s)
+		return (stripStrings(s):match("^%s*([%a_][%w_]*)")) or ""
+	end
+	local function containsOpener(s)
+		local clean = stripStrings(s)
+		local fw = clean:match("^%s*([%a_][%w_]*)")
+		if fw == "elseif" or fw == "else" then return false end
+		for w in clean:gmatch("[%a_][%w_]*") do
+			if INDENT_AFTER[w] then return true end
+			if w == "function" then return true end
+		end
+		return false
+	end
+	for line in (text .. "\n"):gmatch("[^\n]*\n") do
+		local bare = line:gsub("\n$", "")
+		if bare == "" then
+			result[#result + 1] = "\n"; continue
+		end
+		local expr = bare:match("^%[%d+%]%s*:?%d*:?%s*%u[%u_]*%s+(.*)") or bare
+		local kw = firstWord(expr)
+		if DEDENT_THEN_INDENT[kw] then
+			depth = math.max(0, depth - 1)
+			result[#result + 1] = string.rep("    ", depth) .. bare .. "\n"
+			depth += 1
+		elseif DEDENT_BEFORE[kw] then
+			depth = math.max(0, depth - 1)
+			result[#result + 1] = string.rep("    ", depth) .. bare .. "\n"
 		else
-			if Main.Elevated then
-				gui.Parent = service.CoreGui
-			else
-				gui.Parent = service.Players.LocalPlayer:WaitForChild("PlayerGui")
-			end
+			result[#result + 1] = string.rep("    ", depth) .. bare .. "\n"
+			if containsOpener(expr) then depth += 1 end
 		end
 	end
-
-	Main.GetInitDeps = function()
-		return {
-			Main = Main,
-			Lib = Lib,
-			Apps = Apps,
-			Settings = Settings,
-
-			API = API,
-			RMD = RMD,
-			env = env,
-			service = service,
-			plr = plr,
-			create = create,
-			createSimple = createSimple
-		}
+	return table.concat(result)
+end
+local function _coImpl(text)
+	local rawLines = {}
+	for line in (text .. "\n"):gmatch("[^\n]*\n") do
+		rawLines[#rawLines + 1] = line:gsub("\n$", "")
 	end
-
-	Main.Error = function(str)
-		if rconsoleprint then
-			rconsoleprint("ZEX ERROR: "..tostring(str).."\n")
-			wait(9e9)
+	local function escpat(s)
+		return s:gsub("([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
+	end
+	local function nextNonBlank(start)
+		local j = start
+		while j <= #rawLines and (rawLines[j] == nil or rawLines[j]:match("^%s*$")) do
+			j += 1
+		end
+		return j
+	end
+	local function tryCollapse(i)
+		local line = rawLines[i]
+		if line == nil then return false end
+		local reg, lit = line:match('^%s*(v%d+) = (".-")%s*$')
+		if not reg then reg, lit = line:match('^%s*(v%d+) = (%-?%d+%.?%d*)%s*$') end
+		if not reg then reg, lit = line:match('^%s*(v%d+) = (true)%s*$') end
+		if not reg then reg, lit = line:match('^%s*(v%d+) = (false)%s*$') end
+		if not reg then reg, lit = line:match('^%s*(v%d+) = (nil)%s*$') end
+		if not reg then reg, lit = line:match('^%s*(v%d+) = ([%a_][%w_%.]+)%s*$') end
+		if not reg then return false end
+		local j = nextNonBlank(i + 1)
+		if j > #rawLines or rawLines[j] == nil then return false end
+		local nextLine = rawLines[j]
+		local ep = escpat(reg)
+		local count = 0
+		for _ in nextLine:gmatch(ep) do count += 1 end
+		if count ~= 1 then return false end
+		if nextLine:match("^%s*" .. ep .. "%s*=") then return false end
+		for k = i + 1, j - 1 do
+			local mid = rawLines[k]
+			if mid and mid:match("^%s*" .. ep .. "%s*=") then return false end
+		end
+		rawLines[j] = nextLine:gsub(ep, lit, 1)
+		rawLines[i] = nil
+		return true
+	end
+	for _ = 1, 8 do
+		for i = 1, #rawLines do tryCollapse(i) end
+	end
+	local function tryFoldField(i)
+		local line = rawLines[i]
+		if not line then return false end
+		local lreg, src, field = line:match('^%s*(v%d+) = (v%d+)%.([%a_][%w_]*)%s*$')
+		if not lreg then
+			lreg, src, field = line:match('^%s*(v%d+) = (v%d+)%[(.-)%]%s*$')
+			if lreg then field = "[" .. field .. "]" else return false end
 		else
-			error(str)
+			field = "." .. field
 		end
+		local j = nextNonBlank(i + 1)
+		if j > #rawLines then return false end
+		local nextLine = rawLines[j]
+		local epSrc = escpat(src)
+		local epReg = escpat(lreg)
+		local count = 0
+		for _ in nextLine:gmatch(epReg) do count += 1 end
+		if count ~= 1 then return false end
+		if nextLine:match("^%s*" .. epReg .. "%s*=") then return false end
+		for k = i + 1, j - 1 do
+			local mid = rawLines[k]
+			if mid and mid:match("^%s*" .. epSrc .. "%s*=") then return false end
+		end
+		if src:match("^upv_") then return false end
+		rawLines[j] = nextLine:gsub(epReg, src .. field, 1)
+		rawLines[i] = nil
+		return true
 	end
-
-	Main.LoadModule = function(name)
-		if Main.Elevated then
-			local control
-
-			if EmbeddedModules then
-				control = EmbeddedModules[name]()
-
-				if gethsfuncs then
-					control = _G.moduleData
-				end
-
-				if not control then Main.Error("Missing Embedded Module: "..name) end
-			elseif _G.DebugLoadModel then
-				local model = Main.DebugModel
-				if not model then model = oldgame:GetObjects(getsynasset("AfterModules.rbxm"))[1] end
-
-				control = loadstring(model.Modules[name].Source)()
-				print("Locally Loaded Module",name,control)
-			else
-
-				local hashs = Main.ModuleHashData
-				if not hashs then
-					local s,hashDataStr = pcall(oldgame.HttpGet, game, "https://api.github.com/repos/"..Main.GitRepoName.."/ModuleHashs.dat")
-					if not s then Main.Error("Failed to get module hashs") end
-
-					local s,hashData = pcall(service.HttpService.JSONDecode,service.HttpService,hashDataStr)
-					if not s then Main.Error("Failed to decode module hash JSON") end
-
-					hashs = hashData
-					Main.ModuleHashData = hashs
-				end
-
-				local hashfunc = (syn and syn.crypt.hash) or function() return "" end
-				local filePath = "zuka/ModuleCache/"..name..".lua"
-				local s,moduleStr = pcall(env.readfile,filePath)
-
-				if s and hashfunc(moduleStr) == hashs[name] then
-					control = loadstring(moduleStr)()
-				else
-
-					local s,moduleStr = pcall(oldgame.HttpGet, game, "https://api.github.com/repos/"..Main.GitRepoName.."/Modules/"..name..".lua")
-					if not s then Main.Error("Failed to get external module data of "..name) end
-
-					env.writefile(filePath,moduleStr)
-					control = loadstring(moduleStr)()
-				end
-			end
-
-			Main.AppControls[name] = control
-			control.InitDeps(Main.GetInitDeps())
-
-			local moduleData = control.Main()
-			Apps[name] = moduleData
-			return moduleData
+	for _ = 1, 6 do
+		for i = 1, #rawLines do tryFoldField(i) end
+	end
+	local pass2 = {}
+	for idx = 1, #rawLines do
+		local line = rawLines[idx]
+		if line == nil then continue end
+		local stripped = line:match("^%s*(.-)%s*$")
+		if stripped:match("^%-%- goto #%d+$") then continue end
+		if stripped:match("^%-%- jump") then continue end
+		line = line:gsub("%s*%-%- goto #%d+$", "")
+		line = line:gsub("%s*%-%- end at #%d+$", "")
+		line = line:gsub("%s*%-%- iterate %+ jump to #%d+$", "")
+		pass2[#pass2 + 1] = line
+	end
+	local pass3 = {}
+	local i = 1
+	while i <= #pass2 do
+		local line = pass2[i]
+		local nxt  = pass2[i + 1]
+		local s    = line and line:match("^%s*(.-)%s*$") or ""
+		local isNilInit = s:match("^v%d+ = nil") ~= nil
+		local nextIsFor = nxt and nxt:match("^%s*for%s+v%d+") ~= nil
+		if isNilInit and nextIsFor then
+			i += 1
 		else
-			local module = script:WaitForChild("Modules"):WaitForChild(name,2)
-			if not module then Main.Error("CANNOT FIND MODULE "..name) end
-
-			local control = require(module)
-			Main.AppControls[name] = control
-			control.InitDeps(Main.GetInitDeps())
-
-			local moduleData = control.Main()
-			Apps[name] = moduleData
-			return moduleData
+			pass3[#pass3 + 1] = line
+			i += 1
 		end
 	end
-
-	Main.LoadModules = function()
-		for i,v in pairs(Main.ModuleList) do
-			local s,e = pcall(Main.LoadModule,v)
-			if not s then
-				Main.Error("FAILED LOADING " .. v .. " CAUSE " .. e)
-			end
+	local seen = {}
+	local pass4 = {}
+	for _, line in ipairs(pass3) do
+		local reg = line:match("^%s*(v%d+)%s*=")
+		if reg and not seen[reg] then
+			seen[reg] = true
+			line = line:gsub("^(%s*)(v%d+%s*=)", "%1local %2", 1)
 		end
-
-		Explorer = Apps.Explorer
-		Properties = Apps.Properties
-		ScriptViewer = Apps.ScriptViewer
-		Console = Apps.Console
-		SaveInstance = Apps.SaveInstance
-		ModelViewer = Apps.ModelViewer
-		Notebook = Apps.Notebook
-
-		local appTable = {
-			Explorer = Explorer,
-			Properties = Properties,
-			ScriptViewer = ScriptViewer,
-			Console = Console,
-			SaveInstance = SaveInstance,
-			ModelViewer = ModelViewer,
-			Notebook = Notebook,
-
-		}
-
-		Main.AppControls.Lib.InitAfterMain(appTable)
-		for i,v in pairs(Main.ModuleList) do
-			local control = Main.AppControls[v]
-			if control then
-				control.InitAfterMain(appTable)
-			end
-		end
+		pass4[#pass4 + 1] = line
 	end
-
-	Main.InitEnv = function()
-		setmetatable(env,{__newindex = function(self,name,func)
-			if not func then Main.MissingEnv[#Main.MissingEnv+1] = name return end
-			rawset(self,name,func)
-		end})
-
-		env.isonmobile = game:GetService("UserInputService").TouchEnabled
-		
-		env.loadstring = (pcall(loadstring,"local a = 1") and loadstring) or (game:GetService("RunService"):IsStudio() and script.Modules:FindFirstChild("Loadstring") and require(script.Modules:FindFirstChild("Loadstring")))
-
-		env.isfile = isfile
-		env.isfolder = isfolder
-		env.readfile = readfile
-		env.writefile = writefile
-		env.appendfile = appendfile
-		env.makefolder = makefolder
-		env.listfiles = listfiles
-		env.loadfile = loadfile
-		env.saveinstance = saveinstance or (function()
-
-			if game:GetService("RunService"):IsStudio() then return function() error("Cannot run in Roblox Studio!") end end
-			local Params = {
-				RepoURL = "https://raw.githubusercontent.com/luau/SynSaveInstance/main/",
-				SSI = "saveinstance",
-			}
-			local synsaveinstance = loadstring(oldgame:HttpGet(Params.RepoURL .. Params.SSI .. ".luau", true), Params.SSI)()
-		
-			local function wrappedsaveinstance(obj, filepath, options)
-				options["FilePath"] = filepath
-
-				options["Object"] = obj
-				return synsaveinstance(options)
-			end
-			
-			getgenv().saveinstance = wrappedsaveinstance
-			return wrappedsaveinstance
-		end)()
-		
-		env.parsefile = function(name)
-			return tostring(name):gsub("[*\\?:<>|]+", ""):sub(1, 175)
-		end
-
-		env.getupvalues = debug.getupvalues or getupvalues or getupvals
-		env.getconstants = debug.getconstants or getconstants or getconsts
-		env.islclosure = islclosure or is_l_closure
-		env.checkcaller = checkcaller
-		env.getreg = getreg
-		env.getgc = getgc
-
-		env.hookfunction = hookfunction
-		env.hookmetamethod = hookmetamethod
-
-		env.getscriptbytecode = getscriptbytecode
-
-		-- Wrapper that falls back to getloadedmodules for CorePackages/CoreGui scripts
-		env.getBytecode = function(scr)
-			local ok, bc = pcall(getscriptbytecode, scr)
-			if ok and bc and bc ~= "" then return bc end
-			-- try loaded modules path for locked services
-			if getloadedmodules then
-				local ok2, mods = pcall(getloadedmodules)
-				if ok2 and mods then
-					for _, mod in ipairs(mods) do
-						local ok3, name = pcall(function() return mod.Name end)
-						if ok3 and name == scr.Name then
-							local ok4, fullA = pcall(function() return mod:GetFullName() end)
-							local ok5, fullB = pcall(function() return scr:GetFullName() end)
-							local match = (ok4 and ok5 and fullA == fullB) or (not ok4 or not ok5)
-							if match then
-								local ok6, bc2 = pcall(getscriptbytecode, mod)
-								if ok6 and bc2 and bc2 ~= "" then return bc2 end
-							end
-						end
-					end
-				end
-			end
-			return nil
-		end
-		env.setfflag = setfflag
-		env.protectgui = protect_gui or (syn and syn.protect_gui)
-		env.gethui = gethui
-		env.setclipboard = setclipboard
-		env.getnilinstances = getnilinstances or get_nil_instances
-		env.getloadedmodules = getloadedmodules
-		
-		env.isViableDecompileScript = function(obj)
-			if obj:IsA("ModuleScript") then
-				return true
-			elseif obj:IsA("LocalScript") and (obj.RunContext == Enum.RunContext.Client or obj.RunContext == Enum.RunContext.Legacy) then
-				return true
-			elseif obj:IsA("Script") and obj.RunContext == Enum.RunContext.Client then
-				return true
-			end
-			-- CoreScripts: Scripts/LocalScripts/ModuleScripts parented under CoreGui or CorePackages
-			-- getscriptbytecode works on these on supported executors even though they run server-side
-			local ok, fullName = pcall(function() return obj:GetFullName() end)
-			if ok and fullName then
-				if fullName:match("^game%.CoreGui") or fullName:match("^game:GetService%(\"CoreGui\"%)") or
-				   fullName:match("^CoreGui") or fullName:match("^game%.CorePackages") or
-				   fullName:match("^game:GetService%(\"CorePackages\"%)") or fullName:match("^CorePackages") then
-					return true
-				end
-			end
-			return false
-		end
-		env.request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-		
-		-- Konstant removed: zukv2 handles all decompilation via env.decompile override below
-		env.decompile = function() return nil end
-
-		-- ── Expose ZukDecompile on env and override env.decompile ───────────
-		-- ScriptViewer stores ZukDecompile in _G._ZUK_DECOMPILE (set in main()).
-		-- We patch env.decompile so every legacy caller (SAVE_SCRIPT, etc.)
-		-- gets our local decompiler first, Konstant only as a last resort.
-		task.defer(function()
-			local zuk = getgenv()._ZUK_DECOMPILE
-			if not zuk then return end
-			env.ZukDecompile = zuk
-			local _konstant = env.decompile
-			env.decompile = function(scriptObj)
-				local okBC, bytecode = pcall(env.getscriptbytecode, scriptObj)
-				if okBC and bytecode and bytecode ~= "" then
-					local opts = {
-						DecompilerMode="disasm", DecompilerTimeout=15, CleanMode=true, CleanMode=true,
-						ReaderFloatPrecision=7, ShowDebugInformation=false,
-						ShowTrivialOperations=false, ShowInstructionLines=true,
-						ShowOperationIndex=true, ShowOperationNames=true,
-						ListUsedGlobals=true, UseTypeInfo=true,
-						EnabledRemarks={ColdRemark=false, InlineRemark=true},
-						ReturnElapsedTime=false,
-					}
-					local okD, result = pcall(zuk, bytecode, opts)
-					if okD and result then
-						local _pp = getgenv()._ZUK_PRETTYPRINT
-						local _co = getgenv()._ZUK_CLEANOUTPUT
-						return (_pp and _co) and _co(_pp(result)) or (_pp and _pp(result)) or result
-					end
-				end
-				-- bytecode unavailable or decompiler failed — fall back to Konstant
-				if _konstant then return _konstant(scriptObj) end
-			end
-		end)
-
-		if identifyexecutor then
-			Main.Executor = identifyexecutor()
-		end
-
-		Main.GuiHolder = Main.Elevated and service.CoreGui or plr:FindFirstChildOfClass("PlayerGui")
-
-		setmetatable(env,nil)
+	local final = {}
+	local lastBlank = false
+	for _, line in ipairs(pass4) do
+		local isBlank = line:match("^%s*$") ~= nil
+		if isBlank and lastBlank then continue end
+		lastBlank = isBlank
+		final[#final + 1] = line
 	end
-
-	Main.IncompatibleTest = function()
-
-	end
-	
-	local function serialize(val)
-		if typeof(val) == "Color3" then
-			local serializedColor = {}
-			serializedColor.R = val.R
-			serializedColor.G = val.G
-			serializedColor.B = val.B
-			return serializedColor
-		else
-			return val
-		end
-	end
-	
-	local function deserialize(val)
-		if typeof(val) == "table" then
-			if val.R and val.G and val.B then
-				return Color3.new(val.R, val.G, val.B)
-			else
-				return val
-			end
-		else
-			return val
-		end
-	end
-	
-	Main.ExportSettings = function()
-		local rawData = Settings or DefaultSettings
-
-		local function recur(tbl)
-			local newTbl = {}
-			for i, v in pairs(tbl) do
-				if typeof(v) == "table" then
-					newTbl[i] = recur(v)
-				else
-					newTbl[i] = serialize(v)
-				end
-			end
-			return newTbl
-		end
-
-		local serializedData = recur(rawData)
-
-		local s, json = pcall(service.HttpService.JSONEncode, service.HttpService, serializedData)
-		if s and json then
-			return json
-		end
-	end
-
-	Main.LoadSettings = function()
-		local s, data = pcall(env.readfile or error, "ZukaSettings.json")
-		if s and data and data ~= "" then
-			local s, decoded = pcall(service.HttpService.JSONDecode, service.HttpService, data)
-			if s and decoded then
-
-				local function recur(tbl)
-					local newTbl = {}
-					for i, v in pairs(tbl) do
-						if typeof(v) == "table" then
-							newTbl[i] = deserialize(recur(v))
-						else
-							newTbl[i] = deserialize(v)
-						end
-					end
-					return newTbl
-				end
-
-				local deserializedData = recur(decoded)
-				for k, v in pairs(deserializedData) do
-					Settings[k] = v
-				end
-
-			else
-				warn("failed to decode settings json")
-			end
-		else
-			Main.ResetSettings()
-		end
-	end
-
-	Main.ResetSettings = function()
-		local function recur(t,res)
-			for set,val in pairs(t) do
-				if type(val) == "table" and val._Recurse then
-					if type(res[set]) ~= "table" then
-						res[set] = {}
-					end
-					recur(val,res[set])
-				else
-					res[set] = val
-				end
-			end
-			return res
-		end
-		recur(DefaultSettings,Settings)
-	end
-
-	Main.FetchAPI = function(callbackiflong, callbackiftoolong, XD)
-		local downloaded = false
-		local api,rawAPI
-		if Main.Elevated then
-			if Main.LocalDepsUpToDate() then
-				local localAPI = Lib.ReadFile("dex/rbx_api.dat")
-				if localAPI then
-					rawAPI = localAPI
-				else
-					Main.DepsVersionData[1] = ""
-				end
-			end
-			task.spawn(function()
-				task.wait(10)
-				if not downloaded and callbackiflong then callbackiflong() end
-
-				task.wait(20)
-				if not downloaded and callbackiftoolong then callbackiftoolong() end
-
-				task.wait(30)
-				if not downloaded and XD then XD() end
-			end)
-
-			rawAPI = rawAPI or game:HttpGet("http://setup.roblox.com/"..Main.RobloxVersion.."-API-Dump.json")
-		else
-			if script:FindFirstChild("API") then
-				rawAPI = require(script.API)
-			else
-				error("NO API EXISTS")
-			end
-		end
-		downloaded = true
-		
-		Main.RawAPI = rawAPI
-		api = service.HttpService:JSONDecode(rawAPI)
-
-		local classes,enums = {},{}
-		local categoryOrder,seenCategories = {},{}
-
-		local function insertAbove(t,item,aboveItem)
-			local findPos = table.find(t,item)
-			if not findPos then return end
-			table.remove(t,findPos)
-
-			local pos = table.find(t,aboveItem)
-			if not pos then return end
-			table.insert(t,pos,item)
-		end
-
-		for _,class in pairs(api.Classes) do
-			local newClass = {}
-			newClass.Name = class.Name
-			newClass.Superclass = class.Superclass
-			newClass.Properties = {}
-			newClass.Functions = {}
-			newClass.Events = {}
-			newClass.Callbacks = {}
-			newClass.Tags = {}
-
-			if class.Tags then for c,tag in pairs(class.Tags) do newClass.Tags[tag] = true end end
-			for __,member in pairs(class.Members) do
-				local newMember = {}
-				newMember.Name = member.Name
-				newMember.Class = class.Name
-				newMember.Security = member.Security
-				newMember.Tags ={}
-				if member.Tags then for c,tag in pairs(member.Tags) do newMember.Tags[tag] = true end end
-
-				local mType = member.MemberType
-				if mType == "Property" then
-					local propCategory = member.Category or "Other"
-					propCategory = propCategory:match("^%s*(.-)%s*$")
-					if not seenCategories[propCategory] then
-						categoryOrder[#categoryOrder+1] = propCategory
-						seenCategories[propCategory] = true
-					end
-					newMember.ValueType = member.ValueType
-					newMember.Category = propCategory
-					newMember.Serialization = member.Serialization
-					table.insert(newClass.Properties,newMember)
-				elseif mType == "Function" then
-					newMember.Parameters = {}
-					newMember.ReturnType = member.ReturnType.Name
-					for c,param in pairs(member.Parameters) do
-						table.insert(newMember.Parameters,{Name = param.Name, Type = param.Type.Name})
-					end
-					table.insert(newClass.Functions,newMember)
-				elseif mType == "Event" then
-					newMember.Parameters = {}
-					for c,param in pairs(member.Parameters) do
-						table.insert(newMember.Parameters,{Name = param.Name, Type = param.Type.Name})
-					end
-					table.insert(newClass.Events,newMember)
-				end
-			end
-
-			classes[class.Name] = newClass
-		end
-
-		for _,class in pairs(classes) do
-			class.Superclass = classes[class.Superclass]
-		end
-
-		for _,enum in pairs(api.Enums) do
-			local newEnum = {}
-			newEnum.Name = enum.Name
-			newEnum.Items = {}
-			newEnum.Tags = {}
-
-			if enum.Tags then for c,tag in pairs(enum.Tags) do newEnum.Tags[tag] = true end end
-			for __,item in pairs(enum.Items) do
-				local newItem = {}
-				newItem.Name = item.Name
-				newItem.Value = item.Value
-				table.insert(newEnum.Items,newItem)
-			end
-
-			enums[enum.Name] = newEnum
-		end
-
-		local function getMember(class,member)
-			if not classes[class] or not classes[class][member] then return end
-			local result = {}
-
-			local currentClass = classes[class]
-			while currentClass do
-				for _,entry in pairs(currentClass[member]) do
-					result[#result+1] = entry
-				end
-				currentClass = currentClass.Superclass
-			end
-
-			table.sort(result,function(a,b) return a.Name < b.Name end)
-			return result
-		end
-
-		insertAbove(categoryOrder,"Behavior","Tuning")
-		insertAbove(categoryOrder,"Appearance","Data")
-		insertAbove(categoryOrder,"Attachments","Axes")
-		insertAbove(categoryOrder,"Cylinder","Slider")
-		insertAbove(categoryOrder,"Localization","Jump Settings")
-		insertAbove(categoryOrder,"Surface","Motion")
-		insertAbove(categoryOrder,"Surface Inputs","Surface")
-		insertAbove(categoryOrder,"Part","Surface Inputs")
-		insertAbove(categoryOrder,"Assembly","Surface Inputs")
-		insertAbove(categoryOrder,"Character","Controls")
-		categoryOrder[#categoryOrder+1] = "Unscriptable"
-		categoryOrder[#categoryOrder+1] = "Attributes"
-
-		local categoryOrderMap = {}
-		for i = 1,#categoryOrder do
-			categoryOrderMap[categoryOrder[i]] = i
-		end
-
-		return {
-			Classes = classes,
-			Enums = enums,
-			CategoryOrder = categoryOrderMap,
-			GetMember = getMember
-		}
-	end
-
-	Main.FetchRMD = function()
-		local rawXML
-		if Main.Elevated then
-			if Main.LocalDepsUpToDate() then
-				local localRMD = Lib.ReadFile("dex/rbx_rmd.dat")
-				if localRMD then
-					rawXML = localRMD
-				else
-					Main.DepsVersionData[1] = ""
-				end
-			end
-			rawXML = rawXML or game:HttpGet("https://raw.githubusercontent.com/CloneTrooper1019/Roblox-Client-Tracker/roblox/ReflectionMetadata.xml")
-		else
-			if script:FindFirstChild("RMD") then
-				rawXML = require(script.RMD)
-			else
-				error("NO RMD EXISTS")
-			end
-		end
-		Main.RawRMD = rawXML
-		local parsed = Lib.ParseXML(rawXML)
-		local classList = parsed.children[1].children[1].children
-		local enumList = parsed.children[1].children[2].children
-		local propertyOrders = {}
-
-		local classes,enums = {},{}
-		for _,class in pairs(classList) do
-			local className = ""
-			for _,child in pairs(class.children) do
-				if child.tag == "Properties" then
-					local data = {Properties = {}, Functions = {}}
-					local props = child.children
-					for _,prop in pairs(props) do
-						local name = prop.attrs.name
-						name = name:sub(1,1):upper()..name:sub(2)
-						data[name] = prop.children[1].text
-					end
-					className = data.Name
-					classes[className] = data
-				elseif child.attrs.class == "ReflectionMetadataProperties" then
-					local members = child.children
-					for _,member in pairs(members) do
-						if member.attrs.class == "ReflectionMetadataMember" then
-							local data = {}
-							if member.children[1].tag == "Properties" then
-								local props = member.children[1].children
-								for _,prop in pairs(props) do
-									if prop.attrs then
-										local name = prop.attrs.name
-										name = name:sub(1,1):upper()..name:sub(2)
-										data[name] = prop.children[1].text
-									end
-								end
-								if data.PropertyOrder then
-									local orders = propertyOrders[className]
-									if not orders then orders = {} propertyOrders[className] = orders end
-									orders[data.Name] = tonumber(data.PropertyOrder)
-								end
-								classes[className].Properties[data.Name] = data
-							end
-						end
-					end
-				elseif child.attrs.class == "ReflectionMetadataFunctions" then
-					local members = child.children
-					for _,member in pairs(members) do
-						if member.attrs.class == "ReflectionMetadataMember" then
-							local data = {}
-							if member.children[1].tag == "Properties" then
-								local props = member.children[1].children
-								for _,prop in pairs(props) do
-									if prop.attrs then
-										local name = prop.attrs.name
-										name = name:sub(1,1):upper()..name:sub(2)
-										data[name] = prop.children[1].text
-									end
-								end
-								classes[className].Functions[data.Name] = data
-							end
-						end
-					end
-				end
-			end
-		end
-
-		for _,enum in pairs(enumList) do
-			local enumName = ""
-			for _,child in pairs(enum.children) do
-				if child.tag == "Properties" then
-					local data = {Items = {}}
-					local props = child.children
-					for _,prop in pairs(props) do
-						local name = prop.attrs.name
-						name = name:sub(1,1):upper()..name:sub(2)
-						data[name] = prop.children[1].text
-					end
-					enumName = data.Name
-					enums[enumName] = data
-				elseif child.attrs.class == "ReflectionMetadataEnumItem" then
-					local data = {}
-					if child.children[1].tag == "Properties" then
-						local props = child.children[1].children
-						for _,prop in pairs(props) do
-							local name = prop.attrs.name
-							name = name:sub(1,1):upper()..name:sub(2)
-							data[name] = prop.children[1].text
-						end
-						enums[enumName].Items[data.Name] = data
-					end
-				end
-			end
-		end
-
-		return {Classes = classes, Enums = enums, PropertyOrders = propertyOrders}
-	end
-
-	Main.ShowGui = Main.SecureGui
-
-	Main.CreateIntro = function(initStatus)
-		local gui = create({
-			{1,"ScreenGui",{Name="Intro",}},
-			{2,"Frame",{Active=true,BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderSizePixel=0,Name="Main",Parent={1},Position=UDim2.new(0.5,-175,0.5,-100),Size=UDim2.new(0,350,0,200),}},
-			{3,"Frame",{BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderSizePixel=0,ClipsDescendants=true,Name="Holder",Parent={2},Size=UDim2.new(1,0,1,0),}},
-			{4,"UIGradient",{Parent={3},Rotation=30,Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0),}),}},
-			{5,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=4,Name="Title",Parent={3},Position=UDim2.new(0,-190,0,15),Size=UDim2.new(0,100,0,50),Text="Ugh",TextColor3=Color3.new(1,1,1),TextSize=50,TextTransparency=1,}},
-			{6,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Desc",Parent={3},Position=UDim2.new(0,-230,0,60),Size=UDim2.new(0,180,0,25),Text="A Better Dex.",TextColor3=Color3.new(1,1,1),TextSize=18,TextTransparency=1,}},
-			{7,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="StatusText",Parent={3},Position=UDim2.new(0,20,0,110),Size=UDim2.new(0,180,0,25),Text="Grabbing balls.",TextColor3=Color3.new(1,1,1),TextSize=14,TextTransparency=1,}},
-			{8,"Frame",{BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderSizePixel=0,Name="ProgressBar",Parent={3},Position=UDim2.new(0,110,0,145),Size=UDim2.new(0,0,0,4),}},
-			{9,"Frame",{BackgroundColor3=Color3.new(0.2392156869173,0.56078433990479,0.86274510622025),BorderSizePixel=0,Name="Bar",Parent={8},Size=UDim2.new(0,0,1,0),}},
-			{10,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://2764171053",ImageColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),Parent={8},ScaleType=1,Size=UDim2.new(1,0,1,0),SliceCenter=Rect.new(2,2,254,254),}},
-			{11,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Creator",Parent={2},Position=UDim2.new(1,-110,1,-20),Size=UDim2.new(0,105,0,20),Text="Improved",TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=1,}},
-			{12,"UIGradient",{Parent={11},Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0),}),}},
-			{13,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Version",Parent={2},Position=UDim2.new(1,-110,1,-35),Size=UDim2.new(0,105,0,20),Text=Main.Version,TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=1,}},
-			{14,"UIGradient",{Parent={13},Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0),}),}},
-			{15,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Image="rbxassetid://1427967925",Name="Outlines",Parent={2},Position=UDim2.new(0,-5,0,-5),ScaleType=1,Size=UDim2.new(1,10,1,10),SliceCenter=Rect.new(6,6,25,25),TileSize=UDim2.new(0,20,0,20),}},
-			{16,"UIGradient",{Parent={15},Rotation=-30,Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0),}),}},
-			{17,"UIGradient",{Parent={2},Rotation=-30,Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0),}),}},
-			{18,"UIDragDetector", {Parent={2}}}
-		})
-		Main.ShowGui(gui)
-		local backGradient = gui.Main.UIGradient
-		local outlinesGradient = gui.Main.Outlines.UIGradient
-		local holderGradient = gui.Main.Holder.UIGradient
-		local titleText = gui.Main.Holder.Title
-		local descText = gui.Main.Holder.Desc
-		local versionText = gui.Main.Version
-		local versionGradient = versionText.UIGradient
-		local creatorText = gui.Main.Creator
-		local creatorGradient = creatorText.UIGradient
-		local statusText = gui.Main.Holder.StatusText
-		local progressBar = gui.Main.Holder.ProgressBar
-		local tweenS = service.TweenService
-
-		local renderStepped = service.RunService.RenderStepped
-		local signalWait = renderStepped.wait
-		local fastwait = function(s)
-			if not s then return signalWait(renderStepped) end
-			local start = tick()
-			while tick() - start < s do signalWait(renderStepped) end
-		end
-
-		statusText.Text = initStatus
-
-		local function tweenNumber(n,ti,func)
-			local tweenVal = Instance.new("IntValue")
-			tweenVal.Value = 0
-			tweenVal.Changed:Connect(func)
-			local tween = tweenS:Create(tweenVal,ti,{Value = n})
-			tween:Play()
-			tween.Completed:Connect(function()
-				tweenVal:Destroy()
-			end)
-		end
-
-		local ti = TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-		tweenNumber(100,ti,function(val)
-			val = val/200
-			local start = NumberSequenceKeypoint.new(0,0)
-			local a1 = NumberSequenceKeypoint.new(val,0)
-			local a2 = NumberSequenceKeypoint.new(math.min(0.5,val+math.min(0.05,val)),1)
-			if a1.Time == a2.Time then a2 = a1 end
-			local b1 = NumberSequenceKeypoint.new(1-val,0)
-			local b2 = NumberSequenceKeypoint.new(math.max(0.5,1-val-math.min(0.05,val)),1)
-			if b1.Time == b2.Time then b2 = b1 end
-			local goal = NumberSequenceKeypoint.new(1,0)
-			backGradient.Transparency = NumberSequence.new({start,a1,a2,b2,b1,goal})
-			outlinesGradient.Transparency = NumberSequence.new({start,a1,a2,b2,b1,goal})
-		end)
-
-		fastwait(0.4)
-
-		tweenNumber(100,ti,function(val)
-			val = val/166.66
-			local start = NumberSequenceKeypoint.new(0,0)
-			local a1 = NumberSequenceKeypoint.new(val,0)
-			local a2 = NumberSequenceKeypoint.new(val+0.01,1)
-			local goal = NumberSequenceKeypoint.new(1,1)
-			holderGradient.Transparency = NumberSequence.new({start,a1,a2,goal})
-		end)
-
-		tweenS:Create(titleText,ti,{Position = UDim2.new(0,60,0,15), TextTransparency = 0}):Play()
-		tweenS:Create(descText,ti,{Position = UDim2.new(0,20,0,60), TextTransparency = 0}):Play()
-
-		local function rightTextTransparency(obj)
-			tweenNumber(100,ti,function(val)
-				val = val/100
-				local a1 = NumberSequenceKeypoint.new(1-val,0)
-				local a2 = NumberSequenceKeypoint.new(math.max(0,1-val-0.01),1)
-				if a1.Time == a2.Time then a2 = a1 end
-				local start = NumberSequenceKeypoint.new(0,a1 == a2 and 0 or 1)
-				local goal = NumberSequenceKeypoint.new(1,0)
-				obj.Transparency = NumberSequence.new({start,a2,a1,goal})
-			end)
-		end
-		rightTextTransparency(versionGradient)
-		rightTextTransparency(creatorGradient)
-
-		fastwait(0.9)
-
-		local progressTI = TweenInfo.new(0.25,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-
-		tweenS:Create(statusText,progressTI,{Position = UDim2.new(0,20,0,120), TextTransparency = 0}):Play()
-		tweenS:Create(progressBar,progressTI,{Position = UDim2.new(0,60,0,145), Size = UDim2.new(0,100,0,4)}):Play()
-
-		fastwait(0.25)
-
-		local function setProgress(text,n)
-			statusText.Text = text
-			tweenS:Create(progressBar.Bar,progressTI,{Size = UDim2.new(n,0,1,0)}):Play()
-		end
-
-		local function close()
-			tweenS:Create(titleText,progressTI,{TextTransparency = 1}):Play()
-			tweenS:Create(descText,progressTI,{TextTransparency = 1}):Play()
-			tweenS:Create(versionText,progressTI,{TextTransparency = 1}):Play()
-			tweenS:Create(creatorText,progressTI,{TextTransparency = 1}):Play()
-			tweenS:Create(statusText,progressTI,{TextTransparency = 1}):Play()
-			tweenS:Create(progressBar,progressTI,{BackgroundTransparency = 1}):Play()
-			tweenS:Create(progressBar.Bar,progressTI,{BackgroundTransparency = 1}):Play()
-			tweenS:Create(progressBar.ImageLabel,progressTI,{ImageTransparency = 1}):Play()
-
-			tweenNumber(100,TweenInfo.new(0.4,Enum.EasingStyle.Back,Enum.EasingDirection.In),function(val)
-				val = val/250
-				local start = NumberSequenceKeypoint.new(0,0)
-				local a1 = NumberSequenceKeypoint.new(0.6+val,0)
-				local a2 = NumberSequenceKeypoint.new(math.min(1,0.601+val),1)
-				if a1.Time == a2.Time then a2 = a1 end
-				local goal = NumberSequenceKeypoint.new(1,a1 == a2 and 0 or 1)
-				holderGradient.Transparency = NumberSequence.new({start,a1,a2,goal})
-			end)
-
-			fastwait(0.5)
-			gui.Main.BackgroundTransparency = 1
-			outlinesGradient.Rotation = 30
-
-			tweenNumber(100,ti,function(val)
-				val = val/100
-				local start = NumberSequenceKeypoint.new(0,1)
-				local a1 = NumberSequenceKeypoint.new(val,1)
-				local a2 = NumberSequenceKeypoint.new(math.min(1,val+math.min(0.05,val)),0)
-				if a1.Time == a2.Time then a2 = a1 end
-				local goal = NumberSequenceKeypoint.new(1,a1 == a2 and 1 or 0)
-				outlinesGradient.Transparency = NumberSequence.new({start,a1,a2,goal})
-				holderGradient.Transparency = NumberSequence.new({start,a1,a2,goal})
-			end)
-
-			fastwait(0.45)
-			gui:Destroy()
-		end
-
-		return {SetProgress = setProgress, Close = close, Object = gui}
-	end
-
-	Main.CreateApp = function(data)
-		if Main.MenuApps[data.Name] then return end
-		local control = {}
-
-		local app = Main.AppTemplate:Clone()
-
-		local iconIndex = data.Icon
-		if data.IconMap and iconIndex then
-			if type(iconIndex) == "number" then
-				data.IconMap:Display(app.Main.Icon,iconIndex)
-			elseif type(iconIndex) == "string" then
-				data.IconMap:DisplayByKey(app.Main.Icon,iconIndex)
-			end
-		elseif type(iconIndex) == "string" then
-			app.Main.Icon.Image = iconIndex
-		else
-			app.Main.Icon.Image = ""
-		end
-
-		local function updateState()
-			app.Main.BackgroundTransparency = data.Open and 0 or (Lib.CheckMouseInGui(app.Main) and 0 or 1)
-			app.Main.Highlight.Visible = data.Open
-		end
-
-		local function enable(silent)
-			if data.Open then return end
-			data.Open = true
-			updateState()
-			if not silent then
-				if data.Window then data.Window:Show() end
-				if data.OnClick then data.OnClick(data.Open) end
-			end
-		end
-
-		local function disable(silent)
-			if not data.Open then return end
-			data.Open = false
-			updateState()
-			if not silent then
-				if data.Window then data.Window:Hide() end
-				if data.OnClick then data.OnClick(data.Open) end
-			end
-		end
-
-		updateState()
-
-		local ySize = service.TextService:GetTextSize(data.Name,14,Enum.Font.SourceSans,Vector2.new(62,999999)).Y
-		app.Main.Size = UDim2.new(1,0,0,math.clamp(46+ySize,60,74))
-		app.Main.AppName.Text = data.Name
-
-		app.Main.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-				app.Main.BackgroundTransparency = 0
-				app.Main.BackgroundColor3 = Settings.Theme.ButtonHover
-			end
-		end)
-
-		app.Main.InputEnded:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-				app.Main.BackgroundTransparency = data.Open and 0 or 1
-				app.Main.BackgroundColor3 = Settings.Theme.Button
-			end
-		end)
-
-		app.Main.MouseButton1Click:Connect(function()
-			if data.Open then disable() else enable() end
-		end)
-
-		local window = data.Window
-		if window then
-			window.OnActivate:Connect(function() enable(true) end)
-			window.OnDeactivate:Connect(function() disable(true) end)
-		end
-
-		app.Visible = true
-		app.Parent = Main.AppsContainer
-		Main.AppsFrame.CanvasSize = UDim2.new(0,0,0,Main.AppsContainerGrid.AbsoluteCellCount.Y*82 + 8)
-
-		control.Enable = enable
-		control.Disable = disable
-		Main.MenuApps[data.Name] = control
-		return control
-	end
-
-	Main.SetMainGuiOpen = function(val)
-		Main.MainGuiOpen = val
-
-		Main.MainGui.OpenButton.Text = val and " " or " "
-		if val then Main.MainGui.OpenButton.MainFrame.Visible = true end
-		Main.MainGui.OpenButton.MainFrame:TweenSize(val and UDim2.new(0,224,0,200) or UDim2.new(0,0,0,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.2,true)
-
-		service.TweenService:Create(Main.MainGui.OpenButton,TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency = val and 0 or (Lib.CheckMouseInGui(Main.MainGui.OpenButton) and 0 or 0.2)}):Play()
-
-		if Main.MainGuiMouseEvent then Main.MainGuiMouseEvent:Disconnect() end
-
-		if not val then
-			local startTime = tick()
-			Main.MainGuiCloseTime = startTime
-			coroutine.wrap(function()
-				Lib.FastWait(0.2)
-				if not Main.MainGuiOpen and startTime == Main.MainGuiCloseTime then Main.MainGui.OpenButton.MainFrame.Visible = false end
-			end)()
-		else
-			Main.MainGuiMouseEvent = service.UserInputService.InputBegan:Connect(function(input)
-				if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not Lib.CheckMouseInGui(Main.MainGui.OpenButton) and not Lib.CheckMouseInGui(Main.MainGui.OpenButton.MainFrame) then
-
-					Main.SetMainGuiOpen(false)
-				end
-			end)
-		end
-	end
-
-	Main.CreateMainGui = function()
-		local gui = create({
-			{1,"ScreenGui",{IgnoreGuiInset=true,Name="MainMenu",}},
-			{2,"TextButton",{AnchorPoint=Vector2.new(0.5,0),AutoButtonColor=false,BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),BorderSizePixel=0,Font=4,Name="OpenButton",Parent={1},Position=UDim2.new(0.5,0,0,2),Size=UDim2.new(0,55,0,32),Text="Dex++",TextColor3=Color3.new(1,1,1),TextSize=16,TextTransparency=0.20000000298023,}},
-			{3,"UICorner",{CornerRadius=UDim.new(0,4),Parent={2},}},
-			{4,"Frame",{AnchorPoint=Vector2.new(0.5,0),BackgroundColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),ClipsDescendants=true,Name="MainFrame",Parent={2},Position=UDim2.new(0.5,0,1,-4),Size=UDim2.new(0,224,0,200),}},
-			{5,"UICorner",{CornerRadius=UDim.new(0,4),Parent={4},}},
-			{6,"Frame",{BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),Name="BottomFrame",Parent={4},Position=UDim2.new(0,0,1,-24),Size=UDim2.new(1,0,0,24),}},
-			{7,"UICorner",{CornerRadius=UDim.new(0,4),Parent={6},}},
-			{8,"Frame",{BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderSizePixel=0,Name="CoverFrame",Parent={6},Size=UDim2.new(1,0,0,4),}},
-			{9,"Frame",{BackgroundColor3=Color3.new(0.1294117718935,0.1294117718935,0.1294117718935),BorderSizePixel=0,Name="Line",Parent={8},Position=UDim2.new(0,0,0,-1),Size=UDim2.new(1,0,0,1),}},
-			{10,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Settings",Parent={6},Position=UDim2.new(1,-48,0,0),Size=UDim2.new(0,24,1,0),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,}},
-			{11,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://6578871732",ImageTransparency=0.20000000298023,Name="Icon",Parent={10},Position=UDim2.new(0,4,0,4),Size=UDim2.new(0,16,0,16),}},
-			{12,"TextButton",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Information",Parent={6},Position=UDim2.new(1,-24,0,0),Size=UDim2.new(0,24,1,0),Text="",TextColor3=Color3.new(1,1,1),TextSize=14,}},
-			{13,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://6578933307",ImageTransparency=0.20000000298023,Name="Icon",Parent={12},Position=UDim2.new(0,4,0,4),Size=UDim2.new(0,16,0,16),}},
-			{14,"ScrollingFrame",{Active=true,AnchorPoint=Vector2.new(0.5,0),BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderColor3=Color3.new(0.1294117718935,0.1294117718935,0.1294117718935),BorderSizePixel=0,Name="AppsFrame",Parent={4},Position=UDim2.new(0.5,0,0,0),ScrollBarImageColor3=Color3.new(0,0,0),ScrollBarThickness=4,Size=UDim2.new(0,222,1,-25),}},
-			{15,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Name="Container",Parent={14},Position=UDim2.new(0,7,0,8),Size=UDim2.new(1,-14,0,2),}},
-			{16,"UIGridLayout",{CellSize=UDim2.new(0,66,0,74),Parent={15},SortOrder=2,}},
-			{17,"Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Name="App",Parent={1},Size=UDim2.new(0,100,0,100),Visible=false,}},
-			{18,"TextButton",{AutoButtonColor=false,BackgroundColor3=Color3.new(0.2352941185236,0.2352941185236,0.2352941185236),BorderSizePixel=0,Font=3,Name="Main",Parent={17},Size=UDim2.new(1,0,0,60),Text="",TextColor3=Color3.new(0,0,0),TextSize=14,}},
-			{19,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://6579106223",ImageRectSize=Vector2.new(32,32),Name="Icon",Parent={18},Position=UDim2.new(0.5,-16,0,4),ScaleType=4,Size=UDim2.new(0,32,0,32),}},
-			{20,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,BorderSizePixel=0,Font=3,Name="AppName",Parent={18},Position=UDim2.new(0,2,0,38),Size=UDim2.new(1,-4,1,-40),Text="Explorer",TextColor3=Color3.new(1,1,1),TextSize=14,TextTransparency=0,TextTruncate=1,TextWrapped=true,TextYAlignment=0,}},
-			{21,"Frame",{BackgroundColor3=Color3.new(0,0.66666668653488,1),BorderSizePixel=0,Name="Highlight",Parent={18},Position=UDim2.new(0,0,1,-2),Size=UDim2.new(1,0,0,2),}},
-		})
-		Main.MainGui = gui
-		Main.AppsFrame = gui.OpenButton.MainFrame.AppsFrame
-		Main.AppsContainer = Main.AppsFrame.Container
-		Main.AppsContainerGrid = Main.AppsContainer.UIGridLayout
-		Main.AppTemplate = gui.App
-		Main.MainGuiOpen = false
-
-		local openButton = gui.OpenButton
-		openButton.BackgroundTransparency = 0.2
-		openButton.MainFrame.Size = UDim2.new(0,0,0,0)
-		openButton.MainFrame.Visible = false
-		openButton.MouseButton1Click:Connect(function()
-			Main.SetMainGuiOpen(not Main.MainGuiOpen)
-		end)
-
-		openButton.InputBegan:Connect(function(input)
-			-- Block right-click (MouseButton2) to allow explorer context menu
-			if input.UserInputType == Enum.UserInputType.MouseButton2 then return end
-			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-				service.TweenService:Create(Main.MainGui.OpenButton,TweenInfo.new(0,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency = 0}):Play()
-			end
-		end)
-
-		openButton.InputEnded:Connect(function(input)
-			-- Block right-click (MouseButton2) to allow explorer context menu
-			if input.UserInputType == Enum.UserInputType.MouseButton2 then return end
-			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-				service.TweenService:Create(Main.MainGui.OpenButton,TweenInfo.new(0,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency = Main.MainGuiOpen and 0 or 0.2}):Play()
-			end
-		end)
-		
-		local infoDexIntro, isInfoCD
-		
-		openButton.MainFrame.BottomFrame.Settings.Visible = false
-		
-		openButton.MainFrame.BottomFrame.Information.MouseButton1Click:Connect(function()
-			local duration = 1
-			local Infos = {
-				"Contributors >>",
-				"Moon and chillz",
-				"I don't remember",
-				"the rest",
-			}
-			
-			if isInfoCD then return end
-			isInfoCD = true
-			if not infoDexIntro then
-				infoDexIntro = Main.CreateIntro("Running")
-				
-				coroutine.wrap(function()
-					while infoDexIntro do
-						for i,text in Infos do
-							if not infoDexIntro then break end
-							infoDexIntro.SetProgress(text,(1 / #Infos) * i)
-							task.wait(duration)
-						end
-					end
-				end)()
-				
-				Lib.FastWait(1.5)
-				isInfoCD = false
-			else
-				coroutine.wrap(function()
-					infoDexIntro.Close()
-					infoDexIntro = nil
-					
-					Lib.FastWait(1.5)
-					isInfoCD = false
-				end)()
-			end
-		end)
-
-		Main.CreateApp({Name = "Explorer", IconMap = Main.LargeIcons, Icon = "Explorer", Open = true, Window = Explorer.Window})
-
-		Main.CreateApp({Name = "Properties", IconMap = Main.LargeIcons, Icon = "Properties", Open = true, Window = Properties.Window})
-
-		local cptsOnMouseClick = nil
-		Main.CreateApp({Name = "Click part to select", IconMap = Main.LargeIcons, Icon = 6, OnClick = function(callback)
-			if callback then
-				local mouse = Main.Mouse
-				cptsOnMouseClick = mouse.Button1Down:Connect(function()
-					pcall(function()
-						local object = mouse.Target
-						if nodes[object] then
-							selection:Set(nodes[object])
-							Explorer.ViewNode(nodes[object])
-						end
-					end)
-				end)
-			else if cptsOnMouseClick ~= nil then cptsOnMouseClick:Disconnect() cptsOnMouseClick = nil end end
-		end})
-
-		Main.CreateApp({Name = "Notepad", IconMap = Main.LargeIcons, Icon = "Script_Viewer", Window = ScriptViewer.Window})
-		
-		Main.CreateApp({Name = "Console", IconMap = Main.LargeIcons, Icon = "Output", Window = Console.Window})
-		
-		Main.CreateApp({Name = "Save Instance", IconMap = Main.LargeIcons, Icon = "Watcher", Window = SaveInstance.Window})
-		
-		Main.CreateApp({Name = "3D Viewer", IconMap = Explorer.LegacyClassIcons, Icon = 54, Window = ModelViewer.Window})
-
-		Lib.ShowGui(gui)
-	end
-
-	Main.SetupFilesystem = function()
-		if not env.writefile or not env.makefolder then return end
-
-		local writefile,makefolder = env.writefile,env.makefolder
-
-		makefolder("zuka")
-		makefolder("zuka/assets")
-		makefolder("zuka/saved")
-		makefolder("zuka/plugins")
-		makefolder("zuka/ModuleCache")
-	end
-
-	Main.LocalDepsUpToDate = function()
-		return Main.DepsVersionData and Main.ClientVersion == Main.DepsVersionData[1]
-	end
-
-	Main.Init = function()
-		Main.Elevated = pcall(function() local a = game:GetService("CoreGui"):GetFullName() end)
-		
-		if writefile and isfile and not isfile("ZukaSettings.json") then
-			writefile("ZukaSettings.json", Main.ExportSettings())
-		end
-		
-		Main.InitEnv()
-		Main.LoadSettings()
-		
-		Main.SetupFilesystem()
-
-		local intro = Main.CreateIntro("Initializing Library")
-		Lib = Main.LoadModule("Lib")
-		Lib.FastWait()
-
-		Main.IncompatibleTest()
-
-		Main.MiscIcons = Lib.IconMap.new("rbxassetid://6511490623",256,256,16,16)
-		Main.MiscIcons:SetDict({
-			Reference = 0,             Cut = 1,                         Cut_Disabled = 2,      Copy = 3,               Copy_Disabled = 4,    Paste = 5,                Paste_Disabled = 6,
-			Delete = 7,                Delete_Disabled = 8,             Group = 9,             Group_Disabled = 10,    Ungroup = 11,         Ungroup_Disabled = 12,    TeleportTo = 13,
-			Rename = 14,               JumpToParent = 15,               ExploreData = 16,      Save = 17,              CallFunction = 18,    CallRemote = 19,          Undo = 20,
-			Undo_Disabled = 21,        Redo = 22,                       Redo_Disabled = 23,    Expand_Over = 24,       Expand = 25,          Collapse_Over = 26,       Collapse = 27,
-			SelectChildren = 28,       SelectChildren_Disabled = 29,    InsertObject = 30,     ViewScript = 31,        AddStar = 32,         RemoveStar = 33,          Script_Disabled = 34,
-			LocalScript_Disabled = 35, Play = 36,                       Pause = 37,            Rename_Disabled = 38,   Empty = 1000
-		})
-		Main.LargeIcons = Lib.IconMap.new("rbxassetid://6579106223",256,256,32,32)
-		Main.LargeIcons:SetDict({
-			Explorer = 0, Properties = 1, Script_Viewer = 2, Watcher = 3, Output = 4
-		})
-
-		intro.SetProgress("Fetching Roblox Version",0.3)
-		if Main.Elevated then
-			local fileVer = Lib.ReadFile("dex/deps_version.dat")
-			Main.ClientVersion = Version()
-			if fileVer then
-				Main.DepsVersionData = string.split(fileVer,"\n")
-				if Main.LocalDepsUpToDate() then
-					Main.RobloxVersion = Main.DepsVersionData[2]
-				end
-			end
-			
-			Main.RobloxVersion = Main.RobloxVersion or oldgame:HttpGet("https://clientsettings.roblox.com/v2/client-version/WindowsStudio64/channel/LIVE"):match("(version%-[%w]+)")
-		end
-
-		intro.SetProgress("Whatever, Loading...",0.1)
-		API = Main.FetchAPI(
-			function()
-				intro.SetProgress("Fetching API, Please Wait.",0.1)
-			end,
-			function()
-				intro.SetProgress("Fetching API, Might as well rejoin.",0.1)
-			end,
-			function()
-				intro.SetProgress("Fetching API.",0.1)
-			end
-		)
-		Lib.FastWait()
-		intro.SetProgress("Fetching RMD",0.1)
-		RMD = Main.FetchRMD()
-		Lib.FastWait()
-
-		if Main.Elevated and env.writefile and not Main.LocalDepsUpToDate() then
-			env.writefile("dex/deps_version.dat",Main.ClientVersion.."\n"..Main.RobloxVersion)
-			env.writefile("dex/rbx_api.dat",Main.RawAPI)
-			env.writefile("dex/rbx_rmd.dat",Main.RawRMD)
-		end
-
-		intro.SetProgress("Loading Modules",0.1)
-		Main.AppControls.Lib.InitDeps(Main.GetInitDeps())
-		Main.LoadModules()
-		Lib.FastWait()
-
-		intro.SetProgress("Touching Modules",0.1)
-		Explorer.Init()
-		Properties.Init()
-		ScriptViewer.Init()
-		Console.Init()
-		SaveInstance.Init()
-		ModelViewer.Init()
-
-		Lib.FastWait()
-
-		intro.SetProgress("Complete",1)
-		coroutine.wrap(function()
-			Lib.FastWait(1.25)
-			intro.Close()
-		end)()
-
-		Lib.Window.Init()
-		Main.CreateMainGui()
-		Explorer.Window:Show({Align = "right", Pos = 1, Size = 0.5, Silent = true})
-		Properties.Window:Show({Align = "right", Pos = 2, Size = 0.5, Silent = true})
-		
-		Lib.DeferFunc(function() Lib.Window.ToggleSide("right") end)
-	end
-
-	return Main
-end)()
-
-Main.Init()
+	return table.concat(final, "\n")
+end
+local ZukDecompile = Decompile
+local ZukPretty    = _ppImpl
+local ZukClean     = _coImpl
+local Syntax = {
+    Text=Color3.fromRGB(204,204,204), Operator=Color3.fromRGB(204,204,204),
+    Number=Color3.fromRGB(255,198,0), String=Color3.fromRGB(173,241,149),
+    Comment=Color3.fromRGB(102,102,102), Keyword=Color3.fromRGB(248,109,124),
+    BuiltIn=Color3.fromRGB(132,214,247), LocalMethod=Color3.fromRGB(253,251,172),
+    LocalProperty=Color3.fromRGB(97,161,241), Nil=Color3.fromRGB(255,198,0),
+    Bool=Color3.fromRGB(255,198,0), Function=Color3.fromRGB(248,109,124),
+    Local=Color3.fromRGB(248,109,124), Self=Color3.fromRGB(248,109,124),
+    FunctionName=Color3.fromRGB(253,251,172), Bracket=Color3.fromRGB(204,204,204),
+}
+local function colorToHex(c)
+    return string.format("#%02x%02x%02x", math.floor(c.R*255), math.floor(c.G*255), math.floor(c.B*255))
+end
+local HL_KEYWORDS = {
+    ["and"]=true,["break"]=true,["do"]=true,["else"]=true,["elseif"]=true,
+    ["end"]=true,["false"]=true,["for"]=true,["function"]=true,["if"]=true,
+    ["in"]=true,["local"]=true,["nil"]=true,["not"]=true,["or"]=true,
+    ["repeat"]=true,["return"]=true,["then"]=true,["true"]=true,
+    ["until"]=true,["while"]=true,
+}
+local HL_BUILTINS = {
+    ["game"]=true,["Players"]=true,["TweenService"]=true,["ScreenGui"]=true,
+    ["Instance"]=true,["UDim2"]=true,["Vector2"]=true,["Vector3"]=true,
+    ["Color3"]=true,["Enum"]=true,["loadstring"]=true,["warn"]=true,
+    ["pcall"]=true,["print"]=true,["UDim"]=true,["delay"]=true,
+    ["require"]=true,["spawn"]=true,["tick"]=true,["getfenv"]=true,
+    ["workspace"]=true,["setfenv"]=true,["getgenv"]=true,["script"]=true,
+    ["string"]=true,["pairs"]=true,["type"]=true,["math"]=true,
+    ["tonumber"]=true,["tostring"]=true,["CFrame"]=true,["BrickColor"]=true,
+    ["table"]=true,["Random"]=true,["Ray"]=true,["xpcall"]=true,
+    ["coroutine"]=true,["_G"]=true,["_VERSION"]=true,["debug"]=true,
+    ["Axes"]=true,["assert"]=true,["error"]=true,["ipairs"]=true,
+    ["rawequal"]=true,["rawget"]=true,["rawset"]=true,["select"]=true,
+    ["bit32"]=true,["buffer"]=true,["task"]=true,["os"]=true,
+}
+local HL_METHODS = {
+    ["WaitForChild"]=true,["FindFirstChild"]=true,["GetService"]=true,
+    ["Destroy"]=true,["Clone"]=true,["IsA"]=true,["ClearAllChildren"]=true,
+    ["GetChildren"]=true,["GetDescendants"]=true,["Connect"]=true,
+    ["Disconnect"]=true,["Fire"]=true,["Invoke"]=true,["rgb"]=true,
+    ["FireServer"]=true,["request"]=true,["call"]=true,
+}
+local function hlTokenize(line)
+    local tokens, i = {}, 1
+    while i <= #line do
+        local c = line:sub(i,i)
+        if c == "-" and line:sub(i,i+1) == "--" then
+            table.insert(tokens, {line:sub(i), "Comment"}); break
+        elseif c == "[" and line:sub(i,i+1):match("%[=*%[") then
+            local eqCount, k = 0, i+1
+            while line:sub(k,k) == "=" do eqCount += 1; k += 1 end
+            if line:sub(k,k) == "[" then
+                local close  = "]"..string.rep("=",eqCount).."]"
+                local endIdx = line:find(close, k+1, true)
+                local j      = endIdx and (endIdx + #close - 1) or #line
+                table.insert(tokens, {line:sub(i,j), "String"}); i = j
+            else table.insert(tokens, {c, "Operator"}) end
+        elseif c == '"' or c == "'" then
+            local q, j = c, i+1
+            while j <= #line do
+                if line:sub(j,j) == q and line:sub(j-1,j-1) ~= "\\" then break end
+                j += 1
+            end
+            table.insert(tokens, {line:sub(i,j), "String"}); i = j
+        elseif c:match("%d") then
+            local j = i
+            while j <= #line and line:sub(j,j):match("[%d%.]") do j += 1 end
+            table.insert(tokens, {line:sub(i,j-1), "Number"}); i = j-1
+        elseif c:match("[%a_]") then
+            local j = i
+            while j <= #line and line:sub(j,j):match("[%w_]") do j += 1 end
+            table.insert(tokens, {line:sub(i,j-1), "Word"}); i = j-1
+        else table.insert(tokens, {c, "Operator"}) end
+        i += 1
+    end
+    return tokens
+end
+local function hlDetect(tokens, idx)
+    local val, typ = tokens[idx][1], tokens[idx][2]
+    if typ ~= "Word" then return typ end
+    if HL_KEYWORDS[val]  then return "Keyword"  end
+    if HL_BUILTINS[val]  then return "BuiltIn"  end
+    if HL_METHODS[val]   then return "LocalMethod" end
+    if idx > 1 and tokens[idx-1][1] == "." then return "LocalProperty" end
+    if idx > 1 and tokens[idx-1][1] == ":" then return "LocalMethod" end
+    if val == "self" then return "Self" end
+    if val == "true" or val == "false" then return "Bool" end
+    if val == "nil"  then return "Nil"  end
+    if idx > 1 and tokens[idx-1][1] == "function" then return "FunctionName" end
+    return "Text"
+end
+local function hlLine(line)
+    local indent, rest = line:match("^([\t ]*)(.*)")
+    local indentHtml = indent:gsub("\t", string.rep("&#32;", 4)):gsub(" ", "&#32;")
+    local tokens = hlTokenize(rest)
+    local out = indentHtml
+    for i, tok in ipairs(tokens) do
+        local col  = Syntax[hlDetect(tokens, i)] or Syntax.Text
+        local safe = tok[1]:gsub("&","&amp;"):gsub("<","&lt;"):gsub(">","&gt;")
+        out ..= string.format('<font color="%s">%s</font>', colorToHex(col), safe)
+    end
+    return out
+end
+local ROW_H      = 17
+local INDENT_PER = 14
+local MIN_SIZE   = Vector2.new(350, 250)
+local ICON_SIZE = 12
+local CLASS_ICONS = {}
+local function buildIconTable()
+    if type(getgenv().getclassicons) == "function" then
+        local ok, result = pcall(getgenv().getclassicons)
+        if ok and type(result) == "table" then
+            for cls, id in pairs(result) do
+                CLASS_ICONS[cls] = tostring(id)
+            end
+            return
+        end
+    end
+    if not (type(writefile) == "function" and type(getcustomasset) == "function") then
+        return
+    end
+    local ICON_DIR = "zukv2_icons/"
+    pcall(makefolder, ICON_DIR)
+    local b64 = {
+        ["Workspace"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABdUlEQVR4nKWSTU7CQBTH32uA+EEiR4CFlB14AuEGcIOSULfWE4gngKWRJtQb4A28gWVhUuoCjoCJceGi43/G6dDa+BV/yWTevL7363SmTP+kIOisvdrr28s5C+oKpg5SNYyQmYP98uFt2JhusTbkBK3YdRIhJgjvLIuCvVI1lA3N1UggJ0GzNYztmwVihRE0V2d9oiQoM3cfm7MQKUNGoIC8Fx379wSUQG97jeZesdmdEwmH8mwPKtWG3J0S4A1jIqrHtu9Qhi+aFTiji1XLn6aCB6TC2J4NsZRrgeknUO+fMIJMAwdSslt/DwT8SSD5kCAw2NHIw5VOEObICFwcnGgj1PxGwkvUdBgRBKMxEV1iGKQdUw7UCUwpV6gZqyJ9jRsiOsLQFHeRETzjGuvmGiX6L5wjNOAN5rlkJ7AG6d+YK9CSKUK1k1TQenJPk4QcnNPAYvai5iwgjSrIoj/Hw6M+GtpIAV4iXliVUhA1rjeUoSD4K+9YpagRYU5wDwAAAABJRU5ErkJggg==",
+        ["Players"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAu0lEQVR4nN2QsQ3CMBBF75iDHWAHTOfQMwFTIILo6VmDuMPsADuwBhz/TGw5LrGUIk+K/pdyfs6FqZKBwN6lYSGLSsLk3Io7VLI3aTF5QMULOro1t9QzEDReLohEZ3iHIOtFEAlnOJ1LRakWVK/wD0GQ3xzhGZ0/b9pi4ndzSf8lQVDuruj+5e4l+i+mIojkIhUgAqVIDyICqSi5QImS8QQbL3tMzlH1xetq+ISqggdigUd5QrBEBjBXxxdyKncRwlInYwAAAABJRU5ErkJggg==",
+        ["Lighting"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA5UlEQVR4nKWSzQ3CMAyFn9tF2IBuAEhwhxOCExvAKLABJ35OMAASMAEdgUWKeYkE1FFaQP0ky3FsPyVxBDXoaazS39fW1Cb/EmBxjjSdSW+TM/RwzwjoeZqhKNbcyxh6guTjiDQZlkVeVOXfAg5f5Ci0BTzmALoALkCyQip3kHKzwwg49DQZsvnAZUAykv72yIUhIjC+0WU0i8pVBrsuAoQNSu/h45g4JMy7OHaCnK5Ns1SdgGaofAOVHgUuCDACZgqqC16ww8YrRJb4NgXfHJnzi6r8R8DdvclPjBEKxKhNNhb4hSdZCYYR/XyN1wAAAABJRU5ErkJggg==",
+        ["ReplicatedStorage"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAsElEQVR4nLWNsQ3CMBREv6WswQ6hpWUQqsRL0EFNGYk0jATMADNQxjz/Ahyc5BcJT7Lu6+50djKTwYFQ11ek5E1xc227HhsIiFAwc7OAZKS5WUAy0lwLwfu9hLDijKZPC0hGmmsB44womJ8BC7p/HuDW/Jc01wLGcgNSFEfpui3vEgs4GfTjwJ281ALGd0DkxcjJNc2D22RoYBR+9EiPhQaqaiPO7TineDJwQHvowBzed6J0EYiiWXgAAAAASUVORK5CYII=",
+        ["ReplicatedFirst"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAeklEQVR4nM2O2w2AIAxFy0aO5Beykvw4kroQeFNDE01DfSVykqZKL4c6eknDguz9jNahaiw1QUYjF6OakTmKwcGIxuDSgP89cFVwRgKWAB/ycgGXvtvAggUIH7bAq7KBBQs0igAyNSNzlIoEHgtC6CmlyRCs6vAO/ws2eetHlvwFIKkAAAAASUVORK5CYII=",
+        ["ServerScriptService"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABOUlEQVR4nKWRL0zDQBTG3zsJdaAI2LYEQRMcluBAIzHtCA6wgCJY/LohkGDBkWBRJMOtZ0lQyGUI2D2+u4Wl7bp/2S9p7rt7d7+8uzLNyUhBqJM9Eto2JEvM/IGNrUWPX95W0i7KA7BeZOuzttDpyJmIrGFawIo8j2/ykoFgQydRryc7RpGP6UiUkaf2+u0josMJ7OEfkWPEiTCrLhl5zcLGA6Z9QaCTi6qWx/HfiRP4WVzH4FBE2pC600H6hWkBP6stKzKHBtF2kvnpqRME7fhSmFYRgTonMs8IEb4yLdR3Ub9m4W9c48QJ8m+gg+YROhLESlBn1OuFK1is5NfIfhY2r7ChUmAPY8BV4gPke8T+I5bBhrGCPEMLlrkFVVjpVAK7EUMlUwoS/CrZRCzB7zpoRAgFhgSz8gcEbIcRC7hrTwAAAABJRU5ErkJggg==",
+        ["ServerStorage"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABOklEQVR4nL2TMUjEQBBFZ7fUdFoJtknEJmBnK3b2llqYEzu11VZL+0sUsdRWO8HWSoiFYLYVrCyPs5Db8e+GLNnzVkHBB2Hnz/x8JgsR9EeCAanK14hpWRPPCCFeYKymI3H3MFcMMXag77P02psaDHifmechPUxQFImTbogLWFR5NhrxipYUQwaRmm+eF86uUVpsgHn5g3kH5Y8IIYek+b5OyyvIJiBR+eGklb+j3cQGxPVWHwdJIqVJXqikeIP8Qlz3ZiXpDY3SbFLHxZ4NSOv82Nw2Ig6I9C1aGZ5JVPCswnMkWLzjM3ZtQHsHKjndxjaMFqG2s5ZuH3Xf+wSDCXmKywpDZ8Th6PZRr+O8hGwusQuGzojDEep7wtAaQ/xfwLgx1PeEAT/RpmY+Hzc2AeJRJWUG6fBMv+ET6jubESgxzjAAAAAASUVORK5CYII=",
+        ["StarterGui"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAvElEQVR4nMWSQQrCMBBFZ9CVq3oXLyDWXQLewrUnsJ7AtbcQkp0VL+Bd7MqVMk4GGmrbQUMR3yZ/mM8LhCAMpFdgTlTwZstRh2Dnl1j0C0oiPj7ic8TfCcYjmB7nWPHYYXWh7PGEWxSYM1kkMBzB5bgOgrDkUaXuSMmWdOBD+KMgg42b4Z3HuOSoUnekFAThZo5CWCY9YkeQ+pHaghS+FmidKGg+Yht7pQlUsFcFzY+kQQjeL9BxfEMEQ3gBYz2BEZu+KBIAAAAASUVORK5CYII=",
+        ["StarterPack"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABO0lEQVR4nLWSMU4CURRF3xMXAL2LYAsTsNNEKyZWWFEKCzBiXABYWkllmEoT7ZTMFliEPbMAx+/5b/yYGXRMNNwE3rn/vXsbUPmnrMAt4r44NwEzaTSONbpbwhty6Ulb8vwebIrqSDvzWVHw0lsRjOTtnYWbajdp87wh7pbidCi7OxlFKXetUOAwxl5u0ZuIkyH4JZWpdpIRZAoZCwUDwvEt3335VjrT7vwU4K7IKLw2zCn2jE+drrkdcmuZaoHD/qpw6+cWC5xe6v58LMg9x2N+nQvQFG79/LHg069Azy24urNMqQAsyb8zLMAoye/8uy0wD5gj5g3WhB/gM9BzE67uLFMUpP2mRrOMx/WRNORRo+QJYt87kFwOQRPBQchYQVCpoEa+gGGqFMTnfO+BNdJX/o1XgKlU8Bd9AGIGxBHC2csIAAAAAElFTkSuQmCC",
+        ["StarterPlayer"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAdElEQVR4nN2QwQ2AIAxFy0Q6hN7cSdyJmw6hE9XfAyaUkpD0YngJKRR40AZy0hRsJ0fs7pgSMR1pDZEM2oKLGeEjLcE8ayYFv8BbQi+VoHhZY/ykFqjaNboXxUIYQJDRIn0xYyaFXwhuhAlDeCCYESuagl5eHwY7EfzhvZ4AAAAASUVORK5CYII=",
+        ["StarterPlayerScripts"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuklEQVR4nMWRsQ3CMBBF78QCDMAOhBEQKR3WoGYABqFkBrs0JX1omYGCDY5voyByOoyUIOVJ1v9R7OecwjSSnsCdpWEhh0rCFMKGPWqRnqCJckS88TXvEEX+Kxg9whCy4PNmza8vyQI9ewde3mRGJ7/mOx5NsOe7gOa0lwdd0CosTRtqXhUF6S+4KIJqAgEPFqTDiNcIHVo0rSAdRpgkqSnYRjngugVqFqSNqCamQANBi1hiaa4QVEh6AqBtYhF3RcCjAAAAAElFTkSuQmCC",
+        ["StarterCharacterScripts"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABiElEQVR4nKWRv0/CQBTH37uWQQIuOhlG09Y42MQJRmcddZVEin+EOvljk1EDJUZX/wfnTkZIVGhXiJOTQSbb57sjbaDUaOInae5d771PvrlD+Cdzgs23ev5zRFsQkkmaKBFFeUQcEAmvWCTvcaU15raEGYHVcyqk4S4CdSkKvcKiPpADhl9r8jEgirEOdPdiuB3eKhLBeuDYXxFUc3ru8nn1asC/EmJBDFLU8K0bn8uJQMYejeA8J/RGephTVSNBZS4TZJJCAY5kOiWwegc7oImlvuHewhRZwzE6aPevZvNBCczAOcYQhv21iSAdOQt5sb7hnilBPCAi9KQk3kuQYEgorgOz9c7bOWYEklgCU/D5Ey82f2k6SmD2ayeEUOJSkZawgHjJRAnkJUYCt7lMCMz2IS+KnwTcg0qgnvGDLghpgbeK6RS/CiT8ZBV+sn0uE7hBpfiTQCIlfBd7cRJuUIIspJTPZwUSw68viygsE6LtW+1T2ci/M8kUpDF8pwNAG1ymwG5guvY3Gby3pZX0H7MAAAAASUVORK5CYII=",
+        ["Teams"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbklEQVR4nN2MUQqAIBBEZ09WpzGPUbcwT+PJtGnJoChQ7EN6ILM4u0/QyKsgGZMYEO8lzxAJfIs4F3BQJ7ixd50IuLAyTlhM/NMjzn8QMJRk7YgYZwADn3ZacrlI8ISWXP5ewCjiIqg5zHQiaGEDAnN0EYBzKl8AAAAASUVORK5CYII=",
+        ["SoundService"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA/ElEQVR4nK2OMQ4BQRSG30RFwwUkjqBVu8g2rKicQS9UYjUOwUEcQeIAdAphfPN47LIriC/Zmbfz5v/mOXmD7/frbjrdUhZSKPCdTiTOtdx8HvNbSK7AwpRigqJpXgTpMPvBJcnAzkyW5i7w3e6YrcJ3hbCUSiM5HtvUKjQB0zSZZk2ZESRsnLgVry6p8qeJ44V4HyHTrC4BE9CIqfOnOZ2GISzAPc3qEsA8oVmmEQQqI/iY5vay3OCeZnV5xgRcCrIdZY0vAz3N6vIMr6Wn8Ry9QE+zurzjH4I9W5Uvw8cCw/d6kZzPC0rla0EgLflJEDDJz4IAkoabzTYCFxNahBEWCyArAAAAAElFTkSuQmCC",
+        ["Model"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA1ElEQVR4nKWRQQ6CMBBFC+E+wo1wA0u9iS4JG70ReB+S+gadyrRCNLyk+cOfmQ+hmdtJEuCb5oKcOUvGrO8rNMEE+La9Ou9PlMrDFUXtpmkgwMwqxuTtPh7EG5Ay9hVjMuyRgCypJzWSYEwdVmRJPamRBGPqsCJLsbdgpF9tBqxgfmwI4AZu3EDtviCDSIAXhR87N1hevT5qgywRMH+p1K8ADHmgDODJcskxyBy9NAAJSCP2lNDL82PWdfe/A2beyw62AxaDa2jAiBw4H35YFuaAPTwBRHiAEfQXY9cAAAAASUVORK5CYII=",
+        ["Part"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAnUlEQVR4nO2S2w2DMAxF7Y9skOzRUToCnaTpJO0GHQWxRrJCJHMdCQRBBEF+OVLkPHyP8mGmRjaCGOMbxdMxH+ecXwlCCF9m7qiCiAzGmC6l1EPAs+BE+InwH8fHLMC3PRHp13cpw1i0FIgesK2Cvh4lhxXN5BAeBKWKNpd9encLGgSYmZe19ndJMIUJnBYsw8ok8HQwiUoZVrKghRG+kHkRqvtqYQAAAABJRU5ErkJggg==",
+        ["MeshPart"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA3UlEQVR4nKWSwRGCUBBD9x8ogBmgDzuwBEvASsBK1PaAgx18k4ww6ypw4M0w+bvJDxxIdpCfgnEcO0hv+9zquu6/CoZhuENORVGcy7J8TdPU5py5M+izaZrWAHMppRYFaSmYl/bBX/BFnqUAn90jcNl7s98TX5AhCzQgInoe5hSMIRoQET0PcwrGEA2IiJ6HOQUZ4oCj4AwRa3tCTyYNDjgKzhCxtif0ZNLggKPgDBFre0JP5j8DIqI3g3/mWlXVQ8EY2iuYLxtQMIa2CvxloiBCvZl1eDaJl4kKjvAGPCueEVC7/nwAAAAASUVORK5CYII=",
+        ["WedgePart"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAv0lEQVR4nKXS7Q2CMBSF4XsSRiCsYRyFCZRJZBNxAzbROYANIKnnNsFUCv0Ib3JSJemjP4CczAOmabrxkLIsXzyigfs1DMMTwF2YMaarqqrhx2DgbO7ltRQEnIzj2IrIg/OKIeAUMEVRXOd57vgvLnz0VwgBZwEeHyI1kT4HAbcCWjYCzgW0LATcFtCSEXB7gBZE+Kzhy9aFAO0Q4feaQB8DNA/haX9dWAqgKdIsy/J2L2sr0MrBm+i2vaxZ4Exf53KJEU2r8pMAAAAASUVORK5CYII=",
+        ["CornerWedgePart"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABB0lEQVR4nK2RwW2DQBBFdyTuuQDXuIWUkArilOAK4lRAtoK4BHdgSkgHcQe+AxIuAGn9ZmyhNWZ9sZ/0tKOF/XxA3IM8P6DrumUIYce4KYrim/UuNwFt29ZZlq2HYdhrUFmWK7aTCF5BQGDxqFQhhO29EMGRqP6RFm/agvmFvWSI4AgBG27+YlQ8KhU69mdDBEeapjmIyMKduWqBsyGCRt/3C24+MMZ4VCo0piGCBh9vzfKLMTctlDhE0CCgZvnAKR6VsYXCq67yPN8Ks0FAYJljtgUBnwTUFsDXX1Jrx5jCo1KhHranOxDUp/+4y8UE2uKdFv/xYcUCLn/gzzn3ikmmhxULeIQT2tWKEVcW2m8AAAAASUVORK5CYII=",
+        ["TrussPart"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABJUlEQVR4nKWSzW2DQBCFBwvOYSXg6hZMBymBEuJKjDtwKsDpwB3YHYBLyBUO+A4S+SaCiPUiESVPQjPz9r23P8KTf2IxoGmaAyUXF8c4jnOZwQmo67qgpEEQvBpjHvTStu2u7/sL7ZYAy2MN7JwPw5AtmX3fz6jlWsBAcYA5NcZUur4aMAnGna+04cTN1ydYwyTAHHZdV242myNXKkZOA9evwHENQt35A/Fp5FK4C9wWzvJYg4opFbvekyR5EzByn4RkhKyfgOIAc2p++4jgTltygj31m5tM836CNaiA3QwPePM874z4pBxVHzHkCq32SH9gDU/iihD9sQoNZb4yv0dRdJYZnAAVgwchO0w3EXnh0zDHrHgOyEXkwGcB837JrLAC/oIvOvLKESZokmwAAAAASUVORK5CYII=",
+        ["UnionOperation"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAyElEQVR4nKWR7Q2DMAxEnR9sAHt0lI7QTkI6SbtB2QR1DVgBKX22BCIBIj6eZBmcuyMJTi6yCOj7vqZ5WfKqqspLQhTQdd3bOfeQGSGEH7OGx5qASK9Mgy1zURT3YRi+vN42A9i2F75ATaRmSnIBYW2ReUsz8wp2J2ZCGGgRLLq1ue6MozY81qo5FKDm+bFUszsgNVOmyQbQItC1NDMrqjERC4uAFBWnOp2dDuAin2VZfk4FjGaBwwFzszIGeOG/UllSs2IBV/gD7bKMEYII6D0AAAAASUVORK5CYII=",
+        ["SpecialMesh"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABs0lEQVR4nKWSzVECQRCFX1OWZXmRBCx3M8AIwAjUDPDi30XJwAzUi1pc3AzUCIAIxAgcywTwopSFtN8ssLUoN17V7vTP6zc9PWNaEv8EXo89UUVVTNlIDyzyFe2zSGMN0jsLKmFOgOKmjXXp60rti2JXQxGmrpsOyD17RS1EMk1RCEyL7yE+Eb3C7hAuQBfb+tGFuXZd2k/b9kgY6hSvh97FqZNsyZRAPCNcAOFrOgpwLuH0EGgI4Cvu3tCa+hpqD7cL8XyhAJ1hRu4j3BpH6eYC4dCfWRKcbKttrfcTr2/eWo9YgVns7cjv3fONQtK2bcOIAnQ1AUEr+2X8zUU/F+D8AWMLMw+WSWWUc/xemEONOgTi3Y+V4dTLpDIIfFBQjTnsnipqMoNADQKnXkNgQLCarwyRr0lygzSm3mQMLg5xxmFNb6wPB4Fzr+pTAafDQ7kmFJj0IL2yAfYkP6RQSngfZwjuaF1JzFMzAXPYw3ngup7EThA7hAsgvEMr8Xp3fdFDiogiLBnt1WgzI1nHp25yZmJ93OasOALOPPJ2v5UoYsS5I1bye5dWFWLbWAWMbyn8AksxxRFjW3PUAAAAAElFTkSuQmCC",
+        ["Folder"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAjUlEQVR4nO2OzQmDQBhEv0kaSAnpIJsaYg+B3FJCOrGE5BZPaSBgCWpBsj4EUfEHlvXog2FmD/v4ZJFsI/D/e0E50iNLdcterFU6gadm0FvJ98lYRGRN8LHjIbW6/vE425hSSXYVYxGfPxyfc+aJTECgVsAFBeVIEEOBp4LZBRsLSupCQqgQuFYQQ7SgAd+WOhGV3bOVAAAAAElFTkSuQmCC",
+        ["Configuration"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA6ElEQVR4nO2SwQ2CQBBFZwncJQHOWoFYiXagHUgp2oFWoFagHYgV6BkOeIdkfbsnRIgSPfqSyZ+FzGdmGSUN8jwvEAnD0EfeYg2KoojLslwqpe4cE8Kw0loPPM9b+76fcm7FGvDVPTIlhKItIpjNEcOBbmZoK4owHQyrqrpqiqMoWghkWbYxJq7rjujgJh38xqAxwkaA4oUAug6CICFtxRrQgbnExHGcOwZLHtlC8hsdnHi34zyUZ1LuZqJIOjHGjHYkHRAvYKCsASOckZjoRd1AI735G9QM2LqU/zwm/Rh25MLWxtbgGx4SRn8RlXc8ygAAAABJRU5ErkJggg==",
+        ["Script"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAW0lEQVR4nO2TwQnAIAxFv8u0i3WPpnt0sXaZ9kdEUC8RET34IPwQyMspDo0kgu05BMDJsnC9+y254GOYocCNEegiwxMbZQlmEFjQI4VAhwwzXQSCyidCwAta+AHpezoR3LuyPQAAAABJRU5ErkJggg==",
+        ["LocalScript"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAjklEQVR4nLWRQQ6FMAhE4Wz/u/NO1jt1p54NB6MEtdgmxrfppEOeikwvOQn6SRJuBsQ6QmPuOJ0FswiOZvKfORbsTyAQvdmjQEscRtRZUKIhJeosKH4ITco/HpGoX2TAJyXaaRM8UBe4BR74RVYFfsBT6i0opQFPqbfQikpuAr3E0cwHArfhKpc/tAnesAIdPl4RAm5S8QAAAABJRU5ErkJggg==",
+        ["ModuleScript"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAZ0lEQVR4nNWT0Q2AIAxE6X66Bp2prKH71fMSE/ojIibEl0DbwD2+kDRIELjqmtwXtG1EdjHboiBnQ3mMlKJzBGcQhfxIUIdqugQ4d7QEM7PcLnBhsuANFMDc9XKYsT4Q3HwiBNqCEQ41LllvHDDA+QAAAABJRU5ErkJggg==",
+        ["Humanoid"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuElEQVR4nK2QuxHCMBAFdX3QjR1CCg4hogoiqiCC0JBCiLuhj2Ml8IHkQXhsb6B7I51WH3EjiQTaLBdOZU5kRW9SXK6kLLHgvjpQDCnPW0qWiQVjnzCEIIhOTvlzk5cgeXuK/wt6lNr2Ww4DEz8FNIaPpMc2fecwMJEVsK7EDqzJNIIWGiMRDXZ9SgfWewqaau1Uj8QPIhsp6lMvgSeSvDc7SATVjnFGBHlIWe8JBgcoxYttn4WhPAH/dG0RahwUfAAAAABJRU5ErkJggg==",
+        ["HumanoidDescription"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA5UlEQVR4nK2QOw6CQBRF38O4CxO34B6k1MJGKbUyVroBo7HX3kqtRCsS7YQ16G4oDIx3RIkz4RfwJMAdmHvgwVQRRSC8fpcEdxDxRFy5fb4gZaIK3MEWlxg2T2NcMvmzoOoIZXgLlDfr5HxJJNBm1/n9F+JmLdFqsmmPsEQERQXCsxZk0IEC4eDuXUqKCHwIZsK1dtg5JKIH1bhHAbfYPDp5Ap/qvKYnrbBrSDFGT5YRohG+aKLkMvOI2/aePqQLjHBDoTFBmuKI0MqSVAHmHmMtECMSyhJNYM1xbiCqgpSyRBGU4QWPKWsRkTEmvAAAAABJRU5ErkJggg==",
+        ["Animator"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABqklEQVR4nI2Tz0oCURTGz5nK6B8ZvUBBNUaLhF4gWrQqqpXLhFTa6bpNBdE23QShgT5Bia6jlW5bBDluJIp24ZCClHFP351QzImmHxzOd+9wv3vOGS6TB8Fawt96b14J0yoBFrodGR7fuZtN2liSp4FZjSZFJA7ZhZlT1kI6AeltsGBF6kh+RC921cxMIf/LwEaaRHRBG49WIDNDwGWw8hIbbb7JBjMFSVFRGbKO7UNEL8eo4IiAywA3hpDWEGQQv45N8EmzKaekZBtbhGFmO4c1LgOzGjsTUaOQDtqEDKNQmb8oY+nCbVDB1FlGILuwcMsKfE+9H+7vmUhNK4M38K3DjW/AV7qfO39Ce3WsCS04f0DD2HT13GioTehlRfQ8xFRqC8WZxRYhpwpclhRhP76l2Ktn04pcC9EWpCaH0OwidP95/q1nbVIx0weQFKjtz6iPzxpkDqWHCaDqLMHE8A3OcuBhb7OvZzKUFCuLlwVIbwMIvRHCrcuQmKEqdw5rfrbAWXKQMAEcziP+ZqkaDbZFEnhAdudRQaegMUROehr0gkptJP0b/UgOX9H9vYtNglpnAAAAAElFTkSuQmCC",
+        ["Animation"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABcElEQVR4nKWQsU4CQRCGZy5SKDGS+AJaeIexgMTK1sIKEjtLSRRasbGwQRN7sTSHCb2NCT6AHS2N8e4asbEzEkFMUG/8d9UVLhhFv2Qys3u739ws0z8xAtvfrBLROkITOBVG0qSvi4mn505JhHIEmKnq25VtlF8Cdajbe7wgkhSBfoET5MsisoXSwMxHvu0WzaGFIJ9+CeVMmFtK0i/A390jJRAGJm76jjurD31eHrN4NRaLN7u9ThmCHH0AQQtpCmFgoRs/WZnRAtvPN2JMuUvbbWBJi7eFic6DZMjiJX6V09CSFWyXEP3so8meFkRBxzWkZQRZxHfxST5ot8MddM0REDyiukxgqMAJCoci4QRKjZKQZdW8ueM6lgMMF3h4dZZxlAYl8Rx3F+UAWhCdmSicDi3O4JPBCuXcmz+poRxAC76ZOYs6hS34wvqwywotGGXmKO+CEWaOogXJq43sb2eOogUK9Q7o+uPMUYzgr7wBRUSnEXgPqssAAAAASUVORK5CYII=",
+        ["Bone"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABFUlEQVR4nKWRwVHCYBCF3zpe9EQHJB3QgXYgJcAFHU+xAulAvDiSC3RgrECtQKwg2IFe9OK4fgmSIQkDYfhmdnaT7L63+X/TnjQWSCNv2ZcmlF0i8WP1w5F9NBaYn/uTXKf6x02P4di6zQUG7qQSQWzWWCAd+DPNJ5Q5WzdIL71jP3qgIWnHdpWdgb41NddZNqwj9cJNZ8DKr6QOIfactsfWp6xhRA3WHfLhmrIA11tWjihL0FcmvfDAfpW5t4gCl97D2AJVqAlUryuD4Tcd8s93NuOxREmA1SNe3FDmMPhJGuI8Iq+F/gXV1Rl+0QGu9zbXBgqB5eoMbnVdJRfAvYf7hOFGrqssBLg2STNcE/JO5AL78AdW/GYR56HdXQAAAABJRU5ErkJggg==",
+        ["RemoteEvent"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA7klEQVR4nK2RPRLBUBSF741Oyx6UbIEoKREbsAAlLUq9UuWvpAw6lRmU9kChUsl1gkgySV4ywzfz3j15M+fL5IXpR/4rkE0tR5bWRnRhWbE+XyKF4heYxgB7BtHhTimtx8XJBTmUr0A2hk6W1BFdYt5u8xLIvpWm261PQmk8fuArl6cdBCVvgWk0sJcQXTRryKXFGUkJy7aZpYfVR1aT0rphd8GyrldJuIIcDfOY9ekOKcDrE7yI2RhhuCjKNmpBTNkmWpCgbBMu+JSRDzgqYEVxDArwV5zbhkC4PGPvxLGPgMALCkeMPFYUJ6UgCU8e/lzlKb4QxgAAAABJRU5ErkJggg==",
+        ["RemoteFunction"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABDUlEQVR4nL2RwY3CMBBF/yD6YFNBoJTtIFySvS10QAfAjeRCOoBOCBUE+kAMfwyOEhTDAYknWR7/eF7sRPAh3xGcU10qMOPm1aiQOaMGZq85Z7pVRYIHIihHuUxZOoQjSJ3pShT/LDu0JcLhqFPNOTVEhWSnVFWHmOCCkhtjxg0qWEe52LXCmIBTpQP84oo9N8cMjhgikQsOP4WIPL/Z40/A0vCSBQZYyBU7ZmMnYBGkJTAqNkyYHViPOcD1XdB3CjtB/acJ37bl0mENFChLh62d4BVtiTV4Aa80jTZSvhUYXuIFvhnEguZOAdzdvaTdbJhAuaEzM+9gOade7DdWfBqz7oW2Iz9o8ITs/Ywbui2EEXfS4JIAAAAASUVORK5CYII=",
+        ["BindableEvent"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAy0lEQVR4nLXRzQ2CQBAF4HmxAUrADixBotYA3rQC7UCsQEvwuD2AwU7UEjx5wnE2gSw/uysJ8Us2M5d5EwbQSP8L4CyZE7iQ1mAcsVIpNbgD8vguJSTjRRPMEKkHNUBeD1/Xe+LPSVrDsl3rBXCxCah86+2BvAqeWKqQLPoBeXyWspNnMCLZfiOLVgAXSUgl6+1+E0zrW7QDsiSVyx+kdQO2WKgLVVoBXfI5LMXoDGvDAyzD2rAAx7D2O8AzrPkD5K/U13bxBgwxOuALIVpHEesZTFAAAAAASUVORK5CYII=",
+        ["BindableFunction"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9ElEQVR4nMWPwW3CQBBF/0f0QVwBUEo6MBc7tyQd0EHILfYFd5B0AqnA0Adi+LOwlkEYkJDgSaudGc28nSXu5DGCdWZfBnyoeTYo+alSg2qXWec2N0OKAySqQcGJwgB1Oqlzm9HwrvCItoQ6gTqzQldDUjJfZWbWxxgbVGocqtxgxHdS0L/VjQt0La2HV2zxp+ahCv/oI+UGi5eS5OnLkbiBQidKpuhhyi1+VRsFgYJOWgJnqYGxagvFIx0o3wvObeEb1G+W6rW50oAPSGAKA54HwSXaEh+IAn1pkvywuipwoiQK4jDETQInStrDzs2CLp4v2AG8rW0RvZxP8wAAAABJRU5ErkJggg==",
+        ["ScreenGui"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAjUlEQVR4nK2TMQ6CQBRE90cPoEcy0c7CG4k3sqDTxCPJASCfYcgUVAxZXsO84v2KjVIJD9w/2WA9MX2yvNpbNPOBbyY+m2mvEfsdOB7K+X2JDrrK45enfij/xYFJMG3UMJJg2qhhJMG0UcNIgmmjhpEE00YNIwmmjRpGEkwbNYwkmDZqGE1S9yPVPqYaRqB9ahEL95yqAAAAAElFTkSuQmCC",
+        ["Frame"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkUlEQVR4nK2SMQ6CQBBFd2Jlp0cy0TNo6U3Em1jKGSDhSNBRkeHvkE8HDBles/+Hfb9hJQU5ZkCrV5FEP4h+VL7y+BfTQP3UdDpf5fbrUDfR5n1JQ9/KvZR5IBdEN3RMYkF0Q8ckFkQ3dExiQXRDxyQWRDd0TGJBdEPHpFzCvxHHblYH8kccM0t37FL4KUcID4w9UGARqO9m/QAAAABJRU5ErkJggg==",
+        ["ScrollingFrame"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuklEQVR4nMWSyw3CMBBEd5UTN+gASomAGsgxVEKohBxNDYBSCnQAN07RMmtYg5HCR0biXXbG6xlFipkS+U2BbIqKWBaQnyO85KmrrgXbmVDWG3Ben2DfIk3Zp/Z85MmaQ4EayAg9x6CunZ77hRnICD3H+EOBNMWQWtlD3sl4xLk70A3L+JAZyIDsipJEVpD4BJ7z2NX0gGV8yAxkhC8Bz2HFMj6kJvk3YnzNywJdYgS67vhLyU85heSCC1JdfhFFbEheAAAAAElFTkSuQmCC",
+        ["TextLabel"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0UlEQVR4nK2SwQ3CMAxFHcEd2AA2YAUkuPXARpSNOPQGEiPACGwAA4DMtxsjmrqiKH2XfDexv500UCbDFCiOXELtIJVqHfR7SnFixlLDtK82odSDsjEe0eywCg+EP9meefp80V2MPgUkgOyN5WiSBZANdDQgrVKC5bSSjNjmFXKC8RZd43UWMHdYzHF1N68LwS1g7nBeIhR9gXa7cAuo+9ezKvHZKEEL2IVANtzN0ftmOZpkAWRvLEeTJED1jB8pmVk2sLQQIyw18U7cg/+QXeANweB6EYlg5fUAAAAASUVORK5CYII=",
+        ["TextButton"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqklEQVR4nLWRwRGCMBQFX8Q7lmAJ2oPe7AnsiZv2oCVYQrwb4xIYR2YSlAnuDPASwv4fYpTJPILDydekivg7Xsdmb+pOcPaex2SanTF/FtAmdymxvVEBL+5FoQ3ROqcbC0rygFGB+upmwcdPrTFWDAckBUyG6g+nC9mSt7EukgJRvT0ifRA76qiAiXd1hiuuFrvsuriysGQciAqmMKMgsr+v9P8pCHLIFrwAdJdZEYnmdnQAAAAASUVORK5CYII=",
+        ["TextBox"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAnElEQVR4nO2TTQqDQAyFX2jv0R6hPUKpyxF6BHc9U3ceoeAsLT2CHkHvocQXFyIo4s9O/GDI8BJeskgEG+kMXKrKYEKhglgUEYUriA9EGEYZJF5/vVU1svMJ9+9DckqTtAbupyE7On6RBPK2aaxrmOqH0iic0vunJK1Bv3CugWG1h8F+DDYvUp9Vq2xYVwajhCJmJgJw4Vt2TEtpANLwnBH6H4fRAAAAAElFTkSuQmCC",
+        ["ImageLabel"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAyElEQVR4nK2SMQrCQBBFZxoLsdAj2CSW8UQqqLU3MN7AWgX1RKZ0bTyCFmJhE/8M7CAGs8LmwfBnkj+fZFmmSJoJSNw0J6IlSrmkO33+DXwlxLOCL1ejvGi3Or2iv75jDJJdF93n63FDAFuADGj/xu/okh/Q/gSeE0R+bwiRWXcqSwM3H0HonG6OECNxswKCgG0GMRhlwLQnKsek8AHmCZpaGGXIZ0E+CIcwyqgGCPUhjNJFORBRjEG8V7S5gNiLlFPMVY4hOuANl2RuEfb7F1QAAAAASUVORK5CYII=",
+        ["ImageButton"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAr0lEQVR4nL2SMQ4BQRSG35NQiIIjaJaSEyGhdwPjBnoSnIiSbRyBQhQkxv8mGdkNs7Ob2eyXvLx5xfdVwxRIOYHoPFVEtMAUYRn3NsoGNFZhEODqAnXmIRa9tD5gGVyBPUYYYb7kCtSYJ6dovSPQj2fjt9ZbPJ2kAknZ4oukAnLg+UNWRBwjZQUEV0QcI/kC/7COkeRoNlqdY3d1w+llcJm3H8/7NRlQFPKVQwgOfADTm2URw7OBvQAAAABJRU5ErkJggg==",
+        ["BillboardGui"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAx0lEQVR4nLWSTQ4BQRCFq3AA9i5iyczSiBVbO6cQJC5h6Qb+dgY7F3EADoDyqhMT0np6OuLb1Oupri+T7mZy0N7JhJjGiG6Epm5BKoLi5b+CSplqyyZfsbToHqV6u9MlV7CN2dlXdI9zgzaDBclBevSgaBPzUJtBgmQvA1xLA5GCBQh9hBai4SUofIhJKnMdQswIekgqQMlgpvM64hmil68CRf/o/buuUSwKCUpMi1XEJ0QLryBvWDGCTiojIaojfuAbVozgF57wsnZNd82bCAAAAABJRU5ErkJggg==",
+        ["SurfaceGui"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAz0lEQVR4nM2SOw6CQBCG/1EaO72JrXZG7SB6BDrjKcRjWHoDDHRC6LyOHsB1nF2zGCQ8DBZ+Df8wO1+yD0JHSgIvYxcKnsRamBDHc4oKAi9lH4yJxFZEC9rkgm+HNQVBE+uMxw8Fn4GBlIZc4J45kNPYSayGsXcchEphK5XhLUiY5dNIvCDyEj5INPxW4PQxCmd0k7KE7H94V7jWCnRTYiV2zf8IeoTjaU4XM2SbEiuxa7TADstvuX1BN9se4irlqR3WvAQtH1K8pAAfGEEXnt7fhxFjJ5/LAAAAAElFTkSuQmCC",
+        ["ViewportFrame"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA/ElEQVR4nKWTsVHDQBBF9xgiIugAVQB0BIkIcQcWFeCQcURHNhUIKoCIiJnl/Z3Zs04O8Ixesv/v7d9TcCq2kFgw9j4g1sjgeluwx3z07pQA8dxtyxCDOvALu+o25Rv7L+PKL8uPfemiukAGeTKZiVAaZPDZ+wufuELO2TN3R62ZGkrGR98UtydkhWXvdm735dd2CtGqNEbkZmQD/R3ldn7WGMEgF7YolH1pSqUxIgenKJR9aUqlMSIHpyiUfWlKpTEiB6copL6f2UP3Wt5sQizQoYaQepV7xA2yYR7ODLMHgzyZzERIZtFT5rMHxBoZ6IByhC6iBIjDz7SEP5AriRFIn4fAAAAAAElFTkSuQmCC",
+        ["UICorner"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2klEQVR4nM2T0Q2CMBCGrwTeJYF3GYEJdATdwBF0AmEDmQDdwBEYgRF856EM0Kb+vaSGEIg0JMYvudxReh/lkgpaCQu6riuI6IqYokU0YRhWcRy/aIQTGKQl3NI0vSB/mBRgE69LKTda64Mx5kREO4SlxfscmeGNY8GAHs3PKIpKiPaoa6yREKJKkuSM8qvA0SOOaNw6CWaS2ZkI1EsElh5NuVLqTvgdyPgUPgLC1x9BEDTINR55Fl4CYE+R4RQSNQ/bV8BNbr+tfy8Y8l+CguYv0xwlBAUL1vAGt4J3EdFO1YwAAAAASUVORK5CYII=",
+        ["UIStroke"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9ElEQVR4nKWSwQ2CQBBFZxMuepIE+tBKtAQ9edUK1Ar06klL0ArQeiDBk15I1scYCMgSSHjJ5u/MH7+ZsEYG4gxI03SSZdmF64Lj4uZ53sr3/ZczII7jCHmGYbgXB/h7EZniL9oCLKZBj5RjTpU33hZPZ7oCzpQN8NZ4OqMBrp1zk6F+ARQR0tiZfu8ALVDXzg2YbQ1w/mMVY8wnCIINs/qbXgF4a6SEuR0yo//7jDQ6A/As14I7D2lZPqTcZKgzANX5KtoozCRJTtbaEa2S/51p1dAG5kNEIgYOaAP8HaI7ozUMp3hIVxGZc1yUO3OvoQFD+AL2BKgRJQ4VbgAAAABJRU5ErkJggg==",
+        ["UIGradient"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAr0lEQVR4nKWTwQnDMBAEZXADeajFtBGljNSoTzpI5hZW+D4HRgMmueNmXvbRNlFgzjlaay+eO7x778OB33meD/gyLth/+Lny5FkQOFYgBv4K5lI04UhCSAHDvgyFI4nDFGAuRROOJIQUMOzLUDiSOEwB5lI04UhCSAHDvgyFI4nDFGAuRROOJIQUMOzLUDiSOEwB5lI04UhCSAHDvgyFI4nD9Cozl6K5Bkbb+Zh2+ANkP2wRDzQJ5AAAAABJRU5ErkJggg==",
+        ["UIPadding"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAnElEQVR4nKWTQQoCMRAEs7AP0EPea3xvDvEBAa1piMwcBldSIF0NnTm5R9lEB3rvrZTy4PcPz1prWwfe53ne4UX9yRjjNuccHDi+B6ygl1lv9GgVVE6k+J15KKicSPE781BQOZHid+ahoHIixe/MQ0HlRIrfmYeCyokUvzMPBZUTKX5nHgoqJ1L8zjwU9DLrjR5Z2f0rt7LzMe3wAULukhGt/PvyAAAAAElFTkSuQmCC",
+        ["UIListLayout"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAARklEQVR4nN3TsQkAMAhE0XMI542Z1yESOcgAco3kg9g9bDSIEcjMALBqOm13jwecWu0KsCGAEgH5gg8AJQLyBSOAgPJMShe1zzIR4YwQagAAAABJRU5ErkJggg==",
+        ["UIGridLayout"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAUklEQVR4nN2TQQoAIAgEt0f43uy9PqJEKDoYBHuJBoIYZW4WkETAzBRA9ReISHHX/btIXHOnM7APsuWjeyTAEIGsfOt+CTBEICvfuncCCuaYGAZZLZIRoGJUNgAAAABJRU5ErkJggg==",
+        ["UIScale"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA50lEQVR4nKWT3WnDQBCE70AFWA9SG0k6SQdJJ1E6cAkuwSW4BJfgZ+nh/C6B/M3CGo478I8+MLPD7CyyhWPYiB2YpmkIIfzxeYX/rusGP7A2TdPCFfuQlNJuWZbEgXg/IMP4NN6xkhvGgnEcDzHGH0bD97yTGcYCPe48zyeOfGDfOvDJ9z2u63rVEd/zTmYYM7zMD/yNvfAk+77vfwN4x0oySBXKX23bnhkz1HnqgJaQAnWUWSiDVNESUqCOMgtlkCpaQgrUUWahDFJFS0iBOsoslEGqaAnJ4O3seDtJmYUcGMKWP9MWbtOKlBEs43spAAAAAElFTkSuQmCC",
+        ["UIPageLayout"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAZElEQVR4nO2TwQ2AIAxFyxBspXMwhnUM59CtOoS+mpiQqAdSjvyE8MIv7wRJgnkJzExFZGF9Zc05q1S5BVya2SbKAp/wb5hJzGzgAe+PwA+8bBE4lyEYArifIPaU61CqtH6mSC6aGZwR+jgxIAAAAABJRU5ErkJggg==",
+        ["UIAspectRatioConstraint"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAsklEQVR4nM2SsQ0CIRSGH4EFKOg0uokruIKVlRtYaFzA1u4K93AFR7hEO0iwh+T584qLlcflEr0vgR8C74MEFI3kdwLvPSMEZm6VUo1z7lgt+CTGuMw5N5DcO0EIYQ/zHMNeUPjQWl9TSrdOgCteENXg+lvU8AQEpcOk5GABgkrh/wUvY0x51x3mM7QanhCckCI4ENEKko21tqWByCvgE53xidYYLtAEnCBrfVRt+sZowRvM6mBCm0+WqgAAAABJRU5ErkJggg==",
+        ["StringValue"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAArklEQVR4nL2QUQ7CIBBEl4QDyAf38IbiTTySR/AbPvAAJLq7Mg02lRLb9CUNDKQzyxjayHEGKaVAjPc+UMOQQc75VEq585astWfn3JO3ypAB0kE7xaoB0iWZJWGPKVYNavqFv5YrpugatOlInJ91DWr615uFGOPNGPOQ867BCPsY1FHnRS0xlQdg8OJSuJNPUUvU8jIb6D9AhRjIhawslV9aVpYTKuRi6wSB/uzgDTMbbBEmvHK6AAAAAElFTkSuQmCC",
+        ["IntValue"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAzUlEQVR4nK2R3QmDMBRGb0DfvaDvjtBuYjfoJrWbdARHcYP2WYV0ACH9biBFTBND9YCEQ/DkT9FOkgLjOHZKqa4syweBpW8GtNb1PM99VVUF1PNoACsZDEEQUdGAMAzDM8/zCzP3UM+jAWz3hO12WKkmsHYhGEjZPoZwQEBEZ1l2ZuYXgbULwcA0TVdjTIOVGqjnjmAglWMCOFtLRDd8W9xxhJYWuIDB5eBu+A39CZ6wwBNqBOw/DisSkAkZoZaQywj9YkUm9u6gpT/v4ANuJIIR1He3OgAAAABJRU5ErkJggg==",
+        ["NumberValue"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuUlEQVR4nM2R3Q3CIBSFrwkD6APMoRs4St86hjiGT8aJdA9IcAACnktSUizapk2Tfgk5HH6+NHRHC1lfYIx5Io4YzEtKeUJmpggiIgNBcacoOHxDZHC4xdpAgLV0DvO2ENTA4YEAkSlKDWttE2O8Y0rIh1KqoR6jAoYlIYTz92VmkuAfGxHgpTURXTDGuOIvaOrRCaIQ4gDeqFWcc3vvvYMg3elIhQW8wYma+NU5UTOp8MbSL9A08w0+czNdEYpSfskAAAAASUVORK5CYII=",
+        ["BoolValue"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAwUlEQVR4nK2RQQ6CMBBFpwnsdQHXsNxEb+BNxJt4A49CvQZd1H2b1D+NkCYCLcJLJsNPMy9MK2gjiwKtdYcmUVOoqqqalMCjzQKBWC3w3r/Ksrw657rVgu/wGcNPRJklKIqisdY+CMTDqOwVFCQXdIqHmVwBo1CMRI0kBX3fKyHECZ8/8H3UdS0XBTnsI8CuLRHdUCnu2LuliEHAz3UEb8RJjDEHvIKBIMwMhMACPuCOGJjL3BFHQuCDrX/Q0p938AHJGXURvtO1XgAAAABJRU5ErkJggg==",
+        ["ObjectValue"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAwklEQVR4nNWS3QnCMBSFb6B9V2jmUDfSCXQD4wQ6ghu1rpEE4gCBeG4gpfEnFetLPwj3nvtz2oYKmsiogTHmjHDAeaaTUm6KBtbaSwhhj7QH+lbX9dZ738JAFA3w9MBDSDNQbxHW3HtpDsFgQMjgpVTnfMYGQohd0zTXooHWusPgCmkGanGZQNHgG/5jgG9SRHTEGeOEO1A0IBmEqqqW4A75FufcAn+fg0HcSUTBBtzgCBn5pDlC9kTBjalvoOjHO3gAl9J0EY1tQAMAAAAASUVORK5CYII=",
+        ["Vector3Value"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAyElEQVR4nKWR0Q2CMBCGrwkD0AdYQ0dxA93EuoEjOIIjOIIj6Cs8lPc2qf+dKSGBAoUvIcdPcx+Xq6KdZAmapnkopc54FaqqUlkCa23pnHtBckDcJDh6758hhI4lWYLYXBTFCfGDSe51XV9WCYbNWus3PvUsCuaamaSgbVtDRFc831QzMycIKAIvC2WS5AEEhv4T3CAwlCApWIsIBn9bYjRNFAQsCnvSHeIkuI0St2EhkJ6IBBbwAVdEIZW5IvZI4IO9ExjauIMfrTBzEQYiiJkAAAAASUVORK5CYII=",
+        ["Color3Value"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABNElEQVR4nKWSQU6DUBCGhxT2kgBb8QTiCcpN5AbWE0hPUL0B3oSewHoCcQskdA8Ev6FgupCnsX/yMjPhvW/+mWDJhTICmqa56rruYRiGJAiCm7IsPyzLymzbfnFd98gVM6CqqjdCxBHf9y3qgVR1oL4jLgPoHoqIOngmrnkwA/Y42BCPuCgWAWqXkDuOs+37PvY8L6vrOlmtVjnQHWNFOtYiYOqm+qRjrN3UFY9zEbnmjGOZAAVd1EGKgzUOXnFwj4N927Ypy4wBhIsA7SanHeyIenneQY6jR6J5Byr2cKDTLamcAQRn78wfkYoRgAt1sCFNAIQAChHJyFOZZAT8RSMAcioiT5zftD3vrpoBA4thJ6ff8ydN4zQAxjezxkIB+kEj5ailWiPlt8ZCP1zqIJV/7uAL9vi0EUBnQ+MAAAAASUVORK5CYII=",
+        ["CFrameValue"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABQklEQVR4nKWSzU3DQBCFZ6X4biT7Dh1ABZgKkhaogHTAUgGmApIOQgdOBbTA2bZk3/3HN6t48WEDEvmk1Xhm3r7d2cTIL9R1vZmm6YnPLE3ToDZYVMqyfDfGPGDQEg8YWIGqqiaCY7Va3QQNTifnCG77vj9QshgUArMBpm9JkmyDBogKBDsEO74nNnud5rA3xsTUN76xREWcfgWtfiP0uqZprql/zXXfWKJNghWRQlgqJDro3RMyoa9131iCqOCaMddsSXXDkiNLaTEIj6CPOI7jaxRFd13X6XtsERcCjBBT+6T2qLWggYJJjskaod7igzfJh2FYU7PU9my2AmcNFEbJhFnlZ4wjS2cv5IRhXYQz4CQrIs+sv3jhdCsLZgP/u5MG0cfjX9lg4PbMuEQNtKGR1HEu10jqcYk2Lr2BlX++wTdnKrf+SG50MgAAAABJRU5ErkJggg==",
+        ["Sound"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABD0lEQVR4nLWRwW3CQBBFZzhySdKB04HTSUrgBIgq3EGcCwIudgnpIO4glEAHcQGIzZuJV/JijJAQT7Jmdv7337VX5U4eGxBWq1zX6z3tKKMBYbGoJISZ7naJh3kpqnvdbGqBRIxg8pcFBgGcSo7Hb5lOX7Us20Q0+i8bMSDM5x8ymXyy84G+FpEDWuGiwfCX8syTgMk96AVHz3W7fe9OUaG9uWhgCJQBmNwTlstMTqcf1i8s3U+vLho2oAwwEyUGNKwzAfPTJwEt5YknwUwU04uzT6jRchf7sNOMnSpaB5N7fC7SjP7EPm7uQjAlnm73hmvMLl5jJIYMAv7nLfMvlpKI52DO7MhyhasBt3B3wB9FR5IRUw+xpgAAAABJRU5ErkJggg==",
+        ["SoundGroup"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA4klEQVR4nKWSPxLBQBjFv0eldAM3cAbjT0UrlKlyDHEBvS4aE1o6cQdu4AgqHetlk1kbIZNMfjOZ/Xbfy2+2WEhNcgJ1mvkCteBYjMISw9DPCyJHcfnHlV+XnwaDHcoLABf9MLBzI1Dn6YRXGvPAswuG9Gchds5+KoicNZf4ICtottroBXdOBjtnv1jAvc5tvnNd4OFPQe0bfECAQehyiLsmZ7+sICaR2Dn7VQSam4h0JIX9rEAar5U8m/PKL9EIIA8KNhhtL9yVIisoAa/tcTEkgvQlciwG6oj+/sDJoAV1eAPbJYgROVHrLgAAAABJRU5ErkJggg==",
+        ["PointLight"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2klEQVR4nLWQvQ2CABCF70JlJW6gG+AIJFhrJ52s4ATiBI4gdthprcYRdAPZQBjAnI+oyM8RNcQvOd+LgS/kMTXkPwI5ul26yQLVwqWcyeAp22FEJSqC58snVBOXJ4akX5ZUBfvxBjHEaWzZWY+QGZrgijBxGhEEPWQG4wpAECPaOI0EAhOZoQjcAL8TUuEVO6FHOaqCx4gX1DIJRrQ+jpgiO9cnlhnqG+E5D0KfSugC7SuMVoftIEYroApSMKYgMjCe+qz65y/UCuTgeiSyRAXV9V/UCr6lseAO3NlGERQ3o2MAAAAASUVORK5CYII=",
+        ["SpotLight"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA50lEQVR4nKWRuxLBQBSGz0nGDJ0H8ARqvVveQTpUWi+g09IaGlSCV8AzUEobpUIlGln/hokMIrdvJtn/7M75dmeXKSWeQGz1Fgkqs2a0UUaG8b2axRTRB88ha1EIQYIDqbkKV2cX5L+4AonYNAQGSeRmyafAbSbnVsSJmqiDYba4bvR9An1GarYrd4ZsjKlQWFt2PIGfaAJhsrYapBDwDq+0TC5QnCHX1seEgufxEd6v4CdEYJOq9Lm6OCPHFtiU4QGXDQvZJYZAmJTPj7g0uaLwCBDoPfwLWD6hNEm57+WFIX/xUxCHByo+YRGxvZvzAAAAAElFTkSuQmCC",
+        ["SurfaceLight"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABDklEQVR4nKWSPW7CQBCFZ6xUKZJbJGUSKU1aQ5sytpMqqaKkQYIDwAVAVEjQAB2YK6yho4YSDkIDeHjLnw3YsBKftDuzK71PGu0yXUmiQAKvSCIlSmfE2e4L6qlAlNfE/k3nYP7hTKdF4EBgGqb7O59fGzOcIoEot4qSw0pHh28ooLm8Y4Qabg4EI5QnrGR24YXkSegWgl/cRoJLiPp8Iw4dHcaRyAorbPcme4EMvp5pufxDa4bFPtudIBIoz8VuozVljDFqMYFTwEQPaA2RKWf9ckzg1lHMYW7jLwzXAul/PFJo5dGasQ2j27yC9L0MheKgvUwsrNkIlPuPkv4HdhyFNVuBwQskhDVrwTWsAPN8XREIZF6OAAAAAElFTkSuQmCC",
+        ["Atmosphere"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB4ElEQVR4nKWSsW4TQRCG/71zlYaTeAFooOSQaKCKfaaLxdGkdipEFaekywuATYWoMC0NB3YFCU4VGiQuLQ2ReAFXSePb5dvN3UHkNIhfOu3M7sw3M7tn9J9aA+QLl6ysduWU46Z8XiWRRSfSy6JrlvitLgEGh27onMaYbzuxpgSX2B6aVpVGTnpkjPZmmZmqVgvwyVSdxLE2rdM5do+EW6wbBP2IYh0SJkBHZI0aCGehQrKq9JOqXRKuW6uMSnN7TeXsnjkbHLjXhMmxxxi/iF0Qe5MOlwGw9dntg0qiSK9kte0SPfeJHDWd3ccMMpFeOKtnjHo6f2j2LwAH7jvEHdp7EBmVHzJzzPZacq0TxjymizfzvrnbAByOCa0affXzBfsqGZ1xvtfkrAO8aohq5V9cVjEaJkc6/9g3oyYHPwBKRhjaSlm4eTTrmycsrf6CNCNMAaQXgPoSgUy5h6dsKY70ruiZ8HReg29uQ0uNr7xE/4wknkLehHybzR7bbRf5J5faSNuW0fwzEntE7I32Gb38jUMd00U3/EhWW804KLTNKgosSNoBXuAK+488hGebYL4nwf/3JbbvMKXqLuZjvmGT7HUJ4EVwslppxEmOe4fP6wRw0eloAnSJ32oN8K/6Da9d7hFjZHyMAAAAAElFTkSuQmCC",
+        ["Sky"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9ElEQVR4nKWSParCQBSF753HE8TGLVj412lp5RpcgQqKCxA7UXegvYrZgy7AzlYrYyqXYK/kejISSQYdA/ngcO8Ezgdhhiklb0HF63d8kTlWUopabnG1pwRoQaScR/CRr9lMrn4sLG44WtGC0qUnGCZHr7yqY1oJBQ4RtZEIfPLKyxoWK4ykIpGgcu53CLjVpUMGPwVB2VfSwErK54MpiQlet0FN/HsXx1g5xJQwonmVZYMVsIOMWGQsLFkyiEq0IF4OYSfz9z+5P+5Dm0QLcI2C8QG7BO9k8EMQ8F2SUBDwWRIVzIhoiliIS5QvO7e63mpBGp7fY4MRVk8aUwAAAABJRU5ErkJggg==",
+        ["ParticleEmitter"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABSklEQVR4nMWSoVLDQBCG/00wZKYoJAIMugITXKeVDWDAAooHQPYh0CiKBQMTZDp1YBBFYFAIJMwwiCqS5b9LrhO4lgoE30wnm9vdr3vbCn7QzVRvOuKdz8Ir/B+BaeJjKvNkXtLI5jXV8QqdIBnoCV8f0rb0eTZaCHFw1ZLRzlCbnzn6rGkyXwqSoS6jQLcqLgWZnjKFQHAuAcauiXkryxt4SjdkLNsD3SyAXSiitCNH7LE4gSVEL23JKyNL9YW9ALiUrUyPucF1nk9l1gRaIOLq43ICxT5rfQR31bVsUw68hMCKk5lJ7A5+k5gJrtty62rcO1MWKzC4AoY+nIQ7ihmV1HYyERjqkjDARb7ERhJ+IM4L7DGcTMTQ8k1gMBL+jRZ5z5zPMx6ByzpEgAbv/1ZvNngCQ3KvEd7xqMAqiADP/InXGHoIP3/iC1CQp/GK8TqyAAAAAElFTkSuQmCC",
+        ["Fire"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABNUlEQVR4nKWSy03DQBRF37Oyygo6oISkAqADpwLCxomywVTAUAFmEyXZQAd2OggVOB1ACWEfZTjjhJEdfyTEkZ7vlcdz33ys8k86A+x0OhbQxeJdWmgNKCYfDm9YkSC4bwtpDLBRFCIpVWakq1WGVqgF0PmKzjn2giqzYyVDVvIlJeoBUZQiIdVExipGqKcSYGezgez3ObadXm+o8/kWV1ANmEwSsfYB247qqy6XMa6gGhBFOTKgvinDnjNUOJOxiDxRji3bGKIF5wEWcTzyUYJ6GIuRF0oY8/O8cfDRMaDfv9Qk2eE8p9v5xHYGbETkujNAdc0ZhLwqOA9wAyn1TBcjJRgz4s4hCG75FzZyohLg8DehGlNrXgmd73gaaQiuBThY7g2TjLjtHPmgsyl3/qUx4C/8ACinchHdegVRAAAAAElFTkSuQmCC",
+        ["Smoke"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABX0lEQVR4nKWSv0vDQBTH72rSwUVK07HQyQ4Ozm5FV1d1rE6Co6t1UkdxFCf9H9pVcHPtahYVS6FJBCeXhMTPiyTN9QcE+oHHe5fL+957706rFSkl4Pt+O0mSrta6ztLF3hqNxgA/LzAej51qtXoQx3FTEkh8jaJoYNv2Dtv7WAp7X47jXBsCksyPF4TrWJHfMAxvbNvuEm9iGQNDYDKZnFUqlW3CsriGAL3e4fLT6fOUb21COTUvv8iswANuFteyrGdm8o31WBcZGQJBEPQYWpNwDkTuGabsFSuZzsDzvCMmu0u4DLk+ubpzTHBp8TYXoHyj/0WQIDO5JBwS9/HTGXCFaTJXtYcrlpkxIukKb5AKoNqh90dCeSAnWus11ocsc2QGtVptSGiQCtD/O0ktBSR+MKwtXqMMtM6nkWVZ/UXJgsakgh/cBiZ8UmpLlSQT6CilntQ/xwi8qJKkAqvwB3bpgfmngIh3AAAAAElFTkSuQmCC",
+        ["Sparkles"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAiElEQVR4nNWOywmAMBBEN2Ah2oEleVKwIEFPlmQHsRAhToSE/DYEzcV3Sdideaygj7CCc1Sq3QS7N7CBHwp0AU+WlDAaGLQwVQhhA9UFclQHNTR0izjkrHq6aO820dtASCRwSq7MBjRYrAhM+BZTLMhegMGKxwNBT4SMLbmyR2BAiL2Ao67gDTcfI2ARnPIWyAAAAABJRU5ErkJggg==",
+        ["Beam"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAr0lEQVR4nN2RsQrCMBiE/6Mv1FcQdVNwUnHq5mMYH8NNF6mbu4qbc16o/J5RSwNtQunUflB6Fy6X8AfSAr2vFJOLt8czMXpawE1WkiTD6GypXYE+N6kUxZE6jRd8w4bhBa2DRVeWmk8p9LGci2LG9XqAE8b5S29rI9Ads3tMcyM/wLYD/0F4+pY5pXTQlzfvfgN+QRpmYDmDzM2APkg1TN3+Far8CyhLPBNjAAV1vAHg53YRAbP1dgAAAABJRU5ErkJggg==",
+        ["Trail"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABBUlEQVR4nMWSMW7CQBBF/7DJLZIzBMrU5gKpQglVlCqEGiRED4KSCpdQwQHgDMBloAAz/DFgkLUWSC540sh/xzPPkm1BTvILdFFpQvWd2ccWr9LFXhtQ1Pm4vgSTf/YTROffQ159nJZ36ABaRYKEUh7XGGKyBYVDD4fCL9MfK8VVkimQ8uSH9xTOlRBFIYAP1i0DztTvC4AVnHwh0hmzSdaUVildckYeERhnCdpwrEin7BU587DAWLFXYm/JXGTZTLYgfonqPvmJRzzF2ALnlTHGztbwCwQbvEgPewQXiS1wXhl5kJoE49AafoGRkiSC8zIIG5UWf5Q3Zj8pye2yIaxcPF9wBDEPiBHqDicBAAAAAElFTkSuQmCC",
+        ["Explosion"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABLklEQVR4nKWRzVHDMBCF3xoKcDqBCnCGcMY3zC1UYOhAVECowJwgnEjOmMF04E5wAUTLk8L4B5zgSb6Z1Upr6WmfLNiTQQKaX5RAcAfYG5k8H7FUM0zgLZlCNYPIlZzOH9BimIDrQGRGkeudOmjjuwmCUsaPJZddAc0vY/pMOY0AVIwCKvc4DCpYe86DS9aA1eqdnYw4awQ0TzKOx0BgZPK0YNvKcoPKLXdPGRmtuMcMWeWS/NxscCAxrKZQbgRCRoPK2HfyZWPmRceCviaFfyTYCICz0MeSt8bMHdYCbJcfhfmTy5DRR8U9I+YOtQDTv1DA72/jC2sLesLpNrZZ8I/4wulm+IhyNi/wCy/goI0ZU8r4C38hDxv0UAs4aCUCYGo7Kh8cDQ8X2IAw9uIb6lN1EW7ECqAAAAAASUVORK5CYII=",
+        ["ForceField"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABY0lEQVR4nOWST07CQBTG31Qr8U+iV2Bhi3Fhb2C9Qb0BiaBbDmAiJm5N2BktC/Zu6gGM9QbdmMC44AqaqASQPr9XsAzCxrj0l0wn8817P2jzFP2ROYHXrW31+m/7rFSAS58AE8WKOVotbDwmxcYLohzUjHE6lTNsAVYRYUyMpsJyhDNx/zNApc9jYRcr0m7zHDviCRCwZdFBe7sZk4Grq6eUklZMSXsn1KXnip+m9ABB1ps9BBF8hybIr7HloOYEWV6bPQQzNEH+jwTVxFZUfnLCBMccFOcCC/1LSt0PmVraDT1EpqBSx3EPF4dkgDwTKFY9DNeF4vQWx7tOqdnAPhUI8i8wNjIkdZogAmm2l+3LwWhwhJYAP+LhKmNGIGP8MXiPLUWNthO2CIjAVupqhOuUqba2su6b4zwjEHZ11Rsyx3jjsnZvIgJO5zggSlsQ+T+/0ZxAmEpoE0t4XdQsLBT8hi9HTr8R7ZfSuQAAAABJRU5ErkJggg==",
+        ["Terrain"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABXklEQVR4nM2QMUgCURjHv++pJ5jQ0BY5FadSg9BUq3PQ1GpQKrREzYEKzUlLkBbY6iTU2ppT4FCoR01GW0uI4Hn3vr4e3EWeR4hLPzje///uvh/vHcKM+Ar0bj4tQKY5Aki46ySrD5w8TBQk2tlNKSjD0UVIvJkk8QjWXg5ipm2ecPSgBbTTp5WLHkeXX4L191yk36djIopx9YCIvWgUzx4XKwOuCleghj8hQyhTXH3hqzTn5rHuSJRg1cimbIIdCbTA9U8E4EcAof6sV1tKEDdyZSIZ4agQiM2gCN079/3+L5YcpSXRBlcFohh09cqREujd/UteAAneQkGtZpG5LCUeAtA2bzPYEILOg6i9jixzlxCWeBOM+FVeCRLtvS1CMjCsDaVpl38Gx8Ga0AIlGpphJNQ7yetbJeATFPhlyn9wHGzwty0+QckREC9TwwL8P4IiABT4mYYSC4pKMAtffsWMEZQL1DkAAAAASUVORK5CYII=",
+        ["Camera"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2UlEQVR4nLWSwQ2CQBBF/yZwNh7gbAmWoJWIHWgFrhVYgpagHdiBdqCe4eIZEnzEgIJAIMSX/Mzshn07EIwG8h9BFEVBmqZ72gLWB9/3l7QlDClRdziH/R+JIQrD0ErakD5sPc+zuSCl9AaBaRI8iXUc50hVkiSBaiZsE6zJlXfeU2WMWVKmZEcKGgXcPI7j+MLBiQDR3XXdOZPcWBa0Cnj4LmlEMh7szdi70Rc0CmBLzpIOehNImqnyHdoE2dgrxj7RipsXFKsKrYIufAusKuN14PMjDWGw4AXbLGwRO7s0uQAAAABJRU5ErkJggg==",
+        ["Decal"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA6ElEQVR4nL2TPQrCQBCFZxe0EC08gk1i6xHsvYMR9BzGG9j6A+oNvIWllppTaK1kfTOwS9YkQgj6wTKzw7xvixBFNRFBcJvGRDTHqcIiCbexFRiUykCg/idoKDVAoacxZxThZ4IDDjPG+UpOoJWaXIPNnkA/mUWpMTu0pXiCbNjCc5QH1FESro/oczgB29B68FxrGtLLdFKtRhg58OCJH5QQL5YJeI66wtVhwwQkhAVZROth56hOkA0zEsKCLKL1sHNUEXyGGQlhwbSa7e6lt7zj6uC5FRSFGSuIqeRnYgF/0qIwI4I6vAFfUYMR5YtinAAAAABJRU5ErkJggg==",
+        ["Texture"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA5klEQVR4nKWTMRLBYBSE80aldCSDjhalm+AYOiVnQO06bvDbb0XyTyYhM/ma9+/u29dkEsVAfCDdtoci0l7P/qQ4xuJy+By4b1IxGk9ien5JfnRJzK/egdwHMocECD0NWsN0+UDmkAChp0FrmC4fyBy2BRomz5o+2gZCo4JAw+RZ00fbQGhUEGiYPGv6aBtfoadBa5jcb8MhhXwRrWHw02O90ndfStZEPGN2ObtEgUU9DVrD4Euf9Kwpy4VwSQtVAShpVCivD2Rl8KIW+h1olMGLWvh/oKUMXvz1M3EsPba7tjL4wBDeR1iXEX/IvD4AAAAASUVORK5CYII=",
+        ["SpawnLocation"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABNklEQVR4nJWQy03DQBBAZ2PfCR1QgqkALHIkUujA6SAdhA6ghHSApXBM5FABpgJKwNxtljdO1trNR3GeZO3s7MzTeIz0YFLYpPmTZPlgFrLHgeBxZe37yHR5ba4byUnMliOTkwogH+ILds0Fl+mxZoW3EBXEkdwSijZzDCl6ukjA0Qud1IzXNhNwCzon0Ony1JSELUb/s2lkQ9dcrHwxU0FeiD/iWDKBupYF+TvCQwFfu6yd5IprC4XXFFaE+n7DPr4JlYq3lLeSeCtQKAokFPmCIYIfQkcn6QQKhQmFn4TKhqIpZ4X4BXEmipXUDCRhU3PeU0OqY09wFN08h7jlt5dzm/dxAkdw8Rmv7ATrGwW/UST3Ajpdf8HazvjfZ23WZZFqJ+0loDmj+dVvVi4SRAMp/eZT/APpPp644e3u/AAAAABJRU5ErkJggg==",
+        ["Seat"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAq0lEQVR4nM2SwRGDIBREgQrSQipQS0kTni3Fs02kFEkFaSEVSN7/GRgmiDngIW/mz66w7OiINY2cWxDGcUV65ghvl2VAle+CgPyEgnQuGeEvCjzSMUc8KOhRRQs4uCLGOHcz2/bE1XHuSuaOkzcZYkFAZMFGXyPPiC8Lpuli5/nFY0Hcy/NlwedzemYPvQNkUn6vQH2NPCP+tAKPdLKA180aWUZ/pxa00FzwBmQubhHGvdluAAAAAElFTkSuQmCC",
+        ["VehicleSeat"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABP0lEQVR4nKWSwVHCQBiFXxhOXKQE7QAqkBKgA7ww3AwVGCpIvDFcpANTQlKBdKAlhEtODPH7k2wkhnFU3szjLf/u/+0mG09XqgMofH+oPH9kOMUjbNrjWIPBsxdFGeNGLUCxXM51OoUMh/iSMvV6K2+z2alWA6ibXxiaUhyxYyJTnk8k+fgeC8iDg3jYHfud4RCvvO02IjsqFotA0hPOgN/Z41SAr4mU5ol+EGsTVSdZszZwgDdihP+iPYCxAxREV/3+mF/peLQNOgLgtQBWIOy/T4TfAM27Yb5Z7xoSVc81oxiTVvOJEJtW1CPS6lPiFafUJg4QqHqJMcUZWYp6QZQ7EaWoWbNB1tSDcqK+xg9JN+d3zOIW4OxbOXCNt801mlhsVKP/RjOgMakGYKohO9lJLuuA567Z1AL8R1cDPgEW2YsR0KmlXwAAAABJRU5ErkJggg==",
+        ["Tool"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA/klEQVR4nKWRzW3CQBBGZ5IGKIES3AGK4nvIKc4pUEHoJEkF5BbnRu6OEiqAEqACRAEwvDGwMmLN75PGM17t97T2qlzJUYH9ZU1Z2BtjwvZ/TfMuc0CpWjbhEWODYrd29T7/lAqHBcXTgPZAsXM/7BwTzGgNSjT9DnvtN+uIScs/JyzGQGC0kq1gHbY+K1MEzXKxDgQjWkLF+EHajgqseH4RWbYZvWLM5VYTvcsnewIrsj7PjlQxHYpay4/Ny5hwz8MCSgWiYZEPjtqjRwmCmjDcPGr6NWCIUgr4We+0V2qXmruvshUYbZcTws5aEO52w4lhpxQ4QXJG2AmCS1kB0h5jEVMMC90AAAAASUVORK5CYII=",
+        ["WeldConstraint"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2ElEQVR4nMWQ0Q2CMBCGr+IAbqAjsILRR0gYASaxGxgnUDcg0TcxOAIjOIIDaM7/SiDWCLXhgS9per3k/66tooF4CaKC+bxWVsY6uBhf8ItegUzEvCyYUPV8UYnWTG4gfdSGXoGQlBwinE8DSvKlqtCy6BQguCBM/AzLZLkB+i3WoUHCCN4INGGU5klOQXzlLTbCu4+QyPQQggdabkFc8B6/k1LNDmHdhLtoBV9hwpzstFIHcmAE0YU1qg1Kw79hoRYUfCeiOZZXWDACfFzKTBph7RMWjGAIbxMaXhehup+iAAAAAElFTkSuQmCC",
+        ["Motor6D"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABw0lEQVR4nKWSwVHjQBBFf7t84rJsBCtFgIhgTQTrzUC+sAsXTAbKAJ0o4AJEgIkAZYCJQKIIALi4iipKw+uxJeziyK8a9fT87j/drTF9E18E6mnYHix0FKQxbpZc2JeYdWyQ9f+QW6sTkm8h/mAn6YXNoCKa/cDREmyu4XLilvBktSo11EjvSiRNCRhpDZ0An0dtKUtLezH8WLYtVIeh9tJTm9f/QklUg0AJ3cMFSH4g6VfYUvopsB8KSQkJuQB+pYGK9MwqrYHzK26eakGl6BFfRAGU78NAx10C/rPf4FXhvsBNOs5BuyOfFQPe7QQCCT+9JNzoQ5pbXEeDn2IjVi0/c7b8RR64uuVKwH0n3eIyDr1S7jbbCCrIqeDSY6IAvc0xCd49BzPSSic56/F0EH63rTLExvC7HPkMshiEQCEERDJr7MukH9gIkh4xjUxznErwLBcojE3sick2/gbib/RpS3MCSuwG6sOQ8U4q/kbiM4sCjlVfJ/4WCPB2jpJz24Pq4cn2rjsqmiA+40jG6uEi/hoHppsQ6JVAbqqGb9qh/7wN+ktY3iU7NgQcq3ambMeQO1ja1gNmhljpZbPvQcz38AGK594RWjEMugAAAABJRU5ErkJggg==",
+        ["HingeConstraint"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABDklEQVR4nM2SO04DMRRF7/OEgmLEFqAgnpYdIGooWAG/RNS0VLADWjQjPi0NTRbADhAVYygQDR3VQJok83IzkRJlPlGipMiRLF/bV6ewLViQSkHw2djVVO4ZIUZP4u3oBSVUCqxrftUEh4zoKp6dDbcYCwgHgvezg9TIPmPGh43O666hayI7XKKj+sopzzV7V5mA5VtOI3iQCRinwp6sqMD3zUWSpD+MGxwQxbcLok32JqSVApNqCzVJtIcHEPFwPHhG9mYTDPGeAH3zfbT//3Qvroct9uYRTMJy4V64tyRB/iOVwXJeMP5IZdi4eaOi64wwkN/YhpeMBaYITq2Id8QI1d6jC+4cY4FKwaz0AVsnihEDD7OGAAAAAElFTkSuQmCC",
+        ["BallSocketConstraint"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABz0lEQVR4nKWSu0scURTGz5mdnQQT4qYNEVKEnU0iOCFVbK1FxT9AC9dFK7FWEKwsRG0UH4i22qwIWilWayVaCDqDoqJY6grrKuPMHL87i+NjF0H8weHO/c45333MZXonbzJI2h1zRNSGCHHMGWaMZSTtTANz8F9EalCUgRRiHfUkiu71BpHUEUDuucG/886qQkF6ReiCxV+zU7M25Ig/TtryAskKc16ZlBmYTrqPfVqnj7HzwPVHkLSEJIGTZlkki5IxXePmePzTcdEtjMKgHTUlfmPbHgWmZsRWAtfbhpRAvEBrccypLD4iIgO1OgX+IrE2JERNkCoxr1alJ0QGuOFJJDMYLzFNICqRR81XjBGVDPKYViPKYKETOzXzAzVhLaRHA3O/o58oWHjtCChe0pkH8CcaYTQISWklUnvpevyeOv6greISdyBVI55ypRm6RbdeK9o2939N56A9GijULoRjOc3gQ3G9URKyIKuqHTb0HrrzayWQvw+rKyKD2oPuGs+/68Lru8FZi0gtYxUHKbW7JB5OozBVff6iDW99m0K+RGjw0KzH4hO7P8dP0YDjSAMaviOtLu+MhddgmMP0GaGB2npcN+ZUM6ZvIjR4D/dqX8QRaalvAgAAAABJRU5ErkJggg==",
+        ["RopeConstraint"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABHElEQVR4nKWRQU7DMBBFZ6LCmiOUTRyJBXCDcgO4QZASiR3lBJgTUHaIdAEnAE5QbgAskBKzKEdgi6gy/XabKnW7cfskazKO53lGZtqSYEFcZZqIrrFujBrqTQSC4ICAgwXK5AMRucTnZh3MBb+2mECwACO87zCff8XFB9IwQTK+6Mrf5K1Khl2aEyTA7ZqZ96q46CN1BAlUlY87TGdN+xYnsGZqvS2tITF5KrWkaL9HLRqBIDggcHs+qsxGwtGdUQ8vSBe4wxBomnXwBEFKHijuI5z6t1ucwHJg8qN/kRGe6KQ9Y7Mf7XaOy/37H/JYCCx2zlrkloXsrK/Jd9ara3qOmK/KuHikNSwJLLMiHhDJIX5/Yml/7jYrglCmcAp2ERVFCgYAAAAASUVORK5CYII=",
+        ["RodConstraint"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAoUlEQVR4nKWSvQ3CMBBGv0PsQRcKGkZhCJgDMwcMwSg0FEmXPaJcvjspRZQ/X/Iky7Ll9+TiBDsJB4ryngA8uV7V+ZO2BJSbw4CEApfqcW1a/argxGPsB718PMjtX7x/vHKyAnOysRpYko3FwJpszAZyZGMykCsbo0BENgaBqGx4gNOVwPEURR2RjT6g3BxOl9/l4o8ZSOAPuHw8EcADe+gAtbBiEZ+XgkUAAAAASUVORK5CYII=",
+        ["SpringConstraint"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABCklEQVR4nKWSwa3CMBBEZ/mfOv4/JQcu0AklgASc6QBTAldAghLoBC4ckhPUAWSZNXIECSEgRrJ2Y3mePY4FX+pjQJQMHIAJxzSNl64W0EqH7ZPqii2aIn32W7ZeBEgtgDtuGyIziB70gjUoFfyxvHeCKBnumNSl8Xxjp+EU9tFix+JVCzDTOdPNb0O698agEsAMzLli6zObyeaqICVAMXMwRcmoC2QT5u5wWa4ngMfMtrP8oMeb+88U4zRetLksVwkQTGFn+z7p7fabgp7Nsc1VApjMdA/hVKUeAGZkgZmqMhflAbw4Bz5PURxZIS8yFyUcBlAWL/66zqvMRQWAA0/A4Z8nPpAHfKMrFSuSEVuznq8AAAAASUVORK5CYII=",
+        ["Attachment"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA6UlEQVR4nKWQ3W3CQBCEZztJKkmi8EjSgnElUAIdYLcAj1hClEAHdLJ8e8I2Nhw/4pNON96bGfnO9CT/jRfridXIAcZ6yF/jK5dmmKvNxEpGHca6SYQ43cv1FWEB5pqCmS5gdk2E21ALxqtwwHxIJnwk/IlMhEemw+bXlsZ3RxyMwy0YK0rKgcf1w7xn2jhneTAfMXwI7Hwl9p5HBS2EUliA7nmhIF0HGbrn6QJTyQNWgnHBju1bd7gMB13B4HUzjMNBKphufYGaIxMMa5cKZMetcICXgsadLZEz5kgF/H5FQ/FqOEgF73ACwzJhV7RvBL8AAAAASUVORK5CYII=",
+        ["ProximityPrompt"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0klEQVR4nK2S0QnCMBCGr7SD6AbpCAUfHcIR3MQZ3MAHHwVxgmaUDqDU7w6uNmLbKH7Q+3+Suz8JtJAR20vfIoFviXjeFDUq7wE9kgUBNmvFWQqg+ViWssfKqSk6RNdefAqgYRhS7g+5InqDmSf0cqsq2YlIx+dDHUON9+Bt1orjm1Upa4YO2BWNta/ji7FHxIoz3pzxEas+INkBEas+IAlzARGrPiCTTAYgWSSN/wiIiAYEJIsk4BeGAE5vkdyTI7dM/0QC7P25EGCzVr4ddjTkCSzFchE406lRAAAAAElFTkSuQmCC",
+        ["SelectionBox"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABIElEQVR4nMWSPVICQRSE+y2S6wHUK8gJRMVsLfcKRv6cwSrWyDI0soz0CChkYlEmpnIHL2COy6PfUDPsTy0EBHzJvH7T3cHOCtakUhB/aheKFKtQ3A1OJS0UnA31RYFWFOH7/VhuuKqQjPTgP0OP4/6gIxIKfHirgXaW4aHfkUuuC/gwPQnPn1AQf2gKQcKLdu9I/riqkA/TM46HqosCCh4rYbhlYY4uUygwwbGWssdrt/CCo4Pf47n8Dcoer93CC46OzRacf+nudIJbjgEr8x4rjwTTTHFl2oX8pYV1gmtp4untUH55FfAePuc2n3PE5GP/RF5DQaOJvbqwYR4+404+DBIKIuC+LmyYh8c4HzbmBfM/sctxKQxf5MOGK1iHGcecxRHd/WMFAAAAAElFTkSuQmCC",
+        ["Highlight"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAwUlEQVR4nOWSvRLBQBRG76Wh41GUOgZ9OltSeYysR1CqpIxOLyalx6Gj4frWzkRWdmRnUjpF9mdyzmxxmRpSCchJxSSiqQ7hNc9S7QQkUzt8B9TujnicXHHlRfJFjx63C0/3XATKMj3vEV4xxLUXiCvJ5oLVBuSoNLFEIbIB4lcAB8j9ENkAsRowB6xbHGvBv/8dYD5Tq3Nw5gBiWOAj59hveJIm4QGPTKAImDkIGF9HNtiAncQY298wL8uy4R1owguga6UR7B/VygAAAABJRU5ErkJggg==",
+        ["NegateOperation"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2klEQVR4nM2Szw2CMByFf23YxosTOIMj4AXGEKeQcNENnMHEO+HiNIT6XgOl5U85cPFLmpby3kcDKNnJTGCy7IqpkG1uqqqKQGDy/CHGpCJSYWQYSzSSJKm0bQ2BcgKvTNYEjWh9lq57YX10Ahy7EBEePUZQxhBfYHiBZRTkaky2TNixJdwwmKIwPM1xb00wewcMT3Pc+0eBUl98zg9WPhnDfY5yYvdCActKvSE4YRyw42DY5YjWF1WWz1EQKZNA0JcFjAKt7ygulokTeGUyCArZ/hODJw9YwR5+BzqMEfrFaDsAAAAASUVORK5CYII=",
+        ["Player"] = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAdElEQVR4nN2QwQ2AIAxFy0Q6hN7cSdyJmw6hE9XfAyaUkpD0YngJKRR40AZy0hRsJ0fs7pgSMR1pDZEM2oKLGeEjLcE8ayYFv8BbQi+VoHhZY/ykFqjaNboXxUIYQJDRIn0xYyaFXwhuhAlDeCCYESuagl5eHwY7EfzhvZ4AAAAASUVORK5CYII=",
+    }
+    local function b64decode(data)
+        local b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        data = data:gsub("[^"..b.."=]", "")
+        local result = {}
+        local i = 1
+        while i <= #data do
+            local c1 = b:find(data:sub(i,i), 1, true) - 1
+            local c2 = b:find(data:sub(i+1,i+1), 1, true) - 1
+            local c3 = data:sub(i+2,i+2) == "=" and 0 or (b:find(data:sub(i+2,i+2), 1, true) - 1)
+            local c4 = data:sub(i+3,i+3) == "=" and 0 or (b:find(data:sub(i+3,i+3), 1, true) - 1)
+            local n = c1*262144 + c2*4096 + c3*64 + c4
+            result[#result+1] = string.char(math.floor(n/65536))
+            if data:sub(i+2,i+2) ~= "=" then
+                result[#result+1] = string.char(math.floor((n%65536)/256))
+            end
+            if data:sub(i+3,i+3) ~= "=" then
+                result[#result+1] = string.char(n%256)
+            end
+            i = i + 4
+        end
+        return table.concat(result)
+    end
+    for cls, data in pairs(b64) do
+        local filepath = ICON_DIR .. cls .. ".png"
+        local ok, asset = pcall(function()
+            if not pcall(readfile, filepath) then
+                writefile(filepath, b64decode(data))
+            end
+            return getcustomasset(filepath)
+        end)
+        if ok and asset then
+            CLASS_ICONS[cls] = asset
+        end
+    end
+end
+buildIconTable()
+local QUICK_NAV_SERVICES = {
+    "Workspace","Players","Lighting","ReplicatedFirst",
+    "ReplicatedStorage","StarterGui","StarterPack",
+    "StarterPlayer","Teams","SoundService",
+}
+local SCRIPT_CLASSES = { Script=true, LocalScript=true, ModuleScript=true }
+local REMOTE_CLASSES = { RemoteEvent=true, RemoteFunction=true, BindableEvent=true, BindableFunction=true }
+local ClassFire = { RemoteEvent="FireServer", RemoteFunction="InvokeServer", BindableEvent="Fire", BindableFunction="Invoke" }
+local remote_blocklist = {}
+local treeRoot     = game
+local expanded     = {}
+local selected     = nil
+local rows         = {}
+local rowFrames    = {}
+local scrollOffset = 0
+local filterText   = ""
+local ctxMenu      = nil
+local refreshProps
+local function hasChildren(inst)
+    local ok, ch = pcall(inst.GetChildren, inst)
+    return ok and #ch > 0
+end
+local function closeCtx()
+    if ctxMenu then ctxMenu:Destroy(); ctxMenu = nil end
+end
+local function buildPath(inst)
+    local parts = {}
+    local cur = inst
+    while cur and cur ~= game do
+        local ok, name = pcall(function() return cur.Name end)
+        table.insert(parts, 1, ok and name or "???")
+        cur = cur.Parent
+    end
+    if #parts == 0 then return "game" end
+    local svcName = parts[1]
+    local root = ('game:GetService("%s")'):format(svcName)
+    if #parts == 1 then return root end
+    local function needsBracket(name)
+        return not name:match("^[%a_][%w_]*$")
+    end
+    local path = root
+    for i = 2, #parts do
+        local seg = parts[i]
+        if needsBracket(seg) then
+            path = path .. '["' .. seg:gsub('"', '\\"') .. '"]'
+        else
+            path = path .. "." .. seg
+        end
+    end
+    return path
+end
+local SCREENGUI_SCRIPT_CLASSES = { Script=true, LocalScript=true, ModuleScript=true }
+local function serializeVal(v)
+    local t = typeof(v)
+    if t == "string"  then return string.format("%q", v)
+    elseif t == "number" then
+        if v == math.floor(v) then return tostring(math.floor(v)) end
+        return tostring(v)
+    elseif t == "boolean" then return tostring(v)
+    elseif t == "nil"     then return "nil"
+    elseif t == "Vector3" then return ("Vector3.new(%s,%s,%s)"):format(v.X,v.Y,v.Z)
+    elseif t == "Vector2" then return ("Vector2.new(%s,%s)"):format(v.X,v.Y)
+    elseif t == "UDim2"   then return ("UDim2.new(%s,%s,%s,%s)"):format(v.X.Scale,v.X.Offset,v.Y.Scale,v.Y.Offset)
+    elseif t == "UDim"    then return ("UDim.new(%s,%s)"):format(v.Scale,v.Offset)
+    elseif t == "CFrame"  then local c={v:GetComponents()}; return "CFrame.new("..table.concat(c,",")..")"
+    elseif t == "Color3"  then return ("Color3.fromRGB(%d,%d,%d)"):format(math.floor(v.R*255),math.floor(v.G*255),math.floor(v.B*255))
+    elseif t == "BrickColor" then return ("BrickColor.new(%q)"):format(v.Name)
+    elseif t == "EnumItem"   then return tostring(v)
+    elseif t == "Rect" then return ("Rect.new(%s,%s,%s,%s)"):format(v.Min.X,v.Min.Y,v.Max.X,v.Max.Y)
+    elseif t == "FontFace" then return ("Font.new(%q,Enum.FontWeight.%s,Enum.FontStyle.%s)"):format(v.Family,v.Weight.Name,v.Style.Name)
+    elseif t == "NumberRange" then return ("NumberRange.new(%s,%s)"):format(v.Min,v.Max)
+    elseif t == "NumberSequence" then
+        local kps={}
+        for _,kp in ipairs(v.Keypoints) do
+            kps[#kps+1]=("NumberSequenceKeypoint.new(%s,%s,%s)"):format(kp.Time,kp.Value,kp.Envelope)
+        end
+        return "NumberSequence.new({"..table.concat(kps,",").."})";
+    elseif t == "ColorSequence" then
+        local kps={}
+        for _,kp in ipairs(v.Keypoints) do
+            kps[#kps+1]=("ColorSequenceKeypoint.new(%s,Color3.fromRGB(%d,%d,%d))"):format(
+                kp.Time,math.floor(kp.Value.R*255),math.floor(kp.Value.G*255),math.floor(kp.Value.B*255))
+        end
+        return "ColorSequence.new({"..table.concat(kps,",").."})";
+    end
+    return "nil"
+end
+local GUI_COMMON = {
+    "Name","Size","Position","AnchorPoint","Visible","ZIndex","LayoutOrder",
+    "BackgroundColor3","BackgroundTransparency","BorderColor3","BorderSizePixel",
+    "ClipsDescendants","Active","Selectable","Rotation","AutomaticSize",
+}
+local function guiMerge(t,extra)
+    local r={}; for _,v in ipairs(t) do r[#r+1]=v end
+    for _,v in ipairs(extra or {}) do r[#r+1]=v end; return r
+end
+local GUI_PROP_MAP = {
+    ScreenGui={"Name","Enabled","ResetOnSpawn","DisplayOrder","IgnoreGuiInset","ZIndexBehavior","ScreenInsets"},
+    TextLabel=guiMerge(GUI_COMMON,{"Text","RichText","TextSize","Font","FontFace","TextColor3","TextTransparency","TextWrapped","TextScaled","TextXAlignment","TextYAlignment","TextTruncate","TextStrokeColor3","TextStrokeTransparency","LineHeight","MaxVisibleGraphemes","AutoLocalize"}),
+    TextButton=guiMerge(GUI_COMMON,{"Text","RichText","TextSize","Font","FontFace","TextColor3","TextTransparency","TextWrapped","TextScaled","TextXAlignment","TextYAlignment","TextTruncate","TextStrokeColor3","TextStrokeTransparency","LineHeight","AutoButtonColor","Modal","Style"}),
+    TextBox=guiMerge(GUI_COMMON,{"Text","RichText","TextSize","Font","FontFace","TextColor3","TextTransparency","TextWrapped","TextScaled","TextXAlignment","TextYAlignment","PlaceholderText","PlaceholderColor3","ClearTextOnFocus","MultiLine","TextEditable"}),
+    Frame=guiMerge(GUI_COMMON,{"Style"}),
+    ScrollingFrame=guiMerge(GUI_COMMON,{"CanvasSize","CanvasPosition","ScrollBarThickness","ScrollBarImageColor3","ScrollBarImageTransparency","ScrollingDirection","ScrollingEnabled","VerticalScrollBarInset","HorizontalScrollBarInset","BottomImage","MidImage","TopImage"}),
+    ImageLabel=guiMerge(GUI_COMMON,{"Image","ImageColor3","ImageTransparency","ImageRectOffset","ImageRectSize","ResampleMode","ScaleType","SliceCenter","SliceScale","TileSize"}),
+    ImageButton=guiMerge(GUI_COMMON,{"Image","ImageColor3","ImageTransparency","ImageRectOffset","ImageRectSize","ResampleMode","ScaleType","SliceCenter","SliceScale","TileSize","HoverImage","PressedImage","Style","AutoButtonColor","Modal"}),
+    VideoFrame=guiMerge(GUI_COMMON,{"Video","Looped","Playing","TimePosition","Volume"}),
+    ViewportFrame=guiMerge(GUI_COMMON,{"Ambient","LightColor","LightDirection"}),
+    UICorner={"CornerRadius"},
+    UIStroke={"Color","Thickness","Transparency","LineJoinMode","ApplyStrokeMode","Enabled"},
+    UIGradient={"Color","Offset","Rotation","Transparency","Enabled"},
+    UIPadding={"PaddingLeft","PaddingRight","PaddingTop","PaddingBottom"},
+    UIListLayout={"Padding","FillDirection","HorizontalAlignment","VerticalAlignment","SortOrder","HorizontalFlex","VerticalFlex","ItemLineAlignment","Wraps"},
+    UIGridLayout={"CellPadding","CellSize","FillDirectionMaxCells","FillDirection","HorizontalAlignment","VerticalAlignment","SortOrder","StartCorner"},
+    UITableLayout={"FillEmptySpaceColumns","FillEmptySpaceRows","FillDirection","HorizontalAlignment","VerticalAlignment","MajorAxis","Padding","SortOrder"},
+    UIAspectRatioConstraint={"AspectRatio","AspectType","DominantAxis"},
+    UISizeConstraint={"MinSize","MaxSize"},
+    UITextSizeConstraint={"MinTextSize","MaxTextSize"},
+    UIScale={"Scale"},
+    UIFlexItem={"FlexMode","GrowRatio","ShrinkRatio"},
+    UIPageLayout={"Animated","CircularEnabled","EasingDirection","EasingStyle","GamepadInputEnabled","Padding","ScrollWheelInputEnabled","SortOrder","TouchInputEnabled","TweenTime","FillDirection","HorizontalAlignment","VerticalAlignment"},
+}
+local GUI_SKIP_DEFAULTS = {
+    Visible=true, BackgroundTransparency=0, TextTransparency=0, ImageTransparency=0,
+    TextStrokeTransparency=1, BorderSizePixel=1, ZIndex=1, LayoutOrder=0, Rotation=0,
+    AutomaticSize=Enum.AutomaticSize.None, AnchorPoint=Vector2.new(0,0),
+    ClipsDescendants=false, Active=false, Selectable=false, RichText=true,
+    TextWrapped=true, TextScaled=false, TextXAlignment=Enum.TextXAlignment.Center,
+    TextYAlignment=Enum.TextYAlignment.Center, AutoButtonColor=true,
+    Enabled=true, ResetOnSpawn=true, DisplayOrder=0, IgnoreGuiInset=false,
+}
+local function guiShouldSkip(propName, val)
+    local def = GUI_SKIP_DEFAULTS[propName]
+    if def == nil then return false end
+    if typeof(def) ~= typeof(val) then return false end
+    if typeof(val) == "Vector2" then return val.X==def.X and val.Y==def.Y end
+    return val == def
+end
+local function getGuiProps(obj)
+    return GUI_PROP_MAP[obj.ClassName] or guiMerge(GUI_COMMON,{})
+end
+local function convertGuiToScript(gui)
+    local extractedScripts = {}
+    local instanceToVar    = {}
+    local flatCounter      = {n=0}
+    local function newVar(base)
+        flatCounter.n += 1
+        local safe = (base or "obj"):gsub("[^%w_]","_"):gsub("^(%d)","_%1")
+        return safe.."_"..flatCounter.n
+    end
+    local codeLines = {}
+    local function emit(s) codeLines[#codeLines+1] = s end
+    local function extractScript(scriptObj, parentVar)
+        local source = ""
+        local zuk = getgenv()._ZUK_DECOMPILE
+        local okBC, bytecode = pcall(getscriptbytecode, scriptObj)
+        if zuk and okBC and bytecode and bytecode ~= "" then
+            local opts = {
+                DecompilerMode="disasm", DecompilerTimeout=15, CleanMode=true,
+                ReaderFloatPrecision=7, ShowDebugInformation=false,
+                ShowTrivialOperations=false, ShowInstructionLines=true,
+                ShowOperationIndex=true, ShowOperationNames=true,
+                ListUsedGlobals=true, UseTypeInfo=true,
+                EnabledRemarks={ColdRemark=false,InlineRemark=true},
+                ReturnElapsedTime=true,
+            }
+            local okD, result = pcall(zuk, bytecode, opts)
+            if okD and result then
+                local pp = getgenv()._ZUK_PRETTYPRINT
+                source = pp and pp(result) or result
+            end
+        end
+        if source == "" then
+            local ok2, src = pcall(function() return scriptObj.Source end)
+            if ok2 and src and src ~= "" then source = src end
+        end
+        if source == "" and getgenv().decompile then
+            local ok3, res = pcall(getgenv().decompile, scriptObj)
+            if ok3 and res then source = res end
+        end
+        if source == "" then
+            source = "-- [PROTECTED/EMPTY SCRIPT] Could not extract source\n"
+        end
+        local enabled = true
+        pcall(function() enabled = not scriptObj.Disabled end)
+        table.insert(extractedScripts, {
+            parent=parentVar, className=scriptObj.ClassName,
+            name=scriptObj.Name, source=source, enabled=enabled,
+        })
+    end
+    local function generateGuiCode(obj, parentVar, indent)
+        indent = indent or "\t"
+        local cls = obj.ClassName
+        if cls == "LocalScript" or cls == "Script" or cls == "ModuleScript" then
+            extractScript(obj, parentVar); return
+        end
+        local varName = newVar(obj.Name)
+        instanceToVar[obj] = varName
+        emit(indent .. ("local %s = Instance.new(%q)"):format(varName, cls))
+        emit(indent .. ("%s.Parent = %s"):format(varName, parentVar))
+        local props = getGuiProps(obj)
+        for _, propName in ipairs(props) do
+            if propName == "Name" and obj.Name == cls then continue end
+            local ok, val = pcall(function() return obj[propName] end)
+            if ok and val ~= nil and not guiShouldSkip(propName, val) then
+                local s = serializeVal(val)
+                if s ~= "nil" then
+                    emit(indent .. ("%s.%s = %s"):format(varName, propName, s))
+                end
+            end
+        end
+        for _, child in ipairs(obj:GetChildren()) do
+            generateGuiCode(child, varName, indent)
+        end
+    end
+    emit('local Players = game:GetService("Players")')
+    emit("local player = Players.LocalPlayer")
+    emit('local playerGui = player:WaitForChild("PlayerGui")')
+    emit("")
+    emit("-- GUI Structure")
+    emit("local function createGui()")
+    local sgVar = newVar(gui.Name)
+    instanceToVar[gui] = sgVar
+    emit(('\tlocal %s = Instance.new("ScreenGui")'):format(sgVar))
+    local sgProps = getGuiProps(gui)
+    for _, propName in ipairs(sgProps) do
+        local ok, val = pcall(function() return gui[propName] end)
+        if ok and val ~= nil and not guiShouldSkip(propName, val) then
+            local s = serializeVal(val)
+            if s ~= "nil" then emit(("\t%s.%s = %s"):format(sgVar, propName, s)) end
+        end
+    end
+    for _, child in ipairs(gui:GetChildren()) do
+        generateGuiCode(child, sgVar, "\t")
+    end
+    emit(("\t%s.Parent = playerGui"):format(sgVar))
+    emit(("\treturn %s"):format(sgVar))
+    emit("end")
+    emit("")
+    if #extractedScripts > 0 then
+        emit(("-- Extracted Scripts (%d found)"):format(#extractedScripts))
+        for i, sd in ipairs(extractedScripts) do
+            emit(("-- Script %d: %s (%s)"):format(i, sd.name, sd.className))
+            emit(("local function runScript_%d(script_obj)"):format(i))
+            emit("\tlocal script = script_obj")
+            for line in (sd.source.."\n"):gmatch("[^\n]*\n") do
+                emit("\t"..line:gsub("\n$",""))
+            end
+            emit("end"); emit("")
+        end
+    end
+    emit("-- Init")
+    emit("local gui = createGui()")
+    emit("")
+    if #extractedScripts > 0 then
+        for i, sd in ipairs(extractedScripts) do
+            local parentRef
+            if sd.parent == sgVar then
+                parentRef = "gui"
+            else
+                parentRef = ("gui:FindFirstChild(%q, true)"):format(
+                    sd.parent:match("^(.+)_%d+$") or sd.parent)
+            end
+            emit(("-- Run: %s"):format(sd.name))
+            emit("task.spawn(function()")
+            emit(("\tlocal parent = %s"):format(parentRef))
+            emit("\tif parent then")
+            emit(("\t\trunScript_%d(parent)"):format(i))
+            emit("\telse")
+            emit(("\t\twarn('[DeepGUI] Parent not found for script: %s')"):format(sd.name))
+            emit("\tend"); emit("end)"); emit("")
+        end
+    end
+    return table.concat(codeLines, "\n")
+end
+local function runDecompile(inst)
+    local ok, bytecode = pcall(getscriptbytecode, inst)
+    if not ok or not bytecode or bytecode == "" then
+        return "-- Could not obtain bytecode for: " .. tostring(inst.Name)
+            .. "\n-- (getscriptbytecode may be unsupported or the script is empty)"
+    end
+    local opts = {
+        EnabledRemarks       = { ColdRemark=true, InlineRemark=true },
+        DecompilerTimeout    = 10,
+        DecompilerMode       = "disasm",
+        ReaderFloatPrecision = 7,
+        ShowDebugInformation = false,
+        ShowInstructionLines = true,
+        ShowOperationIndex   = false,
+        ShowOperationNames   = false,
+        ShowTrivialOperations= true,
+        UseTypeInfo          = true,
+        ListUsedGlobals      = true,
+        ReturnElapsedTime    = true,
+        CleanMode            = true,
+    }
+    local ok2, raw = pcall(ZukDecompile, bytecode, opts)
+    if not ok2 then return "-- Decompile error:\n-- " .. tostring(raw) end
+    local ok3, cleaned = pcall(ZukClean,  raw);  if ok3 then raw = cleaned end
+    local ok4, pretty  = pcall(ZukPretty, raw);  if ok4 then raw = pretty  end
+    return raw
+end
+local function mk(cls, props, parent)
+    local i = Instance.new(cls)
+    for k,v in pairs(props) do i[k] = v end
+    if parent then i.Parent = parent end
+    return i
+end
+local sg = mk("ScreenGui", {
+    Name="Zukv2_AllInOne", DisplayOrder=10,
+    ZIndexBehavior=Enum.ZIndexBehavior.Global, ResetOnSpawn=false
+})
+local PANEL_W       = 260
+local DECOMP_W      = 500
+local COLLAPSED_W   = 260
+local panelExpanded = false
+local main = mk("Frame", {
+    Name="Main",
+    Size=UDim2.new(0, PANEL_W, 1, 0),
+    Position=UDim2.new(1, -PANEL_W, 0, 0),
+    BackgroundColor3=Color3.fromRGB(35,35,35), BorderSizePixel=4.5,
+    BackgroundTransparency = 0.6,
+    ClipsDescendants=false,
+}, sg)
+mk("UIStroke",{Color=Color3.fromRGB(60,60,60),Thickness=1}, main)
+local topBar = mk("Frame",{
+    Name="TopBar", Size=UDim2.new(1,0,0,22),
+    BackgroundColor3=Color3.fromRGB(35,35,35), BorderSizePixel=4.5,
+    BackgroundTransparency = 0.6,
+}, main)
+mk("TextLabel",{
+    Name="Title", Size=UDim2.new(1,-50,1,0), Position=UDim2.new(0,8,0,0),
+    BackgroundTransparency=1, Text="Zex + Made By @OverZuka",
+    TextColor3=Color3.fromRGB(200,200,200), TextXAlignment=Enum.TextXAlignment.Left,
+    Font=Enum.Font.SourceSansBold, TextSize=14
+}, topBar)
+local closeBtn = mk("TextButton",{
+    Name="Close", Size=UDim2.new(0,22,0,18), Position=UDim2.new(1,-24,0,2),
+    BackgroundColor3=Color3.fromRGB(180,50,50), BackgroundTransparency=0.6,
+    Text="X", TextColor3=Color3.fromRGB(255,255,255), BorderSizePixel=0,
+    Font=Enum.Font.SourceSansBold, TextSize=12
+}, topBar)
+local toggleBtn = mk("TextButton",{
+    Name="ToggleBtn",
+    Size=UDim2.new(0,18,0,48),
+    Position=UDim2.new(0,-18,0.5,-24),
+    BackgroundColor3=Color3.fromRGB(42,42,42),
+    BackgroundTransparency=0.5,
+    BorderSizePixel=0,
+    Text="<",
+    TextColor3=Color3.fromRGB(180,180,180),
+    Font=Enum.Font.SourceSansBold, TextSize=10,
+    ZIndex=20,
+}, main)
+mk("UICorner",{CornerRadius=UDim.new(0,4)}, toggleBtn)
+mk("Frame",{
+    Size=UDim2.new(0,1,1,0), Position=UDim2.new(0,-1,0,0),
+    BackgroundColor3=Color3.fromRGB(20,20,20), BorderSizePixel=0, ZIndex=19
+}, main)
+local split = mk("Frame",{
+    Name="Split", Size=UDim2.new(1,0,1,-22), Position=UDim2.new(0,0,0,22),
+    BackgroundTransparency=1, ClipsDescendants=true,
+}, main)
+local leftCol = mk("Frame",{
+    Name="LeftCol", Size=UDim2.new(1,0,1,0), BackgroundTransparency=1
+}, split)
+local treeSection = mk("Frame",{
+    Name="TreeSection", Size=UDim2.new(1,0,0.55,0),
+    BackgroundColor3=Color3.fromRGB(30,30,30), BorderSizePixel=0
+}, leftCol)
+local treeHeader = mk("Frame",{
+    Name="TreeHeader", Size=UDim2.new(1,0,0,22),
+    BackgroundColor3=Color3.fromRGB(42,42,42), BorderSizePixel=0
+}, treeSection)
+mk("TextLabel",{
+    Size=UDim2.new(1,-8,1,0), Position=UDim2.new(0,8,0,0),
+    BackgroundTransparency=1, Text="Explorer",
+    TextColor3=Color3.fromRGB(200,200,200),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    Font=Enum.Font.SourceSansBold, TextSize=9
+}, treeHeader)
+local treeToolbar = mk("Frame",{
+    Size=UDim2.new(1,0,0,24), Position=UDim2.new(0,0,0,22),
+    BackgroundColor3=Color3.fromRGB(40,40,40), BorderSizePixel=0
+}, treeSection)
+local searchFrame = mk("Frame",{
+    Size=UDim2.new(1,-10,0,18), Position=UDim2.new(0,5,0,3),
+    BackgroundColor3=Color3.fromRGB(30,30,30), BorderSizePixel=0
+}, treeToolbar)
+local searchInput = mk("TextBox",{
+    Name="Input", Size=UDim2.new(1,-10,1,0), Position=UDim2.new(0,5,0,0),
+    BackgroundTransparency=1, TextColor3=Color3.fromRGB(255,255,255),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    PlaceholderText="Search...", Text="", TextSize=7
+}, searchFrame)
+local treeActions = mk("Frame",{
+    Size=UDim2.new(1,0,0,22), Position=UDim2.new(0,0,0,46),
+    BackgroundColor3=Color3.fromRGB(37,37,37), BorderSizePixel=0
+}, treeSection)
+local function mkActionBtn(label, xOff)
+    local b = mk("TextButton",{
+        Size=UDim2.new(0,22,0,18), Position=UDim2.fromOffset(xOff, 2),
+        BackgroundColor3=Color3.fromRGB(50,50,50), BackgroundTransparency=0.4,
+        BorderSizePixel=0,
+        Text=label, TextColor3=Color3.fromRGB(210,210,210),
+        Font=Enum.Font.SourceSansBold, TextSize=11,
+    }, treeActions)
+    b.MouseEnter:Connect(function() b.BackgroundTransparency=0; b.BackgroundColor3=Color3.fromRGB(0,100,200) end)
+    b.MouseLeave:Connect(function() b.BackgroundTransparency=0.4; b.BackgroundColor3=Color3.fromRGB(50,50,50) end)
+    return b
+end
+local refreshBtn2    = mkActionBtn("?",  4)
+local expandAllBtn   = mkActionBtn("+",  28)
+local collapseAllBtn = mkActionBtn("-",  52)
+local instanceCountLabel = mk("TextLabel",{
+    Size=UDim2.new(1,-80,1,0), Position=UDim2.fromOffset(78,0),
+    BackgroundTransparency=1,
+    Text="0 items",
+    TextColor3=Color3.fromRGB(100,100,100),
+    TextXAlignment=Enum.TextXAlignment.Right,
+    Font=Enum.Font.SourceSans, TextSize=11,
+}, treeActions)
+local listFrame = mk("Frame",{
+    Name="List", Size=UDim2.new(1,0,1,-68), Position=UDim2.new(0,0,0,68),
+    BackgroundTransparency=1, ClipsDescendants=true
+}, treeSection)
+mk("Frame",{
+    Size=UDim2.new(1,0,0,1), Position=UDim2.new(0,0,0.55,0),
+    BackgroundColor3=Color3.fromRGB(55,55,55), BorderSizePixel=0
+}, leftCol)
+local propsSection = mk("Frame",{
+    Name="PropsSection", Size=UDim2.new(1,0,0.45,-1), Position=UDim2.new(0,0,0.55,1),
+    BackgroundColor3=Color3.fromRGB(30,30,30), BorderSizePixel=0
+}, leftCol)
+local propsHeader = mk("Frame",{
+    Name="PropsHeader", Size=UDim2.new(1,0,0,22),
+    BackgroundColor3=Color3.fromRGB(42,42,42), BorderSizePixel=0
+}, propsSection)
+mk("TextLabel",{
+    Size=UDim2.new(1,-8,1,0), Position=UDim2.new(0,8,0,0),
+    BackgroundTransparency=1, Text="Properties",
+    TextColor3=Color3.fromRGB(200,200,200),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    Font=Enum.Font.SourceSansBold, TextSize=9
+}, propsHeader)
+local propsToolbar = mk("Frame",{
+    Size=UDim2.new(1,0,0,24), Position=UDim2.new(0,0,0,22),
+    BackgroundColor3=Color3.fromRGB(40,40,40), BorderSizePixel=0
+}, propsSection)
+local propsSearchFrame = mk("Frame",{
+    Size=UDim2.new(1,-10,0,18), Position=UDim2.new(0,5,0,3),
+    BackgroundColor3=Color3.fromRGB(30,30,30), BorderSizePixel=0
+}, propsToolbar)
+local propsSearchInput = mk("TextBox",{
+    Name="PropsSearch", Size=UDim2.new(1,-10,1,0), Position=UDim2.new(0,5,0,0),
+    BackgroundTransparency=1, TextColor3=Color3.fromRGB(255,255,255),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    PlaceholderText="Search...", Text="", TextSize=7
+}, propsSearchFrame)
+local propsScroll = mk("ScrollingFrame",{
+    Name="PropsScroll",
+    Size=UDim2.new(1,0,1,-46), Position=UDim2.new(0,0,0,46),
+    BackgroundTransparency=1, BorderSizePixel=0,
+    ScrollBarThickness=5, ScrollBarImageColor3=Color3.fromRGB(70,70,70),
+    CanvasSize=UDim2.new(0,0,0,0), AutomaticCanvasSize=Enum.AutomaticSize.Y,
+    ClipsDescendants=true
+}, propsSection)
+mk("UIListLayout",{
+    SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,0)
+}, propsScroll)
+local rightCol = mk("Frame",{
+    Name="RightCol",
+    Size=UDim2.new(0,DECOMP_W,1,0),
+    Position=UDim2.new(1,0,0,0),
+    BackgroundColor3=Color3.fromRGB(22,22,22), BorderSizePixel=0,
+    Visible=false,
+}, sg)
+local splitDivider = mk("Frame",{
+    Name="SplitDivider",
+    Size=UDim2.new(0,1,1,0), Position=UDim2.fromOffset(0,0),
+    BackgroundColor3=Color3.fromRGB(55,55,55), BorderSizePixel=0,
+}, rightCol)
+local decompHeader = mk("Frame",{
+    Size=UDim2.new(1,0,0,26), BackgroundColor3=Color3.fromRGB(32,32,32),
+    BorderSizePixel=0
+}, rightCol)
+local decompTitle = mk("TextLabel",{
+    Name="DecompTitle",
+    Size=UDim2.new(1,-310,1,0), Position=UDim2.new(0,8,0,0),
+    BackgroundTransparency=1, Text="Path:",
+    TextColor3=Color3.fromRGB(160,160,160),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    Font=Enum.Font.SourceSansBold, TextSize=9
+}, decompHeader)
+local decompBtn = mk("TextButton",{
+    Name="DecompBtn",
+    Size=UDim2.new(0,60,0,20), Position=UDim2.new(1,-65,0,3),
+    BackgroundColor3=Color3.fromRGB(50,50,50), BorderSizePixel=0,
+    Text="View", TextColor3=Color3.fromRGB(255,255,255),
+    Font=Enum.Font.SourceSansBold, TextSize=11
+}, decompHeader)
+local copyBtn = mk("TextButton",{
+    Name="CopyBtn",
+    Size=UDim2.new(0,50,0,20), Position=UDim2.new(1,-120,0,3),
+    BackgroundColor3=Color3.fromRGB(50,50,50), BorderSizePixel=0,
+    Text="Copy", TextColor3=Color3.fromRGB(210,210,210),
+    Font=Enum.Font.SourceSansBold, TextSize=11
+}, decompHeader)
+local execBtn = mk("TextButton",{
+    Name="ExecBtn",
+    Size=UDim2.new(0,60,0,20), Position=UDim2.new(1,-185,0,3),
+    BackgroundColor3=Color3.fromRGB(40,70,40), BorderSizePixel=0,
+    Text="Execute", TextColor3=Color3.fromRGB(160,255,160),
+    Font=Enum.Font.SourceSansBold, TextSize=11
+}, decompHeader)
+local convertBtn = mk("TextButton",{
+    Name="ConvertBtn",
+    Size=UDim2.new(0,70,0,20), Position=UDim2.new(1,-260,0,3),
+    BackgroundColor3=Color3.fromRGB(50,40,70), BorderSizePixel=0,
+    Text="GUI -> SCRIPT", TextColor3=Color3.fromRGB(200,160,255),
+    Font=Enum.Font.SourceSansBold, TextSize=11
+}, decompHeader)
+local tabBar = mk("Frame",{
+    Name="TabBar", Size=UDim2.new(1,0,0,22), Position=UDim2.new(0,0,0,26),
+    BackgroundColor3=Color3.fromRGB(28,28,28), BorderSizePixel=0
+}, rightCol)
+local tabViewer = mk("TextButton",{
+    Size=UDim2.new(0,70,1,0), Position=UDim2.new(0,0,0,0),
+    BackgroundColor3=Color3.fromRGB(22,22,22), BorderSizePixel=0,
+    Text="Viewer", TextColor3=Color3.fromRGB(220,220,220),
+    Font=Enum.Font.SourceSansBold, TextSize=11
+}, tabBar)
+local tabEditor = mk("TextButton",{
+    Size=UDim2.new(0,70,1,0), Position=UDim2.new(0,70,0,0),
+    BackgroundColor3=Color3.fromRGB(35,35,35), BorderSizePixel=0,
+    Text="Editor", TextColor3=Color3.fromRGB(140,140,140),
+    Font=Enum.Font.SourceSansBold, TextSize=11
+}, tabBar)
+local tabInspector = mk("TextButton",{
+    Size=UDim2.new(0,80,1,0), Position=UDim2.new(0,140,0,0),
+    BackgroundColor3=Color3.fromRGB(35,35,35), BorderSizePixel=0,
+    Text="Inspector", TextColor3=Color3.fromRGB(140,140,140),
+    Font=Enum.Font.SourceSansBold, TextSize=11
+}, tabBar)
+local tabUnderline = mk("Frame",{
+    Size=UDim2.new(0,70,0,2), Position=UDim2.new(0,0,1,-2),
+    BackgroundColor3=Color3.fromRGB(0,120,215), BorderSizePixel=0
+}, tabBar)
+local viewerPane = mk("Frame",{
+    Name="ViewerPane", Size=UDim2.new(1,0,1,-48), Position=UDim2.new(0,0,0,48),
+    BackgroundTransparency=1, ClipsDescendants=true, Visible=true
+}, rightCol)
+local codeScroll = mk("ScrollingFrame",{
+    Name="CodeScroll", Size=UDim2.new(1,0,1,0),
+    BackgroundColor3=Color3.fromRGB(22,22,22), BorderSizePixel=0,
+    ScrollBarThickness=5, ScrollBarImageColor3=Color3.fromRGB(70,70,70),
+    CanvasSize=UDim2.new(0,0,0,0), AutomaticCanvasSize=Enum.AutomaticSize.Y,
+    HorizontalScrollBarInset=Enum.ScrollBarInset.None,
+}, viewerPane)
+mk("UIPadding",{
+    PaddingLeft=UDim.new(0,8), PaddingTop=UDim.new(0,5),
+    PaddingRight=UDim.new(0,8), PaddingBottom=UDim.new(0,5)
+}, codeScroll)
+local codeListLayout = mk("UIListLayout",{
+    SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,0),
+    FillDirection=Enum.FillDirection.Vertical,
+}, codeScroll)
+local codeLabel = mk("TextLabel",{
+    Name="Code", Size=UDim2.new(1,0,0,0), AutomaticSize=Enum.AutomaticSize.Y,
+    BackgroundTransparency=1, TextColor3=Color3.fromRGB(204,204,204),
+    TextXAlignment=Enum.TextXAlignment.Left, TextYAlignment=Enum.TextYAlignment.Top,
+    Font=Enum.Font.Code, TextSize=9, RichText=true, TextWrapped=false,
+    LayoutOrder=0,
+    Text='<font color="#555555">-- zukv2 decompiler\n-- by @OverZuka</font>'
+}, codeScroll)
+local gutterW = 36
+local editorPane = mk("Frame",{
+    Name="EditorPane", Size=UDim2.new(1,0,1,-48), Position=UDim2.new(0,0,0,48),
+    BackgroundColor3=Color3.fromRGB(20,20,20), BorderSizePixel=0,
+    Visible=false, ClipsDescendants=true
+}, rightCol)
+local gutter = mk("Frame",{
+    Name="Gutter", Size=UDim2.new(0,gutterW,1,0),
+    BackgroundColor3=Color3.fromRGB(28,28,28), BorderSizePixel=0
+}, editorPane)
+local gutterScroll = mk("ScrollingFrame",{
+    Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, BorderSizePixel=0,
+    ScrollBarThickness=0, CanvasSize=UDim2.new(0,0,0,0),
+    AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollingEnabled=false
+}, gutter)
+mk("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,0)}, gutterScroll)
+local editorScroll = mk("ScrollingFrame",{
+    Name="EditorScroll",
+    Size=UDim2.new(1,-gutterW,1,0), Position=UDim2.new(0,gutterW,0,0),
+    BackgroundTransparency=1, BorderSizePixel=0,
+    ScrollBarThickness=5, ScrollBarImageColor3=Color3.fromRGB(70,70,70),
+    CanvasSize=UDim2.new(0,0,0,0), AutomaticCanvasSize=Enum.AutomaticSize.Y,
+    ScrollingDirection=Enum.ScrollingDirection.Y
+}, editorPane)
+mk("UIPadding",{PaddingTop=UDim.new(0,5), PaddingBottom=UDim.new(0,5)}, editorScroll)
+local hlOverlay = mk("Frame",{
+    Name="HlOverlay",
+    Size=UDim2.new(1,-8,0,0), Position=UDim2.new(0,8,0,0),
+    AutomaticSize=Enum.AutomaticSize.Y,
+    BackgroundTransparency=1,
+    ZIndex=1,
+}, editorScroll)
+mk("UIListLayout",{
+    SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,0),
+    FillDirection=Enum.FillDirection.Vertical,
+}, hlOverlay)
+local hlLineLabels = {}
+local editorBox = mk("TextBox",{
+    Name="EditorBox",
+    Size=UDim2.new(1,-8,0,0), Position=UDim2.new(0,8,0,0),
+    AutomaticSize=Enum.AutomaticSize.Y,
+    BackgroundTransparency=1,
+    TextColor3=Color3.fromRGB(0,0,0), TextTransparency=1,
+    TextXAlignment=Enum.TextXAlignment.Left,
+    TextYAlignment=Enum.TextYAlignment.Top,
+    Font=Enum.Font.Code, TextSize=9,
+    TextWrapped=true, MultiLine=true,
+    ClearTextOnFocus=false,
+    Text="-- Write your script here\n",
+    PlaceholderColor3=Color3.fromRGB(80,80,80),
+    ZIndex=2,
+}, editorScroll)
+local inspectorPane = mk("Frame",{
+    Name="InspectorPane", Size=UDim2.new(1,0,1,-48), Position=UDim2.new(0,0,0,48),
+    BackgroundColor3=Color3.fromRGB(22,22,22), BorderSizePixel=0,
+    Visible=false, ClipsDescendants=true,
+}, rightCol)
+local inspTopBar = mk("Frame",{
+    Size=UDim2.new(1,0,0,30), BackgroundColor3=Color3.fromRGB(28,28,28), BorderSizePixel=0,
+}, inspectorPane)
+local inspModuleLabel = mk("TextLabel",{
+    Size=UDim2.new(1,-90,1,0), Position=UDim2.new(0,8,0,0),
+    BackgroundTransparency=1,
+    Text="No module selected",
+    TextColor3=Color3.fromRGB(140,140,140),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    Font=Enum.Font.SourceSans, TextSize=10,
+    TextTruncate=Enum.TextTruncate.AtEnd,
+}, inspTopBar)
+local inspLoadBtn = mk("TextButton",{
+    Size=UDim2.new(0,70,0,22), Position=UDim2.new(1,-76,0,4),
+    BackgroundColor3=Color3.fromRGB(0,100,200), BorderSizePixel=0,
+    Text="Load", TextColor3=Color3.fromRGB(255,255,255),
+    Font=Enum.Font.SourceSansBold, TextSize=11,
+}, inspTopBar)
+mk("UICorner",{CornerRadius=UDim.new(0,3)}, inspLoadBtn)
+local inspSubTabBar = mk("Frame",{
+    Size=UDim2.new(1,0,0,22), Position=UDim2.new(0,0,0,30),
+    BackgroundColor3=Color3.fromRGB(24,24,24), BorderSizePixel=0,
+}, inspectorPane)
+local function makeSubTab(label, xPos, w)
+    local btn = mk("TextButton",{
+        Size=UDim2.new(0,w,1,0), Position=UDim2.new(0,xPos,0,0),
+        BackgroundColor3=Color3.fromRGB(30,30,30), BorderSizePixel=0,
+        Text=label, TextColor3=Color3.fromRGB(130,130,130),
+        Font=Enum.Font.SourceSansBold, TextSize=10,
+    }, inspSubTabBar)
+    return btn
+end
+local inspTabTable    = makeSubTab("Table",    0,   68)
+local inspTabMeta     = makeSubTab("Metatable",68,  80)
+local inspTabUpvalues = makeSubTab("Upvalues", 148, 72)
+local inspSubUnderline = mk("Frame",{
+    Size=UDim2.new(0,68,0,2), Position=UDim2.new(0,0,1,-2),
+    BackgroundColor3=Color3.fromRGB(0,120,215), BorderSizePixel=0,
+}, inspSubTabBar)
+local inspPathBar = mk("Frame",{
+    Size=UDim2.new(1,0,0,22), Position=UDim2.new(0,0,0,52),
+    BackgroundColor3=Color3.fromRGB(25,25,25), BorderSizePixel=0,
+}, inspectorPane)
+local inspBackBtn = mk("TextButton",{
+    Size=UDim2.new(0,22,1,0), Position=UDim2.new(0,0,0,0),
+    BackgroundColor3=Color3.fromRGB(35,35,35), BorderSizePixel=0,
+    Text="←", TextColor3=Color3.fromRGB(180,180,180),
+    Font=Enum.Font.SourceSansBold, TextSize=12,
+}, inspPathBar)
+local inspPathLabel = mk("TextLabel",{
+    Size=UDim2.new(1,-28,1,0), Position=UDim2.new(0,26,0,0),
+    BackgroundTransparency=1,
+    Text="Root",
+    TextColor3=Color3.fromRGB(160,160,160),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    Font=Enum.Font.SourceSans, TextSize=9,
+    TextTruncate=Enum.TextTruncate.AtEnd,
+}, inspPathBar)
+local inspSearchBar = mk("Frame",{
+    Size=UDim2.new(1,0,0,24), Position=UDim2.new(0,0,0,74),
+    BackgroundColor3=Color3.fromRGB(28,28,28), BorderSizePixel=0,
+}, inspectorPane)
+local inspSearchFrame = mk("Frame",{
+    Size=UDim2.new(1,-10,0,18), Position=UDim2.new(0,5,0,3),
+    BackgroundColor3=Color3.fromRGB(20,20,20), BorderSizePixel=0,
+}, inspSearchBar)
+mk("UICorner",{CornerRadius=UDim.new(0,3)}, inspSearchFrame)
+local inspSearchInput = mk("TextBox",{
+    Size=UDim2.new(1,-10,1,0), Position=UDim2.new(0,5,0,0),
+    BackgroundTransparency=1,
+    Text="", PlaceholderText="Search keys…",
+    TextColor3=Color3.fromRGB(220,220,220), PlaceholderColor3=Color3.fromRGB(70,70,70),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    Font=Enum.Font.SourceSans, TextSize=9,
+    ClearTextOnFocus=false,
+}, inspSearchFrame)
+local inspHeaders = mk("Frame",{
+    Size=UDim2.new(1,0,0,18), Position=UDim2.new(0,0,0,98),
+    BackgroundColor3=Color3.fromRGB(32,32,32), BorderSizePixel=0,
+}, inspectorPane)
+mk("TextLabel",{
+    Size=UDim2.new(0.42,0,1,0), Position=UDim2.new(0,4,0,0),
+    BackgroundTransparency=1, Text="Key",
+    TextColor3=Color3.fromRGB(120,120,120),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    Font=Enum.Font.SourceSansBold, TextSize=9,
+}, inspHeaders)
+mk("TextLabel",{
+    Size=UDim2.new(0.28,0,1,0), Position=UDim2.new(0.42,0,0,0),
+    BackgroundTransparency=1, Text="Type",
+    TextColor3=Color3.fromRGB(120,120,120),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    Font=Enum.Font.SourceSansBold, TextSize=9,
+}, inspHeaders)
+mk("TextLabel",{
+    Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
+    BackgroundTransparency=1, Text="Value / Actions",
+    TextColor3=Color3.fromRGB(120,120,120),
+    TextXAlignment=Enum.TextXAlignment.Left,
+    Font=Enum.Font.SourceSansBold, TextSize=9,
+}, inspHeaders)
+mk("Frame",{
+    Size=UDim2.new(1,0,0,1), Position=UDim2.new(0,0,1,-1),
+    BackgroundColor3=Color3.fromRGB(50,50,50), BorderSizePixel=0,
+}, inspHeaders)
+local inspScroll = mk("ScrollingFrame",{
+    Name="InspScroll",
+    Size=UDim2.new(1,0,1,-116), Position=UDim2.new(0,0,0,116),
+    BackgroundTransparency=1, BorderSizePixel=0,
+    ScrollBarThickness=5, ScrollBarImageColor3=Color3.fromRGB(70,70,70),
+    CanvasSize=UDim2.new(0,0,0,0), AutomaticCanvasSize=Enum.AutomaticSize.Y,
+    ClipsDescendants=true,
+}, inspectorPane)
+mk("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,0)}, inspScroll)
+local inspStatus = mk("TextLabel",{
+    Size=UDim2.new(1,0,0,50), Position=UDim2.new(0,0,0,0),
+    BackgroundTransparency=1,
+    Text="Select a ModuleScript / Script and press Load.",
+    TextColor3=Color3.fromRGB(100,100,100),
+    TextXAlignment=Enum.TextXAlignment.Center,
+    TextYAlignment=Enum.TextYAlignment.Center,
+    Font=Enum.Font.SourceSans, TextSize=10,
+    TextWrapped=true, Visible=true, LayoutOrder=0,
+}, inspScroll)
+local inspState = {
+    rootTable   = nil,
+    currentTbl  = nil,
+    pathStack   = {},
+    visitedSet  = {},
+    rowFrames   = {},
+    filterText  = "",
+    module      = nil,
+    activeTab   = "table",
+    hookedFns   = {},
+}
+local TYPE_COLORS = {
+    number   = Color3.fromRGB(255,198,0),
+    string   = Color3.fromRGB(173,241,149),
+    boolean  = Color3.fromRGB(255,198,0),
+    ["nil"]  = Color3.fromRGB(150,150,150),
+    ["function"] = Color3.fromRGB(248,109,124),
+    table    = Color3.fromRGB(132,214,247),
+    userdata = Color3.fromRGB(200,160,255),
+    thread   = Color3.fromRGB(200,200,200),
+}
+local function inspGetTypeColor(t)
+    return TYPE_COLORS[t] or Color3.fromRGB(180,180,180)
+end
+local function inspShortValue(v, vtype)
+    if vtype == "string" then
+        local s = tostring(v)
+        return #s > 38 and ('"'..s:sub(1,35)..'..."') or ('"'..s..'"')
+    elseif vtype == "function" then
+        return tostring(v):match("function: (.+)") or "function"
+    elseif vtype == "table" then
+        local n=0
+        local ok2=pcall(function() for _ in pairs(v) do n+=1; if n>99 then break end end end)
+        return ok2 and ("{"..n..(n>99 and "+" or "").."}") or "{protected}"
+    else
+        return tostring(v)
+    end
+end
+local inspPopulate
+local inspPopulateMeta
+local inspPopulateUpvalues
+local function inspSetSubTab(name)
+    inspState.activeTab = name
+    local positions = {table=0, meta=68, upvalues=148}
+    local widths    = {table=68,meta=80, upvalues=72}
+    inspSubUnderline.Position = UDim2.new(0, positions[name], 1, -2)
+    inspSubUnderline.Size     = UDim2.new(0, widths[name], 0, 2)
+    for _, pair in ipairs({
+        {inspTabTable,    "table"},
+        {inspTabMeta,     "meta"},
+        {inspTabUpvalues, "upvalues"},
+    }) do
+        local btn, id = pair[1], pair[2]
+        if id == name then
+            btn.BackgroundColor3 = Color3.fromRGB(22,22,22)
+            btn.TextColor3       = Color3.fromRGB(220,220,220)
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+            btn.TextColor3       = Color3.fromRGB(130,130,130)
+        end
+    end
+    inspPathBar.Visible    = (name == "table")
+    inspSearchBar.Visible  = (name ~= "upvalues")
+    if name == "table" and inspState.currentTbl then
+        inspPopulate(inspState.currentTbl)
+    elseif name == "meta" then
+        inspPopulateMeta()
+    elseif name == "upvalues" then
+        inspPopulateUpvalues()
+    end
+end
+inspTabTable.MouseButton1Click:Connect(function()    inspSetSubTab("table")    end)
+inspTabMeta.MouseButton1Click:Connect(function()     inspSetSubTab("meta")     end)
+inspTabUpvalues.MouseButton1Click:Connect(function() inspSetSubTab("upvalues") end)
+local function inspClearRows()
+    for _, f in ipairs(inspState.rowFrames) do
+        if f and f.Parent then f:Destroy() end
+    end
+    table.clear(inspState.rowFrames)
+    inspStatus.Visible = false
+end
+local function inspSetStatus(msg)
+    inspClearRows()
+    inspStatus.Text    = msg
+    inspStatus.Visible = true
+end
+local function inspUpdatePath()
+    if #inspState.pathStack == 0 then
+        inspPathLabel.Text = "Root"
+    else
+        local parts = {}
+        for _, entry in ipairs(inspState.pathStack) do
+            table.insert(parts, tostring(entry.label))
+        end
+        inspPathLabel.Text = "Root > "..table.concat(parts," > ")
+    end
+end
+local function inspCreateRow(key, value, order, writeTarget, writeKey)
+    writeTarget = writeTarget or inspState.currentTbl
+    writeKey    = writeKey    or key
+    local vtype   = type(value)
+    local isTable = vtype == "table"
+    local keyStr  = tostring(key)
+    local valStr  = inspShortValue(value, vtype)
+    local isEven  = order % 2 == 0
+    local row = mk("Frame",{
+        Size=UDim2.new(1,0,0,20),
+        BackgroundColor3=isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30),
+        BackgroundTransparency=0, BorderSizePixel=0,
+        LayoutOrder=order, ClipsDescendants=true,
+    }, inspScroll)
+    mk("TextLabel",{
+        Size=UDim2.new(0.42,-4,1,0), Position=UDim2.new(0,4,0,0),
+        BackgroundTransparency=1,
+        Text=keyStr,
+        TextColor3=type(key)=="number" and Color3.fromRGB(255,198,0) or Color3.fromRGB(210,210,210),
+        TextXAlignment=Enum.TextXAlignment.Left,
+        Font=Enum.Font.Code, TextSize=9,
+        TextTruncate=Enum.TextTruncate.AtEnd,
+    }, row)
+    local typeLbl = mk("TextLabel",{
+        Size=UDim2.new(0.28,0,1,0), Position=UDim2.new(0.42,0,0,0),
+        BackgroundTransparency=1,
+        Text=vtype,
+        TextColor3=inspGetTypeColor(vtype),
+        TextXAlignment=Enum.TextXAlignment.Left,
+        Font=Enum.Font.Code, TextSize=9,
+        TextTruncate=Enum.TextTruncate.AtEnd,
+    }, row)
+    if isTable then
+        local drillBtn = mk("TextButton",{
+            Size=UDim2.new(0.30,-4,0,16), Position=UDim2.new(0.70,0,0.5,-8),
+            BackgroundColor3=Color3.fromRGB(0,80,160), BorderSizePixel=0,
+            Text="→  "..valStr,
+            TextColor3=Color3.fromRGB(180,220,255),
+            Font=Enum.Font.Code, TextSize=9,
+            TextXAlignment=Enum.TextXAlignment.Left,
+            TextTruncate=Enum.TextTruncate.AtEnd,
+        }, row)
+        mk("UICorner",{CornerRadius=UDim.new(0,3)}, drillBtn)
+        drillBtn.MouseEnter:Connect(function() drillBtn.BackgroundColor3=Color3.fromRGB(0,110,210) end)
+        drillBtn.MouseLeave:Connect(function() drillBtn.BackgroundColor3=Color3.fromRGB(0,80,160) end)
+        drillBtn.MouseButton1Click:Connect(function()
+            if inspState.visitedSet[value] then return end
+            table.insert(inspState.pathStack,{label=keyStr, tbl=inspState.currentTbl})
+            inspState.currentTbl = value
+            inspUpdatePath()
+            inspPopulate(value)
+        end)
+    elseif vtype == "function" then
+        local CELL_W  = 0.30
+        local BTN_W   = 32
+        local GAP     = 2
+        local startX  = 0
+        local function flashRow(color)
+            row.BackgroundColor3 = color
+            task.delay(0.5, function()
+                row.BackgroundColor3 = isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30)
+            end)
+        end
+        local function pill(label, bgCol, txtCol, xOffset)
+            local b = mk("TextButton",{
+                Size=UDim2.new(0,BTN_W,0,14),
+                Position=UDim2.new(0.70, xOffset, 0.5, -7),
+                BackgroundColor3=bgCol, BorderSizePixel=0,
+                Text=label,
+                TextColor3=txtCol,
+                Font=Enum.Font.SourceSansBold, TextSize=8,
+                ZIndex=3,
+            }, row)
+            mk("UICorner",{CornerRadius=UDim.new(0,3)}, b)
+            return b
+        end
+        local btnCall  = pill("▶ Call",  Color3.fromRGB(30,80,30),  Color3.fromRGB(160,255,160), 0)
+        local btnTrue  = pill("⟲ true",  Color3.fromRGB(30,90,30),  Color3.fromRGB(120,255,120), BTN_W+GAP)
+        local btnFalse = pill("⟲ false", Color3.fromRGB(90,30,30),  Color3.fromRGB(255,100,100), (BTN_W+GAP)*2)
+        local btnNil   = pill("⟲ nil",   Color3.fromRGB(50,50,70),  Color3.fromRGB(180,180,255), (BTN_W+GAP)*3)
+        btnCall.MouseButton1Click:Connect(function()
+            local ok2, res = pcall(value)
+            if ok2 then
+                flashRow(Color3.fromRGB(30,60,30))
+                inspModuleLabel.Text = "Call OK → "..tostring(res)
+                inspModuleLabel.TextColor3 = Color3.fromRGB(120,255,120)
+            else
+                flashRow(Color3.fromRGB(70,20,20))
+                inspModuleLabel.Text = "Call ERR: "..tostring(res)
+                inspModuleLabel.TextColor3 = Color3.fromRGB(255,80,80)
+            end
+            task.delay(2.5, function()
+                inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
+                if inspState.module then
+                    inspModuleLabel.Text = inspState.module.Name
+                end
+            end)
+        end)
+        local function makeForceReturn(retVal, label)
+            return function()
+                local originalFn = value
+                local function wrapper(...)
+                    return retVal
+                end
+                local hooked = false
+                local ok2 = pcall(function()
+                    hookfunction(originalFn, wrapper)
+                    hooked = true
+                end)
+                if not hooked then
+                    local writeOk = pcall(function()
+                        writeTarget[writeKey] = wrapper
+                    end)
+                    if not writeOk then
+                        inspModuleLabel.Text = "Force-return failed (protected)"
+                        inspModuleLabel.TextColor3 = Color3.fromRGB(255,120,60)
+                        task.delay(2, function()
+                            inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
+                        end)
+                        return
+                    end
+                end
+                flashRow(Color3.fromRGB(30,60,100))
+                typeLbl.Text      = "fn⟲"..label
+                typeLbl.TextColor3 = Color3.fromRGB(255,220,60)
+                inspModuleLabel.Text = keyStr.." → always returns "..label
+                inspModuleLabel.TextColor3 = Color3.fromRGB(255,220,60)
+                task.delay(2, function()
+                    inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
+                    if inspState.module then
+                        inspModuleLabel.Text = inspState.module.Name
+                    end
+                end)
+            end
+        end
+        btnTrue.MouseButton1Click:Connect(makeForceReturn(true,  "true"))
+        btnFalse.MouseButton1Click:Connect(makeForceReturn(false, "false"))
+        btnNil.MouseButton1Click:Connect(makeForceReturn(nil,    "nil"))
+    elseif vtype == "boolean" then
+        local currentVal = value
+        local valBtn = mk("TextButton",{
+            Size=UDim2.new(0.30,-4,0,16), Position=UDim2.new(0.70,0,0.5,-8),
+            BackgroundColor3=currentVal and Color3.fromRGB(30,90,30) or Color3.fromRGB(90,30,30),
+            BorderSizePixel=0,
+            Text=tostring(currentVal),
+            TextColor3=currentVal and Color3.fromRGB(120,255,120) or Color3.fromRGB(255,100,100),
+            Font=Enum.Font.Code, TextSize=9,
+            ZIndex=3,
+        }, row)
+        mk("UICorner",{CornerRadius=UDim.new(0,3)}, valBtn)
+        valBtn.MouseButton1Click:Connect(function()
+            currentVal = not currentVal
+            local writeOk, writeErr = pcall(function()
+                writeTarget[writeKey] = currentVal
+            end)
+            if writeOk then
+                valBtn.Text = tostring(currentVal)
+                valBtn.TextColor3       = currentVal and Color3.fromRGB(120,255,120)  or Color3.fromRGB(255,100,100)
+                valBtn.BackgroundColor3 = currentVal and Color3.fromRGB(30,90,30)     or Color3.fromRGB(90,30,30)
+                typeLbl.TextColor3 = inspGetTypeColor("boolean")
+            else
+                valBtn.BackgroundColor3 = Color3.fromRGB(120,30,30)
+                task.delay(0.6, function()
+                    valBtn.BackgroundColor3 = currentVal and Color3.fromRGB(30,90,30) or Color3.fromRGB(90,30,30)
+                end)
+                warn("[zukv2 Inspector] Write failed:", writeErr)
+            end
+        end)
+    else
+        local currentVal  = value
+        local currentType = vtype
+        local valLbl = mk("TextLabel",{
+            Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
+            BackgroundTransparency=1,
+            Text=valStr,
+            TextColor3=inspGetTypeColor(currentType),
+            TextXAlignment=Enum.TextXAlignment.Left,
+            Font=Enum.Font.Code, TextSize=9,
+            TextTruncate=Enum.TextTruncate.AtEnd,
+            ZIndex=2,
+        }, row)
+        local editHint = mk("TextLabel",{
+            Size=UDim2.new(0,12,1,0), Position=UDim2.new(1,-13,0,0),
+            BackgroundTransparency=1,
+            Text="✎", TextColor3=Color3.fromRGB(70,70,70),
+            Font=Enum.Font.SourceSans, TextSize=10,
+            ZIndex=3, Visible=false,
+        }, row)
+        local editHit = mk("TextButton",{
+            Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
+            BackgroundTransparency=1, Text="", ZIndex=4,
+        }, row)
+        local activeBox = nil
+        local function closeEditor()
+            if not activeBox then return end
+            activeBox:Destroy(); activeBox=nil
+            row.Size=UDim2.new(1,0,0,20); row.ClipsDescendants=true
+            valLbl.Visible=true; editHit.ZIndex=4
+        end
+        local function commitEdit(rawText)
+            local newVal, newType
+            if currentType == "number" then
+                local n = tonumber(rawText)
+                if not n then closeEditor(); return end
+                newVal=n; newType="number"
+            elseif currentType == "nil" then
+                if rawText=="nil" then newVal=nil; newType="nil"
+                elseif rawText=="true"  then newVal=true;  newType="boolean"
+                elseif rawText=="false" then newVal=false; newType="boolean"
+                elseif tonumber(rawText) then newVal=tonumber(rawText); newType="number"
+                else newVal=rawText; newType="string" end
+            else
+                newVal=rawText; newType="string"
+            end
+            local writeOk, writeErr = pcall(function()
+                writeTarget[writeKey] = newVal
+            end)
+            if writeOk then
+                currentVal=newVal; currentType=newType
+                valLbl.Text=inspShortValue(newVal,newType)
+                valLbl.TextColor3=inspGetTypeColor(newType)
+                typeLbl.Text=newType; typeLbl.TextColor3=inspGetTypeColor(newType)
+                valLbl.TextColor3=Color3.fromRGB(120,255,120)
+                task.delay(0.6, function() valLbl.TextColor3=inspGetTypeColor(newType) end)
+            else
+                warn("[zukv2 Inspector] Write failed:",writeErr)
+                valLbl.TextColor3=Color3.fromRGB(255,80,80)
+                task.delay(0.6, function() valLbl.TextColor3=inspGetTypeColor(currentType) end)
+            end
+            closeEditor()
+        end
+        local function openEditor()
+            if activeBox then return end
+            row.Size=UDim2.new(1,0,0,26); row.ClipsDescendants=false
+            valLbl.Visible=false; editHit.ZIndex=1
+            local box = mk("TextBox",{
+                Size=UDim2.new(0.30,-4,0,22), Position=UDim2.new(0.70,0,0.5,-11),
+                BackgroundColor3=Color3.fromRGB(18,18,28), BorderSizePixel=1,
+                Text=tostring(currentVal),
+                TextColor3=Color3.fromRGB(230,230,230),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.Code, TextSize=9,
+                ClearTextOnFocus=false, ZIndex=10,
+            }, row)
+            mk("UIStroke",{Color=Color3.fromRGB(0,120,215), Thickness=1}, box)
+            box:CaptureFocus(); activeBox=box
+            box.FocusLost:Connect(function(enter)
+                if enter then commitEdit(box.Text) else closeEditor() end
+            end)
+            UserInputService.InputBegan:Connect(function(input,gpe)
+                if gpe then return end
+                if input.KeyCode==Enum.KeyCode.Escape and activeBox==box then closeEditor() end
+            end)
+        end
+        editHit.MouseEnter:Connect(function()  editHint.Visible=true  end)
+        editHit.MouseLeave:Connect(function()  editHint.Visible=false end)
+        editHit.MouseButton1Click:Connect(openEditor)
+        editHit.MouseButton2Click:Connect(function()
+            pcall(setclipboard, tostring(currentVal))
+            valLbl.TextColor3=Color3.fromRGB(120,255,120)
+            task.delay(0.8, function() valLbl.TextColor3=inspGetTypeColor(currentType) end)
+        end)
+    end
+    row.MouseEnter:Connect(function()
+        row.BackgroundColor3=Color3.fromRGB(40,50,65)
+    end)
+    row.MouseLeave:Connect(function()
+        row.BackgroundColor3=isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30)
+    end)
+    table.insert(inspState.rowFrames, row)
+end
+inspPopulate = function(tbl)
+    inspClearRows()
+    if type(tbl) ~= "table" then
+        inspSetStatus("Cannot display: not a table."); return
+    end
+    local entries = {}
+    local ok2 = pcall(function()
+        for k,v in pairs(tbl) do
+            table.insert(entries,{k=k, v=v})
+        end
+    end)
+    if not ok2 then inspSetStatus("Table is protected (cannot iterate)."); return end
+    if #entries == 0 then inspSetStatus("Table is empty."); return end
+    table.sort(entries, function(a,b)
+        local as,bs = tostring(a.k), tostring(b.k)
+        local aSpec = as:sub(1,1)=="["; local bSpec = bs:sub(1,1)=="["
+        if aSpec ~= bSpec then return bSpec end
+        local an,bn = tonumber(a.k), tonumber(b.k)
+        if an and bn then return an<bn end
+        if an then return true end; if bn then return false end
+        return as:lower() < bs:lower()
+    end)
+    local filter = inspState.filterText:lower()
+    local order  = 0
+    for _, entry in ipairs(entries) do
+        local ks = tostring(entry.k)
+        if filter=="" or ks:lower():find(filter,1,true)
+            or tostring(entry.v):lower():find(filter,1,true) then
+            order += 1
+            inspCreateRow(entry.k, entry.v, order, tbl, entry.k)
+        end
+    end
+    if order==0 then
+        inspSetStatus('No results for "'..inspState.filterText..'".')
+    elseif #inspState.pathStack==0 and inspState.module then
+        inspModuleLabel.Text = inspState.module.Name.."  ("..order.." entries)"
+    end
+    inspState.visitedSet[tbl] = true
+end
+inspPopulateMeta = function()
+    inspClearRows()
+    local target = inspState.module or selected
+    if not target then
+        inspSetStatus("No instance / module loaded."); return
+    end
+    local mt
+    local ok2, err = pcall(function()
+        mt = getrawmetatable(target)
+    end)
+    if not ok2 or mt == nil then
+        inspSetStatus("No metatable (or getrawmetatable not available).\n"..tostring(err))
+        return
+    end
+    local wasLocked = false
+    pcall(function()
+        wasLocked = (getrawmetatable(mt).__index ~= nil)
+    end)
+    local entries = {}
+    local iterOk = pcall(function()
+        for k,v in pairs(mt) do
+            table.insert(entries, {k=k, v=v})
+        end
+    end)
+    if not iterOk or #entries == 0 then
+        local META_KEYS = {
+            "__index","__newindex","__call","__tostring","__len",
+            "__eq","__lt","__le","__add","__sub","__mul","__div",
+            "__mod","__pow","__unm","__concat","__namecall","__namecallmethod",
+        }
+        for _, k in ipairs(META_KEYS) do
+            local v
+            local ok3 = pcall(function() v = rawget(mt, k) end)
+            if ok3 and v ~= nil then
+                table.insert(entries, {k=k, v=v})
+            end
+        end
+        if #entries == 0 then
+            inspSetStatus("Metatable is empty or fully protected."); return
+        end
+    end
+    table.sort(entries, function(a,b)
+        return tostring(a.k):lower() < tostring(b.k):lower()
+    end)
+    local filter = inspState.filterText:lower()
+    local order  = 0
+    for _, entry in ipairs(entries) do
+        local ks = tostring(entry.k)
+        if filter=="" or ks:lower():find(filter,1,true) then
+            order += 1
+            local vtype = type(entry.v)
+            local isEven = order%2==0
+            local row = mk("Frame",{
+                Size=UDim2.new(1,0,0,20),
+                BackgroundColor3=isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30),
+                BackgroundTransparency=0, BorderSizePixel=0,
+                LayoutOrder=order, ClipsDescendants=true,
+            }, inspScroll)
+            mk("TextLabel",{
+                Size=UDim2.new(0.42,-4,1,0), Position=UDim2.new(0,4,0,0),
+                BackgroundTransparency=1,
+                Text=ks,
+                TextColor3=Color3.fromRGB(200,140,255),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.Code, TextSize=9,
+                TextTruncate=Enum.TextTruncate.AtEnd,
+            }, row)
+            local typeLbl = mk("TextLabel",{
+                Size=UDim2.new(0.18,0,1,0), Position=UDim2.new(0.42,0,0,0),
+                BackgroundTransparency=1,
+                Text=vtype,
+                TextColor3=inspGetTypeColor(vtype),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.Code, TextSize=9,
+                TextTruncate=Enum.TextTruncate.AtEnd,
+            }, row)
+            local nilBtn = mk("TextButton",{
+                Size=UDim2.new(0,30,0,14),
+                Position=UDim2.new(1,-34,0.5,-7),
+                BackgroundColor3=Color3.fromRGB(80,20,20), BorderSizePixel=0,
+                Text="× nil", TextColor3=Color3.fromRGB(255,110,110),
+                Font=Enum.Font.SourceSansBold, TextSize=8, ZIndex=5,
+            }, row)
+            mk("UICorner",{CornerRadius=UDim.new(0,3)}, nilBtn)
+            nilBtn.MouseButton1Click:Connect(function()
+                local writeOk, writeErr = pcall(function()
+                    rawset(mt, entry.k, nil)
+                end)
+                if writeOk then
+                    row.BackgroundColor3 = Color3.fromRGB(60,20,20)
+                    typeLbl.Text = "nil"
+                    typeLbl.TextColor3 = inspGetTypeColor("nil")
+                    nilBtn.Text = "✓ nil'd"
+                    nilBtn.BackgroundColor3 = Color3.fromRGB(20,50,20)
+                else
+                    warn("[zukv2 Meta] rawset failed:", writeErr)
+                    nilBtn.BackgroundColor3 = Color3.fromRGB(120,30,30)
+                    task.delay(0.8, function()
+                        nilBtn.BackgroundColor3 = Color3.fromRGB(80,20,20)
+                    end)
+                end
+            end)
+            if vtype == "function" then
+                local function pill(label, bgCol, txtCol, xOffset)
+                    local b = mk("TextButton",{
+                        Size=UDim2.new(0,30,0,14),
+                        Position=UDim2.new(0.60, xOffset, 0.5, -7),
+                        BackgroundColor3=bgCol, BorderSizePixel=0,
+                        Text=label,
+                        TextColor3=txtCol,
+                        Font=Enum.Font.SourceSansBold, TextSize=7,
+                        ZIndex=4,
+                    }, row)
+                    mk("UICorner",{CornerRadius=UDim.new(0,3)}, b)
+                    return b
+                end
+                local fn = entry.v
+                local key = entry.k
+                pill("⟲ true",  Color3.fromRGB(30,90,30),  Color3.fromRGB(120,255,120), 0).MouseButton1Click:Connect(function()
+                    pcall(function() hookfunction(fn, function(...) return true end) end)
+                    typeLbl.Text="fn⟲true"; typeLbl.TextColor3=Color3.fromRGB(255,220,60)
+                end)
+                pill("⟲ false", Color3.fromRGB(90,30,30),  Color3.fromRGB(255,100,100), 32).MouseButton1Click:Connect(function()
+                    pcall(function() hookfunction(fn, function(...) return false end) end)
+                    typeLbl.Text="fn⟲false"; typeLbl.TextColor3=Color3.fromRGB(255,220,60)
+                end)
+                pill("⟲ nil",   Color3.fromRGB(50,50,70),  Color3.fromRGB(180,180,255), 64).MouseButton1Click:Connect(function()
+                    pcall(function() hookfunction(fn, function(...) return nil end) end)
+                    typeLbl.Text="fn⟲nil"; typeLbl.TextColor3=Color3.fromRGB(255,220,60)
+                end)
+            else
+                mk("TextLabel",{
+                    Size=UDim2.new(0.22,-4,1,0), Position=UDim2.new(0.60,0,0,0),
+                    BackgroundTransparency=1,
+                    Text=inspShortValue(entry.v, vtype),
+                    TextColor3=inspGetTypeColor(vtype),
+                    TextXAlignment=Enum.TextXAlignment.Left,
+                    Font=Enum.Font.Code, TextSize=9,
+                    TextTruncate=Enum.TextTruncate.AtEnd,
+                }, row)
+            end
+            row.MouseEnter:Connect(function() row.BackgroundColor3=Color3.fromRGB(40,50,65) end)
+            row.MouseLeave:Connect(function()
+                row.BackgroundColor3=isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30)
+            end)
+            table.insert(inspState.rowFrames, row)
+        end
+    end
+    if order==0 then inspSetStatus("No metafields found.") end
+end
+inspPopulateUpvalues = function()
+    inspClearRows()
+    local fns = {}
+    if inspState.currentTbl then
+        pcall(function()
+            for k, v in pairs(inspState.currentTbl) do
+                if type(v) == "function" then
+                    table.insert(fns, {label=tostring(k), fn=v})
+                end
+            end
+        end)
+    end
+    do
+        local gsc = rawget(_G, "getscriptclosure")
+            or rawget(_G, "getclosure")
+            or rawget(_G, "getscriptfunction")
+        if gsc and selected and SCRIPT_CLASSES and SCRIPT_CLASSES[selected.ClassName] then
+            local ok2, closure = pcall(gsc, selected)
+            if ok2 and type(closure) == "function" then
+                table.insert(fns, 1, {label="[main chunk]", fn=closure})
+            end
+        end
+    end
+    if #fns == 0 then
+        inspSetStatus("No functions found.\nLoad a ModuleScript with functions, or select a Script first.")
+        return
+    end
+    local function safeGetUpvalues(fn)
+        local raw
+        local ok2 = pcall(function() raw = getupvalues(fn) end)
+        if not ok2 or type(raw) ~= "table" then return {} end
+        local out = {}
+        local isDict = false
+        for k in pairs(raw) do
+            if type(k) == "string" and not tonumber(k) then
+                isDict = true
+                break
+            end
+        end
+        if isDict then
+            local i = 0
+            for name, val in pairs(raw) do
+                i += 1
+                local realIdx = nil
+                for tryIdx = 1, 50 do
+                    local dgu = rawget(_G, "debug") and rawget(debug, "getupvalue")
+                    if not dgu then break end
+                    local ok3, cur = pcall(dgu, fn, tryIdx)
+                    if not ok3 then break end
+                    if cur == name then realIdx = tryIdx; break end
+                end
+                table.insert(out, {idx=realIdx or i, name=tostring(name), value=val})
+            end
+        else
+            for idx, val in ipairs(raw) do
+                local uvName
+                local dgu = rawget(_G, "debug") and rawget(debug, "getupvalue")
+                if dgu then
+                    pcall(function() uvName = dgu(fn, idx) end)
+                end
+                table.insert(out, {idx=idx, name=uvName or ("upv["..idx.."]"), value=val})
+            end
+        end
+        return out
+    end
+    local order = 0
+    for _, entry in ipairs(fns) do
+        local fn      = entry.fn
+        local fnLabel = entry.label
+        order += 1
+        local hdr = mk("Frame",{
+            Size=UDim2.new(1,0,0,18),
+            BackgroundColor3=Color3.fromRGB(32,28,45), BorderSizePixel=0,
+            LayoutOrder=order,
+        }, inspScroll)
+        mk("TextLabel",{
+            Size=UDim2.new(1,-8,1,0), Position=UDim2.new(0,6,0,0),
+            BackgroundTransparency=1,
+            Text="⬡ "..fnLabel,
+            TextColor3=Color3.fromRGB(200,160,255),
+            TextXAlignment=Enum.TextXAlignment.Left,
+            Font=Enum.Font.SourceSansBold, TextSize=9,
+        }, hdr)
+        table.insert(inspState.rowFrames, hdr)
+        local upvals = safeGetUpvalues(fn)
+        if #upvals == 0 then
+            order += 1
+            local emptyRow = mk("Frame",{
+                Size=UDim2.new(1,0,0,16),
+                BackgroundColor3=Color3.fromRGB(24,24,24), BorderSizePixel=0,
+                LayoutOrder=order,
+            }, inspScroll)
+            mk("TextLabel",{
+                Size=UDim2.new(1,-8,1,0), Position=UDim2.new(0,16,0,0),
+                BackgroundTransparency=1,
+                Text="  (no upvalues / getupvalues unavailable)",
+                TextColor3=Color3.fromRGB(80,80,80),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.SourceSans, TextSize=9,
+            }, emptyRow)
+            table.insert(inspState.rowFrames, emptyRow)
+        else
+        for _, uvEntry in ipairs(upvals) do
+            local idx = uvEntry.idx
+            local uv  = uvEntry.value
+            local uvType = "userdata"
+            pcall(function() uvType = type(uv) end)
+            order += 1
+            local isEven  = order % 2 == 0
+            local uvLabel = uvEntry.name or ("upv["..tostring(idx).."]")
+            local row = mk("Frame",{
+                Size=UDim2.new(1,0,0,20),
+                BackgroundColor3=isEven and Color3.fromRGB(26,24,30) or Color3.fromRGB(28,26,34),
+                BackgroundTransparency=0, BorderSizePixel=0,
+                LayoutOrder=order, ClipsDescendants=true,
+            }, inspScroll)
+            mk("TextLabel",{
+                Size=UDim2.new(0.42,-4,1,0), Position=UDim2.new(0,14,0,0),
+                BackgroundTransparency=1,
+                Text=uvLabel,
+                TextColor3=Color3.fromRGB(180,140,220),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.Code, TextSize=9,
+                TextTruncate=Enum.TextTruncate.AtEnd,
+            }, row)
+            local typeLbl2 = mk("TextLabel",{
+                Size=UDim2.new(0.28,0,1,0), Position=UDim2.new(0.42,0,0,0),
+                BackgroundTransparency=1,
+                Text=uvType,
+                TextColor3=inspGetTypeColor(uvType),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.Code, TextSize=9,
+            }, row)
+            if uvType == "function" then
+                local function upvPill(label, bgCol, txtCol, xOffset, retVal)
+                    local b = mk("TextButton",{
+                        Size=UDim2.new(0,32,0,14),
+                        Position=UDim2.new(0.70, xOffset, 0.5, -7),
+                        BackgroundColor3=bgCol, BorderSizePixel=0,
+                        Text=label, TextColor3=txtCol,
+                        Font=Enum.Font.SourceSansBold, TextSize=8, ZIndex=3,
+                    }, row)
+                    mk("UICorner",{CornerRadius=UDim.new(0,3)}, b)
+                    b.MouseButton1Click:Connect(function()
+                        local origFn = uv
+                        pcall(function()
+                            hookfunction(origFn, function(...) return retVal end)
+                        end)
+                        typeLbl2.Text      = "fn⟲"..tostring(retVal)
+                        typeLbl2.TextColor3 = Color3.fromRGB(255,220,60)
+                    end)
+                end
+                upvPill("⟲ true",  Color3.fromRGB(30,90,30),  Color3.fromRGB(120,255,120), 0,   true)
+                upvPill("⟲ false", Color3.fromRGB(90,30,30),  Color3.fromRGB(255,100,100), 34,  false)
+                upvPill("⟲ nil",   Color3.fromRGB(50,50,70),  Color3.fromRGB(180,180,255), 68,  nil)
+            elseif uvType == "boolean" then
+                local curUv = uv
+                local valBtn = mk("TextButton",{
+                    Size=UDim2.new(0.30,-4,0,14), Position=UDim2.new(0.70,0,0.5,-7),
+                    BackgroundColor3=curUv and Color3.fromRGB(30,90,30) or Color3.fromRGB(90,30,30),
+                    BorderSizePixel=0,
+                    Text=tostring(curUv),
+                    TextColor3=curUv and Color3.fromRGB(120,255,120) or Color3.fromRGB(255,100,100),
+                    Font=Enum.Font.Code, TextSize=9, ZIndex=3,
+                }, row)
+                mk("UICorner",{CornerRadius=UDim.new(0,3)}, valBtn)
+                valBtn.MouseButton1Click:Connect(function()
+                    curUv = not curUv
+                    local ok3 = pcall(setupvalue, fn, idx, curUv)
+                    if ok3 then
+                        valBtn.Text = tostring(curUv)
+                        valBtn.TextColor3       = curUv and Color3.fromRGB(120,255,120) or Color3.fromRGB(255,100,100)
+                        valBtn.BackgroundColor3 = curUv and Color3.fromRGB(30,90,30)    or Color3.fromRGB(90,30,30)
+                    else
+                        valBtn.BackgroundColor3 = Color3.fromRGB(120,30,30)
+                        task.delay(0.6, function()
+                            valBtn.BackgroundColor3 = curUv and Color3.fromRGB(30,90,30) or Color3.fromRGB(90,30,30)
+                        end)
+                    end
+                end)
+            elseif uvType == "number" or uvType == "string" then
+                local curUv   = uv
+                local curType = uvType
+                local valLbl = mk("TextLabel",{
+                    Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
+                    BackgroundTransparency=1,
+                    Text=inspShortValue(curUv, curType),
+                    TextColor3=inspGetTypeColor(curType),
+                    TextXAlignment=Enum.TextXAlignment.Left,
+                    Font=Enum.Font.Code, TextSize=9,
+                    TextTruncate=Enum.TextTruncate.AtEnd, ZIndex=2,
+                }, row)
+                local editHit = mk("TextButton",{
+                    Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
+                    BackgroundTransparency=1, Text="", ZIndex=4,
+                }, row)
+                local activeBox = nil
+                local function closeUvEdit()
+                    if not activeBox then return end
+                    activeBox:Destroy(); activeBox=nil
+                    row.Size=UDim2.new(1,0,0,20); row.ClipsDescendants=true
+                    valLbl.Visible=true; editHit.ZIndex=4
+                end
+                editHit.MouseButton1Click:Connect(function()
+                    if activeBox then return end
+                    row.Size=UDim2.new(1,0,0,26); row.ClipsDescendants=false
+                    valLbl.Visible=false; editHit.ZIndex=1
+                    local box = mk("TextBox",{
+                        Size=UDim2.new(0.30,-4,0,22), Position=UDim2.new(0.70,0,0.5,-11),
+                        BackgroundColor3=Color3.fromRGB(18,18,28), BorderSizePixel=1,
+                        Text=tostring(curUv),
+                        TextColor3=Color3.fromRGB(230,230,230),
+                        TextXAlignment=Enum.TextXAlignment.Left,
+                        Font=Enum.Font.Code, TextSize=9,
+                        ClearTextOnFocus=false, ZIndex=10,
+                    }, row)
+                    mk("UIStroke",{Color=Color3.fromRGB(180,100,255), Thickness=1}, box)
+                    box:CaptureFocus(); activeBox=box
+                    box.FocusLost:Connect(function(enter)
+                        if not enter then closeUvEdit(); return end
+                        local newVal
+                        if curType=="number" then
+                            newVal = tonumber(box.Text)
+                            if not newVal then closeUvEdit(); return end
+                        else
+                            newVal = box.Text
+                        end
+                        local ok3 = pcall(setupvalue, fn, idx, newVal)
+                        if ok3 then
+                            curUv = newVal
+                            valLbl.Text=inspShortValue(newVal,curType)
+                            valLbl.TextColor3=Color3.fromRGB(120,255,120)
+                            task.delay(0.6, function() valLbl.TextColor3=inspGetTypeColor(curType) end)
+                        else
+                            valLbl.TextColor3=Color3.fromRGB(255,80,80)
+                            task.delay(0.6, function() valLbl.TextColor3=inspGetTypeColor(curType) end)
+                        end
+                        closeUvEdit()
+                    end)
+                end)
+            else
+                mk("TextLabel",{
+                    Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
+                    BackgroundTransparency=1,
+                    Text=inspShortValue(uv, uvType),
+                    TextColor3=inspGetTypeColor(uvType),
+                    TextXAlignment=Enum.TextXAlignment.Left,
+                    Font=Enum.Font.Code, TextSize=9,
+                    TextTruncate=Enum.TextTruncate.AtEnd,
+                }, row)
+            end
+            row.MouseEnter:Connect(function() row.BackgroundColor3=Color3.fromRGB(40,35,55) end)
+            row.MouseLeave:Connect(function()
+                row.BackgroundColor3=isEven and Color3.fromRGB(26,24,30) or Color3.fromRGB(28,26,34)
+            end)
+            table.insert(inspState.rowFrames, row)
+        end
+        end
+    end
+    if order == 0 then inspSetStatus("No upvalue rows built.") end
+end
+inspLoadBtn.MouseButton1Click:Connect(function()
+    local inst = selected
+    if not inst then
+        inspModuleLabel.Text = "Select an instance in the explorer first."
+        inspModuleLabel.TextColor3 = Color3.fromRGB(255,120,80)
+        inspSetStatus("Nothing selected."); return
+    end
+    local isScript = SCRIPT_CLASSES[inst.ClassName]
+    local isMod    = inst.ClassName == "ModuleScript"
+    inspModuleLabel.Text = "Loading "..inst.Name.."…"
+    inspModuleLabel.TextColor3 = Color3.fromRGB(180,180,100)
+    inspSetStatus("Loading…")
+    task.defer(function()
+        if isMod then
+            local success2, result2
+            local done = false
+            task.spawn(function()
+                success2, result2 = pcall(require, inst)
+                done = true
+            end)
+            local waited = 0
+            while not done and waited < 3 do task.wait(0.1); waited += 0.1 end
+            if not done then
+                inspModuleLabel.Text = inst.Name.."  [timeout]"
+                inspModuleLabel.TextColor3 = Color3.fromRGB(255,160,60)
+                inspSetStatus("Module timed out."); return
+            end
+            if not success2 then
+                inspModuleLabel.Text = inst.Name.."  [error]"
+                inspModuleLabel.TextColor3 = Color3.fromRGB(255,80,80)
+                inspSetStatus("require() error:\n"..tostring(result2)); return
+            end
+            local tbl
+            if type(result2) == "table" then
+                tbl = result2
+            elseif result2 == nil then
+                tbl = {["[ReturnValue]"]="nil"}
+            else
+                tbl = {["[ReturnValue]"]=result2, ["[Type]"]=type(result2)}
+            end
+            inspState.rootTable  = tbl
+            inspState.currentTbl = tbl
+            inspState.pathStack  = {}
+            inspState.visitedSet = {}
+            inspState.module     = inst
+            inspState.filterText = ""
+            inspSearchInput.Text = ""
+            inspUpdatePath()
+            inspModuleLabel.Text       = inst.Name
+            inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
+        else
+            inspState.rootTable  = nil
+            inspState.currentTbl = nil
+            inspState.pathStack  = {}
+            inspState.visitedSet = {}
+            inspState.module     = inst
+            inspState.filterText = ""
+            inspSearchInput.Text = ""
+            inspModuleLabel.Text       = inst.Name.." ("..inst.ClassName..")"
+            inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
+        end
+        if inspState.currentTbl then
+            inspSetSubTab("table")
+        else
+            inspSetSubTab("meta")
+        end
+    end)
+end)
+local inspBackLastClick = 0
+inspBackBtn.MouseButton1Click:Connect(function()
+    if #inspState.pathStack == 0 then return end
+    local now = tick()
+    if now - inspBackLastClick < 0.35 then
+        inspState.pathStack  = {}
+        inspState.currentTbl = inspState.rootTable
+    else
+        local prev = table.remove(inspState.pathStack)
+        inspState.currentTbl = prev.tbl
+    end
+    inspBackLastClick = now
+    inspUpdatePath()
+    inspPopulate(inspState.currentTbl)
+end)
+inspSearchInput:GetPropertyChangedSignal("Text"):Connect(function()
+    inspState.filterText = inspSearchInput.Text
+    if inspState.activeTab == "table" and inspState.currentTbl then
+        inspPopulate(inspState.currentTbl)
+    elseif inspState.activeTab == "meta" then
+        inspPopulateMeta()
+    end
+end)
+local resizeHandle = mk("Frame",{
+    Name="ResizeHandle",
+    Size=UDim2.new(1,0,0,5), Position=UDim2.new(0,0,1,-5),
+    BackgroundColor3=Color3.fromRGB(55,55,55),
+    BackgroundTransparency=0.6, BorderSizePixel=0, ZIndex=15
+}, main)
+sg.Parent = playerGui
+local setPanelExpanded
+local lastDecompResult = ""
+local extraCodeLabels  = {}
+local function setCodeText(raw)
+    codeLabel.Text = ""
+    for _, lbl in ipairs(extraCodeLabels) do lbl:Destroy() end
+    table.clear(extraCodeLabels)
+    local order = 1
+    for line in (raw.."\n"):gmatch("[^\n]*\n") do
+        local bare = line:gsub("\n$","")
+        local lbl = Instance.new("TextLabel")
+        lbl.Size                = UDim2.new(1,0,0,14)
+        lbl.AutomaticSize       = Enum.AutomaticSize.Y
+        lbl.BackgroundTransparency = 1
+        lbl.TextColor3          = Color3.fromRGB(204,204,204)
+        lbl.TextXAlignment      = Enum.TextXAlignment.Left
+        lbl.TextYAlignment      = Enum.TextYAlignment.Top
+        lbl.Font                = Enum.Font.Code
+        lbl.TextSize            = 13
+        lbl.RichText            = true
+        lbl.TextWrapped         = true
+        lbl.LayoutOrder         = order
+        lbl.Text                = hlLine(bare)
+        lbl.Parent              = codeScroll
+        table.insert(extraCodeLabels, lbl)
+        order += 1
+    end
+end
+local function openCtxMenu(inst, screenPos)
+    closeCtx()
+    local isScript    = SCRIPT_CLASSES[inst.ClassName] == true
+    local isScreenGui = inst.ClassName == "ScreenGui"
+    local isService   = pcall(function() game:GetService(inst.ClassName) end)
+        and inst.Parent == game
+    local canDelete   = inst.Parent ~= nil and inst ~= game and not isService
+    local canClone    = canDelete
+    local hasBytecode = isScript
+    local ITEMS = {}
+    local function addItem(icon, label, col, fn)
+        table.insert(ITEMS, {icon=icon, label=label, color=col, fn=fn})
+    end
+    local function addSep()
+        table.insert(ITEMS, "sep")
+    end
+    addItem(" ", "Select",              Color3.fromRGB(210,210,210), function()
+        selected = inst
+        rows = buildRows(treeRoot, 0, {})
+        renderRows(); refreshProps()
+    end)
+    addItem(" ", "Copy Path",           Color3.fromRGB(210,210,210), function()
+        pcall(setclipboard, buildPath(inst))
+    end)
+    addItem(" ", "Copy Name",           Color3.fromRGB(210,210,210), function()
+        pcall(setclipboard, inst.Name)
+    end)
+    addItem(" ", "Copy ClassName",      Color3.fromRGB(210,210,210), function()
+        pcall(setclipboard, inst.ClassName)
+    end)
+    addSep()
+    if hasBytecode then
+        addItem(" ", "Decompile",        Color3.fromRGB(253,251,172), function()
+            selected = inst
+            decompTitle.Text = inst.ClassName.." › "..inst.Name.."  (decompiling…)"
+            task.defer(function()
+                local raw = runDecompile(inst)
+                lastDecompResult = raw
+                setCodeText(raw); setTab("viewer")
+                decompTitle.Text = inst.ClassName.." › "..inst.Name
+                setPanelExpanded(true)
+            end)
+        end)
+        addItem(">", "Execute Script",   Color3.fromRGB(160,255,160), function()
+            local ok2, bc = pcall(getscriptbytecode, inst)
+            if ok2 and bc ~= "" then
+                local fn2, err = loadstring(bc)
+                if fn2 then task.spawn(fn2)
+                else warn("[zukv2] exec: "..tostring(err)) end
+            end
+        end)
+        if inst.ClassName == "ModuleScript" then
+            addItem("☠", "Poison!",     Color3.fromRGB(255,160,60), function()
+                local path = buildPath(inst)
+                local success, result = pcall(require, inst)
+                local function getPoisonValue(name, currentVal)
+                    local n = tostring(name)
+                    local lowerN = n:lower()
+                    if n == "BaseDamage" or lowerN:find("damage") then return 999999
+                    elseif n == "HeadshotDamageMultiplier" or lowerN:find("headshot") then return 100
+                    elseif n == "FireRate" or n == "BurstRate" or n == "ReloadTime" or n == "EquipTime" then return 0
+                    elseif n == "TacticalReloadTime" or n == "SwitchTime" or lowerN:find("delay") then return 0
+                    elseif n == "AmmoPerMag" then return 999999
+                    elseif n =="Debuff" then return true
+                    elseif n =="DebuffChance" then return 100
+                    elseif n == "Recoil" then return 0
+                    elseif n == "BulletPerShot" then return 5
+                    elseif n == "FriendlyFire" then return true
+                    elseif n == "Lifesteal" then return 99999
+                    elseif n == "ShotgunEnabled" then return true
+                    elseif n == "Knockback" then return 9999999
+                    elseif n == "DualFireEnabled" then return true
+                    elseif n == "IcifyChance" then return 9999
+                    elseif n == "FlamingBullet" then return true
+                    elseif n == "IgniteChance" then return 9999
+                    elseif n == "FreezingBullet" then return true
+                    elseif n == "ChargedShotEnabled" then return false
+                    elseif n == "ChargingTime" then return 0
+                    elseif n == "HoldAndReleaseEnabled" then return false
+                    elseif n == "DelayBeforeFiring" then return 0
+                    elseif n == "Auto" then return true
+                    elseif n == "CriticalDamageEnabled" then return 999999
+                    elseif n == "SilenceEffect" then return true
+                    elseif n == "HoldDownEnabled" then return false
+                    elseif n == "RicochetAmount" then return 15
+                    elseif n == "SuperRicochet" then return true
+                    elseif n == "BulletLifetime" then return 10
+                    elseif n == "Spread" or n == "Accuracy" then return 0
+                    elseif lowerN:find("angle") and (lowerN:find("min") or lowerN:find("max")) then return 0
+                    elseif n == "BulletSpeed" or n == "Range" then return 90000
+                    elseif n == "LimitedAmmoEnabled" or n == "DamageDropOffEnabled" then return false
+                    elseif n == "WalkSpeedRedutionEnabled" then return false
+                    elseif n == "WalkSpeedRedution" then return 0
+                    end
+                    return currentVal
+                end
+                local function serialize(v)
+                    local t = typeof(v)
+                    if t == "string" then return '"' .. v:gsub('"', '\\"') .. '"'
+                    elseif t == "number" or t == "boolean" then return tostring(v)
+                    elseif t == "Vector3" then return "Vector3.new("..v.X..", "..v.Y..", "..v.Z..")"
+                    elseif t == "Vector2" then return "Vector2.new("..v.X..", "..v.Y..")"
+                    elseif t == "CFrame" then return "CFrame.new("..tostring(v)..")"
+                    elseif t == "Color3" then return "Color3.fromRGB("..math.floor(v.R*255)..", "..math.floor(v.G*255)..", "..math.floor(v.B*255)..")"
+                    elseif t == "EnumItem" then return tostring(v)
+                    end
+                    return "nil"
+                end
+                local output = "\n\n"
+                output = output .. "local targetModule = require(" .. path .. ")\n"
+                output = output .. "if setreadonly then setreadonly(targetModule, false) end\n\n"
+                if not success then
+                    output = output .. "-- [ERROR]: Require failed. Protected or Server-Side.\n"
+                elseif type(result) == "table" then
+                    for k, v in pairs(result) do
+                        if type(v) ~= "function" and type(v) ~= "table" then
+                            local pVal = getPoisonValue(tostring(k), v)
+                            if pVal ~= v then
+                                output = output .. "targetModule." .. tostring(k) .. " = " .. serialize(pVal) .. " -- [PATCHED]\n"
+                            end
+                        end
+                    end
+                    output = output .. "\nif setreadonly then setreadonly(targetModule, true) end\n"
+                    output = output .. "print('--> [zukv2]: " .. inst.Name .. " has been updated.')"
+                else
+                    output = output .. "-- [INFO]: Module returns a " .. type(result) .. " instead of a table."
+                end
+                lastDecompResult = output
+                editorBox.Text = output
+                decompTitle.Text = "ModuleScript › " .. inst.Name .. "  [Poison Patch]"
+                setTab("editor")
+                setPanelExpanded(true)
+                pcall(setclipboard, output)
+            end)
+        end
+        addItem("!", "Inspect Module",  Color3.fromRGB(132,214,247), function()
+            selected = inst
+            setPanelExpanded(true)
+            setTab("inspector")
+            task.defer(function()
+                inspModuleLabel.Text       = "Loading " .. inst.Name .. "…"
+                inspModuleLabel.TextColor3 = Color3.fromRGB(180,180,100)
+                inspSetStatus("Loading…")
+                task.defer(function()
+                    local ok3, res3
+                    local done3 = false
+                    task.spawn(function()
+                        ok3, res3 = pcall(require, inst); done3 = true
+                    end)
+                    local w = 0
+                    while not done3 and w < 3 do task.wait(0.1); w += 0.1 end
+                    if not done3 then
+                        inspModuleLabel.Text = inst.Name .. "  [timeout]"
+                        inspModuleLabel.TextColor3 = Color3.fromRGB(255,160,60)
+                        inspSetStatus("Module timed out.")
+                        return
+                    end
+                    if not ok3 then
+                        inspModuleLabel.Text = inst.Name .. "  [error]"
+                        inspModuleLabel.TextColor3 = Color3.fromRGB(255,80,80)
+                        inspSetStatus("require() error:\n" .. tostring(res3))
+                        return
+                    end
+                    local tbl3
+                    if type(res3) == "table" then tbl3 = res3
+                    elseif res3 == nil then tbl3 = {["[ReturnValue]"]="nil"}
+                    else tbl3 = {["[ReturnValue]"]=res3, ["[Type]"]=type(res3)} end
+                    inspState.rootTable  = tbl3
+                    inspState.currentTbl = tbl3
+                    inspState.pathStack  = {}
+                    inspState.visitedSet = {}
+                    inspState.module     = inst
+                    inspState.filterText = ""
+                    inspSearchInput.Text = ""
+                    inspUpdatePath()
+                    inspModuleLabel.Text       = inst.Name
+                    inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
+                    inspPopulate(tbl3)
+                end)
+            end)
+        end)
+        addSep()
+    end
+    if isScreenGui then
+        addItem("+", "Gui -> Script", Color3.fromRGB(200,160,255), function()
+            task.defer(function()
+                local output = convertGuiToScript(inst)
+                lastDecompResult = output
+                pcall(setclipboard, output)
+                setCodeText(output)
+                decompTitle.Text = "ScreenGui › "..inst.Name.."  [Converted]"
+                setPanelExpanded(true)
+            end)
+        end)
+        addSep()
+    end
+    addItem(">", "Expand Children",     Color3.fromRGB(180,210,255), function()
+        local ok2, ch = pcall(inst.GetChildren, inst)
+        if ok2 then for _, c in ipairs(ch) do expanded[c] = true end end
+        expanded[inst] = true
+        rows = buildRows(treeRoot, 0, {}); renderRows()
+    end)
+    addItem("<", "Collapse Children",   Color3.fromRGB(180,210,255), function()
+        local ok2, ch = pcall(inst.GetChildren, inst)
+        if ok2 then for _, c in ipairs(ch) do expanded[c] = false end end
+        rows = buildRows(treeRoot, 0, {}); renderRows()
+    end)
+    addItem("+", "Jump to Parent",     Color3.fromRGB(180,210,255), function()
+        if inst.Parent and inst.Parent ~= game then
+            jumpToInstance(inst.Parent)
+            refreshProps()
+        end
+    end)
+    if REMOTE_CLASSES[inst.ClassName] then
+        local isBlocked = remote_blocklist[inst] == true
+        if not isBlocked then
+            addItem("X", "Block Remote",   Color3.fromRGB(255,100,100), function()
+                if remote_blocklist[inst] then return end
+                local functionToHook = ClassFire[inst.ClassName]
+                if not functionToHook then return end
+                remote_blocklist[inst] = true
+                local old; old = hookmetamethod((oldgame or game), "__namecall", function(self, ...)
+                    if remote_blocklist[inst] and self == inst and getnamecallmethod() == functionToHook then
+                        return nil
+                    end
+                    return old(self, ...)
+                end)
+                pcall(function() inst:SetAttribute("IsBlocked", true) end)
+            end)
+        else
+            addItem("✓", "Unblock Remote", Color3.fromRGB(100,255,160), function()
+                remote_blocklist[inst] = nil
+                pcall(function() inst:SetAttribute("IsBlocked", false) end)
+            end)
+        end
+        addSep()
+    end
+    if inst:IsA("BasePart") or inst:IsA("Model") then
+        addItem("→", "Teleport To",     Color3.fromRGB(120,220,255), function()
+            local char = localPlayer.Character
+            local plrRP = char and char:FindFirstChild("HumanoidRootPart")
+            if not plrRP then return end
+            local OFFSET = Vector3.new(0, 3, 0)
+            if inst:IsA("BasePart") then
+                if inst.CanCollide then
+                    char:MoveTo(inst.Position)
+                else
+                    plrRP.CFrame = CFrame.new(inst.Position + OFFSET)
+                end
+            elseif inst:IsA("Model") then
+                if inst.PrimaryPart then
+                    if inst.PrimaryPart.CanCollide then
+                        char:MoveTo(inst.PrimaryPart.Position)
+                    else
+                        plrRP.CFrame = CFrame.new(inst.PrimaryPart.Position + OFFSET)
+                    end
+                else
+                    local part = inst:FindFirstChildWhichIsA("BasePart", true)
+                    if part then
+                        if part.CanCollide then
+                            char:MoveTo(part.Position)
+                        else
+                            plrRP.CFrame = CFrame.new(part.Position + OFFSET)
+                        end
+                    elseif inst.WorldPivot then
+                        plrRP.CFrame = inst.WorldPivot
+                    end
+                end
+            end
+        end)
+        addItem("←", "Bring To Me",     Color3.fromRGB(120,220,255), function()
+            local char = localPlayer.Character
+            local plrRP = char and char:FindFirstChild("HumanoidRootPart")
+            if not plrRP then return end
+            local DISTANCE = 5
+            local offset = plrRP.CFrame.LookVector * DISTANCE
+            if inst:IsA("BasePart") then
+                local wasCollide = inst.CanCollide
+                if wasCollide then inst.CanCollide = false end
+                inst.CFrame = plrRP.CFrame * CFrame.new(offset)
+                if wasCollide then inst.CanCollide = true end
+            elseif inst:IsA("Model") then
+                local targetPos = (plrRP.CFrame * CFrame.new(offset)).Position
+                if inst.PrimaryPart or inst:FindFirstChildWhichIsA("BasePart", true) then
+                    inst:MoveTo(targetPos)
+                end
+            end
+        end)
+        addSep()
+    end
+    if canClone then
+        addItem("+", "Clone",           Color3.fromRGB(210,210,210), function()
+            local ok2, cl = pcall(function() return inst:Clone() end)
+            if ok2 and cl then
+                cl.Parent = inst.Parent
+                rows = buildRows(treeRoot, 0, {}); renderRows()
+            end
+        end)
+    end
+    addItem("+", "Rename…",            Color3.fromRGB(210,210,210), function()
+        local ok2, oldName = pcall(function() return inst.Name end)
+        if not ok2 then return end
+        local overlay = mk("Frame",{
+            Size=UDim2.new(1,0,1,0), BackgroundTransparency=0.5,
+            BackgroundColor3=Color3.fromRGB(0,0,0), ZIndex=100,
+        }, sg)
+        local box = mk("Frame",{
+            Size=UDim2.new(0,280,0,60),
+            Position=UDim2.new(0.5,-140,0.5,-30),
+            BackgroundColor3=Color3.fromRGB(40,40,40), BorderSizePixel=0, ZIndex=101,
+        }, overlay)
+        mk("UICorner",{CornerRadius=UDim.new(0,6)}, box)
+        mk("TextLabel",{
+            Size=UDim2.new(1,-10,0,22), Position=UDim2.new(0,5,0,2),
+            BackgroundTransparency=1, Text="Rename: "..oldName,
+            TextColor3=Color3.fromRGB(170,170,170),
+            TextXAlignment=Enum.TextXAlignment.Left,
+            Font=Enum.Font.SourceSansBold, TextSize=11, ZIndex=102,
+        }, box)
+        local inp = mk("TextBox",{
+            Size=UDim2.new(1,-10,0,24), Position=UDim2.new(0,5,0,28),
+            BackgroundColor3=Color3.fromRGB(25,25,25), BorderSizePixel=1,
+            Text=oldName, TextColor3=Color3.fromRGB(230,230,230),
+            TextXAlignment=Enum.TextXAlignment.Left,
+            Font=Enum.Font.Code, TextSize=9, ZIndex=102,
+            ClearTextOnFocus=false,
+        }, box)
+        inp:CaptureFocus()
+        inp.FocusLost:Connect(function(enter)
+            if enter then
+                local newName = inp.Text:match("^%s*(.-)%s*$")
+                if newName ~= "" then pcall(function() inst.Name = newName end) end
+            end
+            overlay:Destroy()
+            rows = buildRows(treeRoot, 0, {}); renderRows()
+        end)
+    end)
+    if canDelete then
+        addItem("X", "Delete",          Color3.fromRGB(255,100,100), function()
+            pcall(function() inst:Destroy() end)
+            if selected == inst then selected = nil end
+            rows = buildRows(treeRoot, 0, {}); renderRows(); refreshProps()
+        end)
+    end
+    local ITEM_H = 20
+    local SEP_H  = 7
+    local totalH = 0
+    for _, item in ipairs(ITEMS) do
+        totalH += (item == "sep") and SEP_H or ITEM_H
+    end
+    local cam      = workspace.CurrentCamera
+    local screenH  = cam and cam.ViewportSize.Y or 800
+    local screenW  = cam and cam.ViewportSize.X or 1280
+    local menuY    = math.min(screenPos.Y, screenH - totalH - 6)
+    local menuX    = math.min(screenPos.X, screenW - 186)
+    local menu = mk("Frame", {
+        Name="CtxMenu",
+        Size=UDim2.new(0,182,0,totalH+2),
+        Position=UDim2.fromOffset(menuX, menuY),
+        BackgroundColor3=Color3.fromRGB(36,36,36),
+        BorderSizePixel=4, ZIndex=60,
+        ClipsDescendants=true,
+    }, sg)
+    mk("UICorner",{CornerRadius=UDim.new(0,5)}, menu)
+    mk("UIStroke",{Color=Color3.fromRGB(65,65,65),Thickness=1}, menu)
+    mk("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder,
+        Padding=UDim.new(0,0)}, menu)
+    local ord = 0
+    for _, item in ipairs(ITEMS) do
+        ord += 1
+        if item == "sep" then
+            mk("Frame",{
+                Size=UDim2.new(1,-16,0,1),
+                BackgroundColor3=Color3.fromRGB(60,60,60),
+                BackgroundTransparency=0, BorderSizePixel=0,
+                LayoutOrder=ord,
+            }, menu)
+            local sep = menu:FindFirstChild(tostring(ord))
+            local spacer = mk("Frame",{
+                Size=UDim2.new(1,0,0,SEP_H),
+                BackgroundTransparency=1, BorderSizePixel=0,
+                LayoutOrder=ord,
+            }, menu)
+            mk("Frame",{
+                Size=UDim2.new(1,-16,0,1),
+                Position=UDim2.new(0,8,0.5,-1),
+                BackgroundColor3=Color3.fromRGB(58,58,58),
+                BorderSizePixel=0,
+            }, spacer)
+        else
+            local btn = mk("TextButton",{
+                Size=UDim2.new(1,0,0,ITEM_H),
+                BackgroundColor3=Color3.fromRGB(36,36,36),
+                BackgroundTransparency=1,
+                BorderSizePixel=0,
+                Text="",
+                ZIndex=61, LayoutOrder=ord,
+            }, menu)
+            mk("TextLabel",{
+                Size=UDim2.new(0,20,1,0), Position=UDim2.new(0,5,0,0),
+                BackgroundTransparency=1,
+                Text=item.icon,
+                TextColor3=item.color,
+                TextXAlignment=Enum.TextXAlignment.Center,
+                Font=Enum.Font.SourceSans, TextSize=9, ZIndex=62,
+            }, btn)
+            mk("TextLabel",{
+                Size=UDim2.new(1,-28,1,0), Position=UDim2.new(0,26,0,0),
+                BackgroundTransparency=1,
+                Text=item.label,
+                TextColor3=item.color,
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.SourceSans, TextSize=9, ZIndex=62,
+            }, btn)
+            btn.MouseEnter:Connect(function()
+                btn.BackgroundTransparency=0
+                btn.BackgroundColor3=Color3.fromRGB(0,100,210)
+            end)
+            btn.MouseLeave:Connect(function()
+                btn.BackgroundTransparency=1
+                btn.BackgroundColor3=Color3.fromRGB(36,36,36)
+            end)
+            local fn = item.fn
+            btn.MouseButton1Click:Connect(function()
+                closeCtx(); fn()
+            end)
+        end
+    end
+    ctxMenu = menu
+end
+local PINNED_SERVICES = {
+    "Workspace", "ReplicatedStorage", "ReplicatedFirst", "StarterGui",
+    "CoreGui", "StarterPlayer", "StarterPack", "Players",
+    "ServerScriptService", "ServerStorage", "Lighting", "SoundService",
+    "Teams", "Chat",
+}
+local function getOrderedChildren(inst)
+    local ok, children = pcall(inst.GetChildren, inst)
+    if not ok then return {} end
+    if inst ~= game then return children end
+    local pinned = {}
+    local seen = {}
+    for _, svcName in ipairs(PINNED_SERVICES) do
+        local ok2, svc = pcall(function() return game:GetService(svcName) end)
+        if ok2 and svc then
+            table.insert(pinned, svc)
+            seen[svc] = true
+        end
+    end
+    for _, child in ipairs(children) do
+        if not seen[child] then
+            table.insert(pinned, child)
+        end
+    end
+    return pinned
+end
+local function buildRows(inst, depth, result)
+    depth = depth or 0; result = result or {}
+    local ok, name = pcall(function() return inst.Name end)
+    if not ok then name = "???" end
+    if filterText == "" or name:lower():find(filterText:lower(), 1, true) then
+        table.insert(result, {inst=inst, depth=depth})
+    end
+    if expanded[inst] then
+        local ch = getOrderedChildren(inst)
+        for _, c in ipairs(ch) do buildRows(c, depth+1, result) end
+    end
+    return result
+end
+local function renderRows()
+    for _, f in ipairs(rowFrames) do f:Destroy() end
+    table.clear(rowFrames)
+    instanceCountLabel.Text = #rows .. " item" .. (#rows == 1 and "" or "s")
+    local visH   = listFrame.AbsoluteSize.Y
+    local startI = math.floor(scrollOffset / ROW_H) + 1
+    local endI   = math.min(#rows, startI + math.ceil(visH / ROW_H) + 1)
+    for i = startI, endI do
+        local row = rows[i]; if not row then break end
+        local inst      = row.inst
+        local isSel     = inst == selected
+        local isScript  = SCRIPT_CLASSES[inst.ClassName] == true
+        local entry = mk("TextButton",{
+            Size=UDim2.new(1,0,0,ROW_H),
+            Position=UDim2.fromOffset(0, (i-1)*ROW_H - scrollOffset),
+            BackgroundColor3=isSel and Color3.fromRGB(0,120,215) or Color3.fromRGB(35,35,35),
+            BackgroundTransparency=isSel and 0 or 1,
+            BorderSizePixel=0, Text=""
+        }, listFrame)
+        local indent = mk("Frame",{
+            Size=UDim2.new(1,-(row.depth*INDENT_PER),1,0),
+            Position=UDim2.fromOffset(row.depth*INDENT_PER+4,0),
+            BackgroundTransparency=1
+        }, entry)
+        local iconData = CLASS_ICONS[inst.ClassName]
+        local iconW = 0
+        if iconData then
+            iconW = 18
+            local ico = Instance.new("ImageLabel")
+            ico.Size                  = UDim2.fromOffset(ICON_SIZE, ICON_SIZE)
+            ico.Position              = UDim2.fromOffset(1, math.floor((ROW_H - ICON_SIZE) / 2))
+            ico.BackgroundTransparency= 1
+            ico.ScaleType             = Enum.ScaleType.Fit
+            ico.ZIndex                = 2
+            if type(iconData) == "string" then
+                ico.Image = iconData
+            else
+                ico.Image           = iconData.sheet
+                ico.ImageRectOffset = Vector2.new(iconData.ox, iconData.oy)
+                ico.ImageRectSize   = Vector2.new(16, 16)
+            end
+            ico.Parent = indent
+        end
+        mk("TextLabel",{
+            Size=UDim2.new(1,-(iconW+2),1,0), Position=UDim2.fromOffset(iconW+2,0),
+            BackgroundTransparency=1,
+            Text=inst.Name,
+            TextColor3=isScript and Color3.fromRGB(253,251,172) or Color3.fromRGB(220,220,220),
+            TextXAlignment=Enum.TextXAlignment.Left, TextSize=9
+        }, indent)
+        entry.MouseButton1Click:Connect(function()
+            closeCtx(); selected = inst
+            if isScript then
+                decompTitle.Text = inst.ClassName .. " › " .. inst.Name .. "   (press View)"
+            else
+                decompTitle.Text = inst.ClassName .. " › " .. inst.Name
+            end
+            renderRows()
+            refreshProps()
+        end)
+        entry.MouseButton2Click:Connect(function()
+            selected = inst; renderRows()
+            refreshProps()
+            openCtxMenu(inst, UserInputService:GetMouseLocation())
+        end)
+        if hasChildren(inst) then
+            local exp = mk("TextButton",{
+                Size=UDim2.fromOffset(16,ROW_H), Position=UDim2.fromOffset(-16,0),
+                BackgroundTransparency=1,
+                Text=expanded[inst] and "+" or "+",
+                TextColor3=Color3.fromRGB(170,170,170), TextSize=8
+            }, indent)
+            exp.MouseButton1Click:Connect(function()
+                expanded[inst] = not expanded[inst]
+                rows = buildRows(treeRoot, 0, {})
+                renderRows()
+            end)
+        end
+        table.insert(rowFrames, entry)
+    end
+end
+local function jumpToInstance(inst)
+    expanded[game] = true; selected = inst
+    rows = buildRows(treeRoot, 0, {})
+    local targetI = 1
+    for i, row in ipairs(rows) do if row.inst == inst then targetI = i; break end end
+    local maxOff = math.max(0, (#rows*ROW_H) - listFrame.AbsoluteSize.Y)
+    scrollOffset = math.clamp((targetI-1)*ROW_H, 0, maxOff)
+    renderRows()
+end
+local syncHighlights = {}
+local HIGHLIGHT_DURATION = 2.5
+local HIGHLIGHT_COLOR    = Color3.fromRGB(60, 200, 90)
+local HIGHLIGHT_BAR_W    = 3
+local syncPending  = false
+local syncLastFire = 0
+local SYNC_DEBOUNCE = 0.15
+local liveBadge = mk("TextLabel", {
+    Size     = UDim2.new(0, 30, 0, 14),
+    Position = UDim2.new(1, -34, 0.5, -7),
+    BackgroundColor3    = Color3.fromRGB(30, 120, 50),
+    BackgroundTransparency = 0,
+    BorderSizePixel     = 0,
+    Text                = "LIVE",
+    TextColor3          = Color3.fromRGB(140, 255, 160),
+    Font                = Enum.Font.SourceSansBold,
+    TextSize            = 8,
+    ZIndex              = 5,
+}, treeHeader)
+mk("UICorner", {CornerRadius = UDim.new(0, 3)}, liveBadge)
+local livePulseRunning = false
+local function startLivePulse()
+    if livePulseRunning then return end
+    livePulseRunning = true
+    task.spawn(function()
+        while liveBadge and liveBadge.Parent do
+            for t = 0, 1, 0.05 do
+                if not (liveBadge and liveBadge.Parent) then return end
+                liveBadge.BackgroundTransparency = t * 0.55
+                task.wait(0.04)
+            end
+            for t = 1, 0, -0.05 do
+                if not (liveBadge and liveBadge.Parent) then return end
+                liveBadge.BackgroundTransparency = t * 0.55
+                task.wait(0.04)
+            end
+        end
+        livePulseRunning = false
+    end)
+end
+startLivePulse()
+local function syncRebuild()
+    rows = buildRows(treeRoot, 0, {})
+    renderRows()
+end
+local function scheduleSyncRebuild()
+    syncLastFire = tick()
+    if syncPending then return end
+    syncPending = true
+    task.spawn(function()
+        while (tick() - syncLastFire) < SYNC_DEBOUNCE do
+            task.wait(SYNC_DEBOUNCE)
+        end
+        syncPending = false
+        if sg and sg.Parent then
+            syncRebuild()
+        end
+    end)
+end
+game.DescendantAdded:Connect(function(inst)
+    local ok, _ = pcall(function() return inst.ClassName end)
+    if not ok then return end
+    syncHighlights[inst] = tick() + HIGHLIGHT_DURATION
+    scheduleSyncRebuild()
+end)
+game.DescendantRemoving:Connect(function(inst)
+    syncHighlights[inst] = nil
+    expanded[inst]       = nil
+    if selected == inst then
+        selected = nil
+        pcall(function() refreshProps() end)
+    end
+    scheduleSyncRebuild()
+end)
+local _origRenderRows = renderRows
+renderRows = function()
+    _origRenderRows()
+    local now = tick()
+    local expired = {}
+    for _, frame in ipairs(rowFrames) do
+        local frameY   = frame.Position.Y.Offset + scrollOffset
+        local rowIndex = math.floor(frameY / ROW_H) + 1
+        local row      = rows[rowIndex]
+        if not row then continue end
+        local inst   = row.inst
+        local expiry = syncHighlights[inst]
+        if expiry then
+            if now >= expiry then
+                table.insert(expired, inst)
+            else
+                local bar = frame:FindFirstChild("_SyncBar")
+                if not bar then
+                    bar = mk("Frame", {
+                        Name            = "_SyncBar",
+                        Size            = UDim2.new(0, HIGHLIGHT_BAR_W, 1, 0),
+                        Position        = UDim2.new(0, 0, 0, 0),
+                        BackgroundColor3= HIGHLIGHT_COLOR,
+                        BorderSizePixel = 0,
+                        ZIndex          = 5,
+                    }, frame)
+                    local origBg = frame.BackgroundColor3
+                    local origTr = frame.BackgroundTransparency
+                    frame.BackgroundColor3    = Color3.fromRGB(30, 80, 40)
+                    frame.BackgroundTransparency = 0.3
+                    task.delay(0.6, function()
+                        if frame and frame.Parent then
+                            frame.BackgroundColor3    = origBg
+                            frame.BackgroundTransparency = origTr
+                        end
+                    end)
+                    local remaining = expiry - now
+                    task.delay(math.max(0, remaining - 0.5), function()
+                        if bar and bar.Parent then
+                            local steps = 20
+                            for s = 1, steps do
+                                if not (bar and bar.Parent) then break end
+                                bar.BackgroundTransparency = s / steps
+                                task.wait(0.025)
+                            end
+                            if bar and bar.Parent then bar:Destroy() end
+                        end
+                    end)
+                end
+            end
+        end
+    end
+    for _, inst in ipairs(expired) do
+        syncHighlights[inst] = nil
+    end
+end
+decompBtn.MouseButton1Click:Connect(function()
+    if not selected then
+        codeLabel.Text = '<font color="#ff6060">-- No instance selected.</font>'
+        return
+    end
+    if not SCRIPT_CLASSES[selected.ClassName] then
+        codeLabel.Text = '<font color="#ff9030">-- "'..tostring(selected.Name)..'" is a '
+            ..tostring(selected.ClassName)..'.\n-- Pick a Script, LocalScript or ModuleScript.</font>'
+        return
+    end
+    decompBtn.Text = "View"
+    decompBtn.BackgroundColor3 = Color3.fromRGB(80,60,20)
+    codeLabel.Text = '<font color="#494949ff">-- Decompiling '..selected.Name..'…</font>'
+    task.defer(function()
+        local raw = runDecompile(selected)
+        lastDecompResult = raw
+        setCodeText(raw)
+        setTab("viewer")
+        decompTitle.Text = selected.ClassName .. " › " .. selected.Name
+        decompBtn.Text   = "View"
+        decompBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        setPanelExpanded(true)
+    end)
+end)
+local copyResetPending = false
+copyBtn.MouseButton1Click:Connect(function()
+    local src = editorPane.Visible and editorBox.Text or lastDecompResult
+    if src ~= "" then
+        pcall(setclipboard, src)
+        copyBtn.Text = "✓ Copied"
+        if not copyResetPending then
+            copyResetPending = true
+            task.delay(1.5, function()
+                copyBtn.Text = "Copy"
+                copyResetPending = false
+            end)
+        end
+    end
+end)
+execBtn.MouseButton1Click:Connect(function()
+    local src = editorPane.Visible and editorBox.Text or lastDecompResult
+    if src == "" then return end
+    local fn, err = loadstring(src)
+    if fn then
+        task.spawn(fn)
+        execBtn.Text = "✓ Ran"
+        task.delay(1.5, function() execBtn.Text = "Execute" end)
+    else
+        execBtn.Text = "Error"
+        warn("[zukv2] Exec error: " .. tostring(err))
+        task.delay(2, function() execBtn.Text = "Execute" end)
+    end
+end)
+local function setTab(which)
+    local isViewer    = which == "viewer"
+    local isEditor    = which == "editor"
+    local isInspector = which == "inspector"
+    viewerPane.Visible    = isViewer
+    editorPane.Visible    = isEditor
+    inspectorPane.Visible = isInspector
+    local function styleTab(btn, active)
+        btn.BackgroundColor3 = active and Color3.fromRGB(22,22,22) or Color3.fromRGB(35,35,35)
+        btn.TextColor3       = active and Color3.fromRGB(220,220,220) or Color3.fromRGB(140,140,140)
+    end
+    styleTab(tabViewer,    isViewer)
+    styleTab(tabEditor,    isEditor)
+    styleTab(tabInspector, isInspector)
+    local underlineX = isViewer and 0 or (isEditor and 70 or 140)
+    local underlineW = isInspector and 80 or 70
+    tabUnderline.Position = UDim2.new(0, underlineX, 1, -2)
+    tabUnderline.Size     = UDim2.new(0, underlineW, 0, 2)
+    if isEditor then
+        if editorBox.Text == "-- Write your script here\n" and lastDecompResult ~= "" then
+            editorBox.Text = lastDecompResult
+        end
+    end
+end
+tabViewer.MouseButton1Click:Connect(function()    setTab("viewer")    end)
+tabEditor.MouseButton1Click:Connect(function()    setTab("editor")    end)
+tabInspector.MouseButton1Click:Connect(function() setTab("inspector") end)
+setTab("viewer")
+local gutterLabels = {}
+local lastLineCount = 0
+local LINE_H = 16
+local function updateGutter()
+    local text = editorBox.Text
+    local lineCount = 1
+    for _ in text:gmatch("\n") do lineCount += 1 end
+    if lineCount == lastLineCount then return end
+    lastLineCount = lineCount
+    for i = lineCount + 1, #gutterLabels do
+        gutterLabels[i]:Destroy(); gutterLabels[i] = nil
+    end
+    for i = #gutterLabels + 1, lineCount do
+        local lbl = mk("TextLabel",{
+            Size=UDim2.new(1,0,0,LINE_H),
+            BackgroundTransparency=1,
+            Text=tostring(i),
+            TextColor3=Color3.fromRGB(90,90,90),
+            TextXAlignment=Enum.TextXAlignment.Right,
+            Font=Enum.Font.Code, TextSize=9,
+            LayoutOrder=i,
+        }, gutterScroll)
+        gutterLabels[i] = lbl
+    end
+end
+local hlDebounce = false
+local lastHlText = ""
+local function updateHlOverlay()
+    local text = editorBox.Text
+    if text == lastHlText then return end
+    lastHlText = text
+    local lines = {}
+    for line in (text .. "\n"):gmatch("([^\n]*)\n") do
+        table.insert(lines, line)
+    end
+    if #lines > 1 and lines[#lines] == "" then
+        table.remove(lines)
+    end
+    for i, line in ipairs(lines) do
+        local highlighted = hlLine(line)
+        if hlLineLabels[i] then
+            hlLineLabels[i].Text        = highlighted
+            hlLineLabels[i].LayoutOrder = i
+        else
+            hlLineLabels[i] = mk("TextLabel",{
+                Size=UDim2.new(1,0,0,LINE_H),
+                AutomaticSize=Enum.AutomaticSize.None,
+                BackgroundTransparency=1,
+                Text=highlighted,
+                TextColor3=Color3.fromRGB(204,204,204),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                TextYAlignment=Enum.TextYAlignment.Center,
+                Font=Enum.Font.Code, TextSize=9,
+                RichText=true, TextWrapped=false,
+                LayoutOrder=i, ZIndex=1,
+            }, hlOverlay)
+        end
+    end
+    for i = #lines + 1, #hlLineLabels do
+        if hlLineLabels[i] then
+            hlLineLabels[i]:Destroy()
+            hlLineLabels[i] = nil
+        end
+    end
+end
+editorScroll:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+    gutterScroll.CanvasPosition = Vector2.new(0, editorScroll.CanvasPosition.Y)
+end)
+editorBox:GetPropertyChangedSignal("Text"):Connect(function()
+    updateGutter()
+    if hlDebounce then return end
+    hlDebounce = true
+    task.defer(function()
+        hlDebounce = false
+        updateHlOverlay()
+    end)
+end)
+updateGutter()
+updateHlOverlay()
+convertBtn.MouseButton1Click:Connect(function()
+    if not selected then
+        codeLabel.Text = '<font color="#ff6060">-- No instance selected.</font>'
+        return
+    end
+    if selected.ClassName ~= "ScreenGui" then
+        codeLabel.Text = '<font color="#ff9030">-- "'..tostring(selected.Name)..'" is not a ScreenGui.\n-- Select a ScreenGui to use Convert GUI.</font>'
+        return
+    end
+    convertBtn.Text = "View"
+    convertBtn.BackgroundColor3 = Color3.fromRGB(60,40,80)
+    codeLabel.Text = '<font color="#555555">-- Converting '..selected.Name..'…</font>'
+    task.defer(function()
+        local output = convertGuiToScript(selected)
+        lastDecompResult = output
+        setCodeText(output)
+        decompTitle.Text = "ScreenGui › " .. selected.Name .. "  [Converted]"
+        convertBtn.Text = "GUI -> SCRIPT"
+        convertBtn.BackgroundColor3 = Color3.fromRGB(50,40,70)
+        setPanelExpanded(true)
+    end)
+end)
+local propRowFrames = {}
+local propsFilterText = ""
+local PROPS_ROW_H = 18
+local SKIP_PROP_TYPES = { RBXScriptSignal=true, Instance=true }
+local function serializeValShort(v)
+    local t = typeof(v)
+    if t == "string"     then return #v > 40 and ('"'..v:sub(1,37)..'..."') or string.format("%q",v)
+    elseif t == "number" then return tostring(v)
+    elseif t == "boolean"then return tostring(v)
+    elseif t == "nil"    then return "nil"
+    elseif t == "Vector3"then return ("%.3g, %.3g, %.3g"):format(v.X,v.Y,v.Z)
+    elseif t == "Vector2"then return ("%.3g, %.3g"):format(v.X,v.Y)
+    elseif t == "UDim2"  then return ("{%.3g,%.3g},{%.3g,%.3g}"):format(v.X.Scale,v.X.Offset,v.Y.Scale,v.Y.Offset)
+    elseif t == "UDim"   then return ("%.3g, %.3g"):format(v.Scale,v.Offset)
+    elseif t == "Color3" then return ("%d, %d, %d"):format(math.floor(v.R*255),math.floor(v.G*255),math.floor(v.B*255))
+    elseif t == "EnumItem" then return tostring(v):match("%.(.+)$") or tostring(v)
+    elseif t == "CFrame" then return "CFrame"
+    elseif t == "BrickColor" then return v.Name
+    elseif t == "Rect"   then return ("%.3g,%.3g,%.3g,%.3g"):format(v.Min.X,v.Min.Y,v.Max.X,v.Max.Y)
+    elseif t == "NumberRange" then return ("%.3g .. %.3g"):format(v.Min,v.Max)
+    elseif t == "FontFace" then return v.Family:match("[^/]+$") or "Font"
+    else return t end
+end
+local function getTypeColor(v)
+    local t = typeof(v)
+    if t ==     "string"   then return Color3.fromRGB(173,241,149)
+    elseif t == "number" then return Color3.fromRGB(255,198,0)
+    elseif t == "boolean" then return Color3.fromRGB(255,198,0)
+    elseif t == "Color3" then return v
+    elseif t == "EnumItem" then return Color3.fromRGB(132,214,247)
+    else return Color3.fromRGB(180,180,180) end
+end
+refreshProps = function()
+    for _, f in ipairs(propRowFrames) do f:Destroy() end
+    table.clear(propRowFrames)
+    if not selected then return end
+    local inst = selected
+    local allPropNames = {}
+    local seen = {}
+    local function addProp(name)
+        if not seen[name] then seen[name] = true; table.insert(allPropNames, name) end
+    end
+    if type(getgenv().getproperties) == "function" then
+        local ok2, result = pcall(getgenv().getproperties, inst)
+        if ok2 and type(result) == "table" then
+            for _, p in ipairs(result) do
+                if type(p) == "table" and p.Name then addProp(p.Name)
+                elseif type(p) == "string" then addProp(p) end
+            end
+        end
+    end
+    if #allPropNames == 0 then
+        local cls = inst.ClassName
+        local base = {"Name","ClassName","Parent","Archivable"}
+        for _, p in ipairs(base) do addProp(p) end
+        local classProps = {
+            GuiBase2d = {"AbsolutePosition","AbsoluteSize","AbsoluteRotation","AutoLocalize"},
+            GuiObject = {"Active","AnchorPoint","AutomaticSize","BackgroundColor3",
+                "BackgroundTransparency","BorderColor3","BorderSizePixel","ClipsDescendants",
+                "LayoutOrder","Position","Rotation","Selectable","Size","SizeConstraint",
+                "Visible","ZIndex"},
+            TextLabel = {"Font","FontFace","LineHeight","MaxVisibleGraphemes","RichText","Text",
+                "TextBounds","TextColor3","TextFits","TextScaled","TextSize","TextStrokeColor3",
+                "TextStrokeTransparency","TextTransparency","TextTruncate","TextWrapped",
+                "TextXAlignment","TextYAlignment","AutomaticSize"},
+            TextButton = {"Font","FontFace","LineHeight","RichText","Text","TextBounds",
+                "TextColor3","TextFits","TextScaled","TextSize","TextStrokeColor3",
+                "TextStrokeTransparency","TextTransparency","TextTruncate","TextWrapped",
+                "TextXAlignment","TextYAlignment","AutoButtonColor","Modal","Style"},
+            TextBox = {"Font","FontFace","LineHeight","RichText","Text","TextBounds",
+                "TextColor3","TextFits","TextScaled","TextSize","TextStrokeColor3",
+                "TextStrokeTransparency","TextTransparency","TextTruncate","TextWrapped",
+                "TextXAlignment","TextYAlignment","ClearTextOnFocus","MultiLine",
+                "PlaceholderColor3","PlaceholderText","TextEditable"},
+            Frame = {"Style"},
+            ScrollingFrame = {"CanvasPosition","CanvasSize","ScrollBarImageColor3",
+                "ScrollBarImageTransparency","ScrollBarThickness","ScrollingDirection",
+                "ScrollingEnabled","VerticalScrollBarInset","HorizontalScrollBarInset",
+                "BottomImage","MidImage","TopImage"},
+            ImageLabel = {"Image","ImageColor3","ImageRectOffset","ImageRectSize",
+                "ImageTransparency","ResampleMode","ScaleType","SliceCenter","SliceScale","TileSize"},
+            ImageButton = {"Image","ImageColor3","ImageRectOffset","ImageRectSize",
+                "ImageTransparency","ResampleMode","ScaleType","SliceCenter","SliceScale","TileSize",
+                "HoverImage","PressedImage","AutoButtonColor","Modal","Style"},
+            ScreenGui = {"DisplayOrder","Enabled","IgnoreGuiInset","ResetOnSpawn",
+                "ScreenInsets","ZIndexBehavior"},
+            UICorner = {"CornerRadius"},
+            UIStroke = {"ApplyStrokeMode","Color","Enabled","LineJoinMode","Thickness","Transparency"},
+            UIGradient = {"Color","Enabled","Offset","Rotation","Transparency"},
+            UIPadding = {"PaddingBottom","PaddingLeft","PaddingRight","PaddingTop"},
+            UIListLayout = {"FillDirection","HorizontalAlignment","HorizontalFlex",
+                "ItemLineAlignment","Padding","SortOrder","VerticalAlignment","VerticalFlex","Wraps"},
+            UIGridLayout = {"CellPadding","CellSize","FillDirection","FillDirectionMaxCells",
+                "HorizontalAlignment","SortOrder","StartCorner","VerticalAlignment"},
+            UIScale = {"Scale"},
+            UIAspectRatioConstraint = {"AspectRatio","AspectType","DominantAxis"},
+            UISizeConstraint = {"MaxSize","MinSize"},
+            UITextSizeConstraint = {"MaxTextSize","MinTextSize"},
+            BasePart = {"Anchored","CanCollide","CastShadow","CFrame","Color","Locked",
+                "Material","Reflectance","Size","Transparency","BrickColor","Massless",
+                "CollisionGroupId","RootPriority"},
+            Part = {"Shape"},
+            MeshPart = {"MeshId","TextureID"},
+            Humanoid = {"DisplayName","Health","HipHeight","JumpHeight","JumpPower",
+                "MaxHealth","MaxSlopeAngle","RootPart","WalkSpeed","AutoRotate",
+                "BreakJointsOnDeath","DisplayDistanceType","HealthDisplayDistance",
+                "NameDisplayDistance","NameOcclusion","RequiresNeck","RigType"},
+            Script = {"Disabled","LinkedSource","RunContext","Source"},
+            LocalScript = {"Disabled","LinkedSource","Source"},
+            ModuleScript = {"LinkedSource","Source"},
+            StringValue = {"Value"},
+            IntValue = {"Value"},
+            NumberValue = {"Value"},
+            BoolValue = {"Value"},
+            Vector3Value = {"Value"},
+            Color3Value = {"Value"},
+            ObjectValue = {"Value"},
+            Sound = {"Looped","MaxDistance","Pitch","PlayOnRemove","Playing",
+                "RollOffMaxDistance","RollOffMinDistance","RollOffMode","SoundId",
+                "TimeLength","TimePosition","Volume"},
+            Lighting = {"Ambient","Brightness","ClockTime","ColorShift_Bottom",
+                "ColorShift_Top","EnvironmentDiffuseScale","EnvironmentSpecularScale",
+                "ExposureCompensation","FogColor","FogEnd","FogStart",
+                "GeographicLatitude","GlobalShadows","OutdoorAmbient","ShadowSoftness","TimeOfDay"},
+            Camera = {"CFrame","CameraSubject","CameraType","FieldOfView",
+                "Focus","HeadLocked","HeadScale","MaxAxisFieldOfView","NearPlaneZ","ViewportSize"},
+        }
+        local chain = {
+            TextLabel  = {"GuiBase2d","GuiObject","TextLabel"},
+            TextButton = {"GuiBase2d","GuiObject","TextButton"},
+            TextBox    = {"GuiBase2d","GuiObject","TextBox"},
+            Frame      = {"GuiBase2d","GuiObject","Frame"},
+            ScrollingFrame = {"GuiBase2d","GuiObject","ScrollingFrame"},
+            ImageLabel = {"GuiBase2d","GuiObject","ImageLabel"},
+            ImageButton= {"GuiBase2d","GuiObject","ImageButton"},
+            ScreenGui  = {"ScreenGui"},
+            UICorner   = {"UICorner"},UIStroke={"UIStroke"},UIGradient={"UIGradient"},
+            UIPadding  = {"UIPadding"},UIListLayout={"UIListLayout"},
+            UIGridLayout={"UIGridLayout"},UIScale={"UIScale"},
+            UIAspectRatioConstraint={"UIAspectRatioConstraint"},
+            UISizeConstraint={"UISizeConstraint"},UITextSizeConstraint={"UITextSizeConstraint"},
+            Part={"BasePart","Part"},MeshPart={"BasePart","MeshPart"},
+            UnionOperation={"BasePart"},SpecialMesh={"BasePart"},
+            Humanoid={"Humanoid"},
+            Script={"Script"},LocalScript={"LocalScript"},ModuleScript={"ModuleScript"},
+            StringValue={"StringValue"},IntValue={"IntValue"},NumberValue={"NumberValue"},
+            BoolValue={"BoolValue"},Vector3Value={"Vector3Value"},
+            Color3Value={"Color3Value"},ObjectValue={"ObjectValue"},
+            Sound={"Sound"},Lighting={"Lighting"},Camera={"Camera"},
+        }
+        local hierarchy = chain[cls] or {"GuiBase2d","GuiObject"}
+        for _, c in ipairs(hierarchy) do
+            if classProps[c] then
+                for _, p in ipairs(classProps[c]) do addProp(p) end
+            end
+        end
+    end
+    local filter = propsFilterText:lower()
+    local order = 0
+    for _, propName in ipairs(allPropNames) do
+        if filter ~= "" and not propName:lower():find(filter, 1, true) then continue end
+        local okV, val = pcall(function() return inst[propName] end)
+        if not okV then continue end
+        if typeof(val) == "RBXScriptSignal" then continue end
+        if typeof(val) == "Instance" then continue end
+        order += 1
+        local isEven = order % 2 == 0
+        local row = mk("Frame",{
+            Size=UDim2.new(1,0,0,PROPS_ROW_H),
+            BackgroundColor3=isEven and Color3.fromRGB(28,28,28) or Color3.fromRGB(33,33,33),
+            BackgroundTransparency=0, BorderSizePixel=0,
+            LayoutOrder=order, ClipsDescendants=true
+        }, propsScroll)
+        mk("TextLabel",{
+            Size=UDim2.new(0.5,0,1,0), Position=UDim2.new(0,4,0,0),
+            BackgroundTransparency=1,
+            Text=propName,
+            TextColor3=Color3.fromRGB(190,190,190),
+            TextXAlignment=Enum.TextXAlignment.Left,
+            Font=Enum.Font.SourceSans, TextSize=11,
+            TextTruncate=Enum.TextTruncate.AtEnd,
+        }, row)
+        local valType = typeof(val)
+        local valColor = valType=="Color3" and Color3.fromRGB(180,180,180) or getTypeColor(val)
+        local valLabel = mk("TextLabel",{
+            Size=UDim2.new(0.5,-2,1,0), Position=UDim2.new(0.5,0,0,0),
+            BackgroundTransparency=1,
+            Text=serializeValShort(val),
+            TextColor3=valColor,
+            TextXAlignment=Enum.TextXAlignment.Left,
+            Font=Enum.Font.SourceSans, TextSize=11,
+            TextTruncate=Enum.TextTruncate.AtEnd,
+        }, row)
+        local swatch
+        if valType == "Color3" then
+            swatch = mk("Frame",{
+                Size=UDim2.new(0,11,0,11),
+                Position=UDim2.new(0.5,2,0.5,-5),
+                BackgroundColor3=val, BorderSizePixel=1,
+                ZIndex=2
+            }, row)
+            valLabel.Position = UDim2.new(0.5,15,0,0)
+            valLabel.Size     = UDim2.new(0.5,-17,1,0)
+        end
+        local activeEdit = nil
+        local function closeEdit()
+            if activeEdit then activeEdit:Destroy(); activeEdit = nil end
+            row.Size = UDim2.new(1,0,0,PROPS_ROW_H)
+        end
+        local function applyVal(newVal)
+            local ok, err = pcall(function() inst[propName] = newVal end)
+            if ok then
+                val = newVal
+                valLabel.Text = serializeValShort(newVal)
+                valLabel.TextColor3 = getTypeColor(newVal)
+                if swatch and typeof(newVal)=="Color3" then
+                    swatch.BackgroundColor3 = newVal
+                end
+            else
+                warn("[zukv2] prop set failed: "..tostring(err))
+            end
+            closeEdit()
+        end
+        local function makeInlineBox(startText, onConfirm)
+            closeEdit()
+            row.Size = UDim2.new(1,0,0,PROPS_ROW_H+2)
+            local box = mk("TextBox",{
+                Size=UDim2.new(0.5,-2,1,-2), Position=UDim2.new(0.5,0,0,1),
+                BackgroundColor3=Color3.fromRGB(20,20,20),
+                BorderSizePixel=1, BorderColor3=Color3.fromRGB(0,120,215),
+                Text=startText, TextColor3=Color3.fromRGB(220,220,220),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.Code, TextSize=11,
+                ClearTextOnFocus=false, ZIndex=10
+            }, row)
+            activeEdit = box
+            box:CaptureFocus()
+            box.FocusLost:Connect(function(enterPressed)
+                if enterPressed then onConfirm(box.Text) end
+                closeEdit()
+            end)
+            return box
+        end
+        local hitbox = mk("TextButton",{
+            Size=UDim2.new(0.5,0,1,0), Position=UDim2.new(0.5,0,0,0),
+            BackgroundTransparency=1, Text="", ZIndex=3
+        }, row)
+        hitbox.MouseEnter:Connect(function()
+            row.BackgroundColor3 = Color3.fromRGB(45,45,55)
+        end)
+        hitbox.MouseLeave:Connect(function()
+            row.BackgroundColor3 = isEven and Color3.fromRGB(28,28,28) or Color3.fromRGB(33,33,33)
+        end)
+        hitbox.MouseButton1Click:Connect(function()
+            if valType == "boolean" then
+                applyVal(not inst[propName])
+            elseif valType == "string" then
+                makeInlineBox(inst[propName], function(t) applyVal(t) end)
+            elseif valType == "number" then
+                makeInlineBox(tostring(inst[propName]), function(t)
+                    local n = tonumber(t)
+                    if n then applyVal(n) else closeEdit() end
+                end)
+            elseif valType == "EnumItem" then
+                local ok2, items = pcall(function()
+                    return inst[propName].EnumType:GetEnumItems()
+                end)
+                if ok2 and items then
+                    local cur = inst[propName]
+                    local nextItem = items[1]
+                    for i2, item in ipairs(items) do
+                        if item == cur then
+                            nextItem = items[(i2 % #items) + 1]; break
+                        end
+                    end
+                    applyVal(nextItem)
+                end
+            elseif valType == "Color3" then
+                closeEdit()
+                row.Size = UDim2.new(1,0,0,PROPS_ROW_H + 22)
+                local popup = mk("Frame",{
+                    Size=UDim2.new(1,0,0,22), Position=UDim2.new(0,0,0,PROPS_ROW_H),
+                    BackgroundColor3=Color3.fromRGB(22,22,22), BorderSizePixel=0, ZIndex=10
+                }, row)
+                activeEdit = popup
+                local cur = inst[propName]
+                local rBox = mk("TextBox",{
+                    Size=UDim2.new(0,38,1,-4), Position=UDim2.new(0,2,0,2),
+                    BackgroundColor3=Color3.fromRGB(30,30,30), BorderSizePixel=1,
+                    Text=tostring(math.floor(cur.R*255)),
+                    TextColor3=Color3.fromRGB(255,100,100),
+                    Font=Enum.Font.Code, TextSize=11, ZIndex=11, ClearTextOnFocus=false
+                }, popup)
+                local gBox = mk("TextBox",{
+                    Size=UDim2.new(0,38,1,-4), Position=UDim2.new(0,42,0,2),
+                    BackgroundColor3=Color3.fromRGB(30,30,30), BorderSizePixel=1,
+                    Text=tostring(math.floor(cur.G*255)),
+                    TextColor3=Color3.fromRGB(100,220,100),
+                    Font=Enum.Font.Code, TextSize=11, ZIndex=11, ClearTextOnFocus=false
+                }, popup)
+                local bBox = mk("TextBox",{
+                    Size=UDim2.new(0,38,1,-4), Position=UDim2.new(0,82,0,2),
+                    BackgroundColor3=Color3.fromRGB(30,30,30), BorderSizePixel=1,
+                    Text=tostring(math.floor(cur.B*255)),
+                    TextColor3=Color3.fromRGB(100,150,255),
+                    Font=Enum.Font.Code, TextSize=11, ZIndex=11, ClearTextOnFocus=false
+                }, popup)
+                local applyBtn = mk("TextButton",{
+                    Size=UDim2.new(0,30,1,-4), Position=UDim2.new(0,122,0,2),
+                    BackgroundColor3=Color3.fromRGB(0,100,200), BorderSizePixel=0,
+                    Text="OK", TextColor3=Color3.fromRGB(255,255,255),
+                    Font=Enum.Font.SourceSansBold, TextSize=11, ZIndex=11
+                }, popup)
+                applyBtn.MouseButton1Click:Connect(function()
+                    local r2 = tonumber(rBox.Text) or 0
+                    local g2 = tonumber(gBox.Text) or 0
+                    local b2 = tonumber(bBox.Text) or 0
+                    applyVal(Color3.fromRGB(
+                        math.clamp(r2,0,255),
+                        math.clamp(g2,0,255),
+                        math.clamp(b2,0,255)
+                    ))
+                end)
+            elseif valType == "Vector3" then
+                local cur = inst[propName]
+                makeInlineBox(("%.4g,%.4g,%.4g"):format(cur.X,cur.Y,cur.Z), function(t)
+                    local x,y,z = t:match("([^,]+),([^,]+),([^,]+)")
+                    local nx,ny,nz = tonumber(x),tonumber(y),tonumber(z)
+                    if nx and ny and nz then applyVal(Vector3.new(nx,ny,nz)) else closeEdit() end
+                end)
+            elseif valType == "Vector2" then
+                local cur = inst[propName]
+                makeInlineBox(("%.4g,%.4g"):format(cur.X,cur.Y), function(t)
+                    local x,y = t:match("([^,]+),([^,]+)")
+                    local nx,ny = tonumber(x),tonumber(y)
+                    if nx and ny then applyVal(Vector2.new(nx,ny)) else closeEdit() end
+                end)
+            elseif valType == "UDim2" then
+                local cur = inst[propName]
+                makeInlineBox(("%.4g,%.4g,%.4g,%.4g"):format(
+                    cur.X.Scale,cur.X.Offset,cur.Y.Scale,cur.Y.Offset), function(t)
+                    local a,b2,c,d = t:match("([^,]+),([^,]+),([^,]+),([^,]+)")
+                    local na,nb,nc,nd = tonumber(a),tonumber(b2),tonumber(c),tonumber(d)
+                    if na and nb and nc and nd then
+                        applyVal(UDim2.new(na,nb,nc,nd))
+                    else closeEdit() end
+                end)
+            elseif valType == "UDim" then
+                local cur = inst[propName]
+                makeInlineBox(("%.4g,%.4g"):format(cur.Scale,cur.Offset), function(t)
+                    local s,o = t:match("([^,]+),([^,]+)")
+                    local ns,no = tonumber(s),tonumber(o)
+                    if ns and no then applyVal(UDim.new(ns,no)) else closeEdit() end
+                end)
+            elseif valType == "BrickColor" then
+                makeInlineBox(inst[propName].Name, function(t)
+                    local ok3, bc = pcall(BrickColor.new, t)
+                    if ok3 then applyVal(bc) else closeEdit() end
+                end)
+            end
+        end)
+        table.insert(propRowFrames, row)
+    end
+end
+propsSearchInput:GetPropertyChangedSignal("Text"):Connect(function()
+    propsFilterText = propsSearchInput.Text
+    refreshProps()
+end)
+for i, svcName in ipairs(QUICK_NAV_SERVICES) do
+end
+closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
+do
+local GC_SCAN_TYPES = {
+    LocalScript    = true,
+    ModuleScript   = true,
+    Script         = true,
+    RemoteEvent    = true,
+    RemoteFunction = true,
+    BindableEvent  = true,
+}
+local function scanGCInstances()
+    local found = {}
+    local seen  = {}
+    local ok, objects = pcall(getgc, true)
+    if not ok or not objects then return found end
+    for _, v in ipairs(objects) do
+        local okT, isInst = pcall(function() return typeof(v) == "Instance" end)
+        if not (okT and isInst) then continue end
+        if seen[v] then continue end
+        seen[v] = true
+        local okC, cls = pcall(function() return v.ClassName end)
+        if not (okC and GC_SCAN_TYPES[cls]) then continue end
+        local okP, parent = pcall(function() return v.Parent end)
+        local isHidden = not okP or parent == nil
+        local okN, name = pcall(function() return v.Name end)
+        local isFlagged = false
+        if okN then
+            local lower = name:lower()
+            isFlagged = lower:find("anti",   1, true) ~= nil
+                     or lower:find("core",   1, true) ~= nil
+                     or lower:find("check",  1, true) ~= nil
+                     or lower:find("detect", 1, true) ~= nil
+                     or lower:find("ban",    1, true) ~= nil
+        end
+        if isHidden or isFlagged then
+            local okFull, fullName = pcall(function() return v:GetFullName() end)
+            table.insert(found, {
+                inst    = v,
+                name    = okN and name or "(unnamed)",
+                cls     = cls,
+                path    = okFull and fullName or "(nil-parented)",
+                hidden  = isHidden,
+                flagged = isFlagged,
+            })
+        end
+    end
+    return found
+end
+local gcPanel = mk("Frame", {
+    Size            = UDim2.new(1, 0, 1, 0),
+    BackgroundColor3 = Color3.fromRGB(18, 10, 10),
+    BorderSizePixel = 0,
+    Visible         = false,
+    ZIndex          = 5,
+}, leftCol)
+local gcToolbar = mk("Frame", {
+    Size             = UDim2.new(1, 0, 0, 26),
+    BackgroundColor3 = Color3.fromRGB(25, 14, 14),
+    BorderSizePixel  = 0,
+    ZIndex           = 6,
+}, gcPanel)
+local gcBackBtn = mk("TextButton", {
+    Size             = UDim2.new(0, 50, 0, 20),
+    Position         = UDim2.new(0, 2, 0, 3),
+    BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+    BorderSizePixel  = 0,
+    Text             = "← Back",
+    TextColor3       = Color3.fromRGB(200, 200, 200),
+    Font             = Enum.Font.SourceSansBold,
+    TextSize         = 11,
+    ZIndex           = 7,
+}, gcToolbar)
+local gcScanBtn = mk("TextButton", {
+    Size             = UDim2.new(0, 70, 0, 20),
+    Position         = UDim2.new(0, 56, 0, 3),
+    BackgroundColor3 = Color3.fromRGB(120, 30, 30),
+    BorderSizePixel  = 0,
+    Text             = "Scan GC",
+    TextColor3       = Color3.fromRGB(255, 255, 255),
+    Font             = Enum.Font.SourceSansBold,
+    TextSize         = 12,
+    ZIndex           = 7,
+}, gcToolbar)
+local gcCountLabel = mk("TextLabel", {
+    Size                = UDim2.new(1, -132, 1, 0),
+    Position            = UDim2.new(0, 130, 0, 0),
+    BackgroundTransparency = 1,
+    Text                = "Click Scan to find hidden scripts",
+    TextColor3          = Color3.fromRGB(160, 100, 100),
+    Font                = Enum.Font.Code,
+    TextSize            = 10,
+    TextXAlignment      = Enum.TextXAlignment.Left,
+    TextTruncate        = Enum.TextTruncate.AtEnd,
+    ZIndex              = 6,
+}, gcToolbar)
+local gcListFrame = mk("Frame", {
+    Size                = UDim2.new(1, 0, 1, -26),
+    Position            = UDim2.new(0, 0, 0, 26),
+    BackgroundTransparency = 1,
+    ClipsDescendants    = true,
+    ZIndex              = 6,
+}, gcPanel)
+local gcFoundItems   = {}
+local gcScrollOffset = 0
+local function renderGCRows()
+    for _, ch in ipairs(gcListFrame:GetChildren()) do
+        if ch:IsA("Frame") then ch:Destroy() end
+    end
+    for i, item in ipairs(gcFoundItems) do
+        local y = (i - 1) * ROW_H - gcScrollOffset
+        if y + ROW_H < 0 or y > gcListFrame.AbsoluteSize.Y + ROW_H then continue end
+        local rowColor = item.hidden
+            and Color3.fromRGB(60, 20, 20)
+            or  Color3.fromRGB(50, 35, 10)
+        local row = mk("Frame", {
+            Size             = UDim2.new(1, 0, 0, ROW_H),
+            Position         = UDim2.new(0, 0, 0, y),
+            BackgroundColor3 = rowColor,
+            BorderSizePixel  = 0,
+            ZIndex           = 7,
+        }, gcListFrame)
+        mk("TextLabel", {
+            Size               = UDim2.new(0, 90, 1, 0),
+            Position           = UDim2.new(0, 4, 0, 0),
+            BackgroundTransparency = 1,
+            Text               = "[" .. item.cls .. "]",
+            TextColor3         = Color3.fromRGB(180, 180, 100),
+            Font               = Enum.Font.Code,
+            TextSize           = 11,
+            TextXAlignment     = Enum.TextXAlignment.Left,
+            ZIndex             = 8,
+        }, row)
+        mk("TextLabel", {
+            Size               = UDim2.new(0, 80, 1, 0),
+            Position           = UDim2.new(0, 98, 0, 0),
+            BackgroundTransparency = 1,
+            Text               = item.name,
+            TextColor3         = item.hidden
+                and Color3.fromRGB(255, 80, 80)
+                or  Color3.fromRGB(255, 160, 60),
+            Font               = Enum.Font.Code,
+            TextSize           = 11,
+            TextXAlignment     = Enum.TextXAlignment.Left,
+            ZIndex             = 8,
+        }, row)
+        mk("TextLabel", {
+            Size               = UDim2.new(1, -234, 1, 0),
+            Position           = UDim2.new(0, 182, 0, 0),
+            BackgroundTransparency = 1,
+            Text               = item.path,
+            TextColor3         = Color3.fromRGB(140, 140, 140),
+            Font               = Enum.Font.Code,
+            TextSize           = 10,
+            TextXAlignment     = Enum.TextXAlignment.Left,
+            TextTruncate       = Enum.TextTruncate.AtEnd,
+            ZIndex             = 8,
+        }, row)
+        local isScript = item.cls == "LocalScript" or item.cls == "Script" or item.cls == "ModuleScript"
+        if isScript then
+            local dcBtn = mk("TextButton", {
+                Size             = UDim2.new(0, 22, 1, -2),
+                Position         = UDim2.new(1, -48, 0, 1),
+                BackgroundColor3 = Color3.fromRGB(40, 60, 40),
+                BorderSizePixel  = 0,
+                Text             = "D",
+                TextColor3       = Color3.fromRGB(140, 255, 140),
+                Font             = Enum.Font.SourceSansBold,
+                TextSize         = 10,
+                ZIndex           = 9,
+            }, row)
+            mk("UICorner", { CornerRadius = UDim.new(0, 2) }, dcBtn)
+            dcBtn.MouseButton1Click:Connect(function()
+                selected = item.inst
+                selectedInst = item.inst
+                pcall(refreshProps)
+                codeLabel.Text = '<font color="#494949ff">-- Decompiling (GC) ' .. item.name .. '…</font>'
+                task.defer(function()
+                    local raw = runDecompile(item.inst)
+                    lastDecompResult = raw
+                    setCodeText(raw)
+                    setTab("viewer")
+                    decompTitle.Text = item.cls .. " › " .. item.name .. "  [GC]"
+                    setPanelExpanded(true)
+                end)
+            end)
+            local inBtn = mk("TextButton", {
+                Size             = UDim2.new(0, 22, 1, -2),
+                Position         = UDim2.new(1, -24, 0, 1),
+                BackgroundColor3 = Color3.fromRGB(30, 50, 80),
+                BorderSizePixel  = 0,
+                Text             = "I",
+                TextColor3       = Color3.fromRGB(132, 214, 247),
+                Font             = Enum.Font.SourceSansBold,
+                TextSize         = 10,
+                ZIndex           = 9,
+            }, row)
+            mk("UICorner", { CornerRadius = UDim.new(0, 2) }, inBtn)
+            inBtn.MouseButton1Click:Connect(function()
+                selected = item.inst
+                selectedInst = item.inst
+                pcall(refreshProps)
+                setPanelExpanded(true)
+                setTab("inspector")
+                if item.cls == "ModuleScript" then
+                    task.defer(function()
+                        inspModuleLabel.Text       = "Loading (GC) " .. item.name .. "…"
+                        inspModuleLabel.TextColor3 = Color3.fromRGB(180, 180, 100)
+                        inspSetStatus("Loading…")
+                        task.defer(function()
+                            local okR, resR
+                            local doneR = false
+                            task.spawn(function()
+                                okR, resR = pcall(require, item.inst); doneR = true
+                            end)
+                            local w = 0
+                            while not doneR and w < 3 do task.wait(0.1); w += 0.1 end
+                            if not doneR then
+                                inspModuleLabel.Text       = item.name .. "  [timeout]"
+                                inspModuleLabel.TextColor3 = Color3.fromRGB(255, 160, 60)
+                                inspSetStatus("Module timed out."); return
+                            end
+                            if not okR then
+                                inspModuleLabel.Text       = item.name .. "  [error]"
+                                inspModuleLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+                                inspSetStatus("require() error:\n" .. tostring(resR)); return
+                            end
+                            local tblR
+                            if type(resR) == "table" then tblR = resR
+                            elseif resR == nil then tblR = {["[ReturnValue]"] = "nil"}
+                            else tblR = {["[ReturnValue]"] = resR, ["[Type]"] = type(resR)} end
+                            inspState.rootTable  = tblR
+                            inspState.currentTbl = tblR
+                            inspState.pathStack  = {}
+                            inspState.visitedSet = {}
+                            inspState.module     = item.inst
+                            inspState.filterText = ""
+                            inspSearchInput.Text = ""
+                            inspUpdatePath()
+                            inspModuleLabel.Text       = item.name .. "  [GC]"
+                            inspModuleLabel.TextColor3 = Color3.fromRGB(160, 220, 160)
+                            inspPopulate(tblR)
+                        end)
+                    end)
+                else
+                    inspState.rootTable  = nil
+                    inspState.currentTbl = nil
+                    inspState.pathStack  = {}
+                    inspState.visitedSet = {}
+                    inspState.module     = item.inst
+                    inspState.filterText = ""
+                    inspSearchInput.Text = ""
+                    inspModuleLabel.Text       = item.name .. "  [GC]"
+                    inspModuleLabel.TextColor3 = Color3.fromRGB(160, 220, 160)
+                    inspSetSubTab("upvalues")
+                end
+            end)
+        else
+            row.InputBegan:Connect(function(input)
+                if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+                selected = item.inst
+                selectedInst = item.inst
+                pcall(refreshProps)
+            end)
+        end
+        row.MouseEnter:Connect(function()
+            row.BackgroundColor3 = item.hidden
+                and Color3.fromRGB(90, 30, 30)
+                or  Color3.fromRGB(75, 55, 15)
+        end)
+        row.MouseLeave:Connect(function()
+            row.BackgroundColor3 = item.hidden
+                and Color3.fromRGB(60, 20, 20)
+                or  Color3.fromRGB(50, 35, 10)
+        end)
+    end
+end
+gcListFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseWheel then
+        local maxOff = math.max(0, (#gcFoundItems * ROW_H) - gcListFrame.AbsoluteSize.Y)
+        gcScrollOffset = math.clamp(gcScrollOffset - input.Position.Z * ROW_H * 3, 0, maxOff)
+        renderGCRows()
+    end
+end)
+gcScanBtn.MouseButton1Click:Connect(function()
+    gcScanBtn.Text = "Scanning…"
+    gcCountLabel.Text = "Searching GC heap…"
+    task.defer(function()
+        gcFoundItems   = scanGCInstances()
+        gcScrollOffset = 0
+        renderGCRows()
+        gcScanBtn.Text = "Scan GC"
+        gcCountLabel.Text = string.format("Found %d hidden/flagged", #gcFoundItems)
+    end)
+end)
+gcBackBtn.MouseButton1Click:Connect(function()
+    gcPanel.Visible     = false
+    treeSection.Visible = true
+    propsSection.Visible = true
+end)
+local gcOpenBtn = mk("TextButton", {
+    Size             = UDim2.new(0, 64, 0, 16),
+    Position         = UDim2.new(1, -105, 0, 3),
+    BackgroundColor3 = Color3.fromRGB(80, 20, 20),
+    BorderSizePixel  = 0,
+    Text             = "Hidden",
+    TextColor3       = Color3.fromRGB(255, 100, 100),
+    Font             = Enum.Font.SourceSansBold,
+    TextSize         = 10,
+    ZIndex           = 4,
+}, treeHeader)
+mk("UICorner", { CornerRadius = UDim.new(0, 3) }, gcOpenBtn)
+gcOpenBtn.MouseButton1Click:Connect(function()
+    treeSection.Visible  = false
+    propsSection.Visible = false
+    gcPanel.Visible      = true
+end)
+end
+local TweenService = game:GetService("TweenService")
+local TWEEN_INFO   = TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+setPanelExpanded = function(expand)
+    panelExpanded = expand
+    if expand then
+        rightCol.Visible = true
+        TweenService:Create(rightCol, TWEEN_INFO, {
+            Position = UDim2.new(1, -(PANEL_W + DECOMP_W), 0, 0),
+        }):Play()
+        toggleBtn.Text = ">"
+    else
+        local tw = TweenService:Create(rightCol, TWEEN_INFO, {
+            Position = UDim2.new(1, 0, 0, 0),
+        })
+        tw:Play()
+        tw.Completed:Connect(function()
+            if not panelExpanded then
+                rightCol.Visible = false
+            end
+        end)
+        toggleBtn.Text = "<"
+    end
+end
+toggleBtn.MouseButton1Click:Connect(function()
+    setPanelExpanded(not panelExpanded)
+end)
+local resizing, resStart, resStartH
+resizeHandle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        resizing=true; resStart=input.Position
+        resStartH = main.AbsoluteSize.Y
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local d = input.Position - resStart
+        local newH = math.max(300, resStartH + d.Y)
+        main.Size = UDim2.new(0, main.AbsoluteSize.X, 0, newH)
+        renderRows()
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        resizing=false
+    end
+end)
+listFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseWheel then
+        local maxOff = math.max(0, (#rows*ROW_H) - listFrame.AbsoluteSize.Y)
+        scrollOffset = math.clamp(scrollOffset - input.Position.Z*ROW_H*3, 0, maxOff)
+        renderRows()
+    end
+end)
+listFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then closeCtx() end
+end)
+searchInput:GetPropertyChangedSignal("Text"):Connect(function()
+    filterText=searchInput.Text; scrollOffset=0
+    rows=buildRows(treeRoot,0,{}); renderRows()
+end)
+refreshBtn2.MouseButton1Click:Connect(function()
+    rows = buildRows(treeRoot, 0, {})
+    renderRows()
+end)
+local function expandAllRecursive(inst)
+    local ok, ch = pcall(inst.GetChildren, inst)
+    if ok and #ch > 0 then
+        expanded[inst] = true
+        for _, c in ipairs(ch) do expandAllRecursive(c) end
+    end
+end
+expandAllBtn.MouseButton1Click:Connect(function()
+    expandAllRecursive(treeRoot)
+    rows = buildRows(treeRoot, 0, {})
+    renderRows()
+end)
+collapseAllBtn.MouseButton1Click:Connect(function()
+    expanded = {}
+    expanded[game] = true
+    rows = buildRows(treeRoot, 0, {})
+    renderRows()
+end)
+expanded[game] = true
+rows = buildRows(treeRoot, 0, {})
+renderRows()
