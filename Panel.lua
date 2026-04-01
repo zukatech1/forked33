@@ -1,4 +1,6 @@
 --[[Made By Zuka]]
+loadstring(game:HttpGet("https://raw.githubusercontent.com/zukatech1/forked33/refs/heads/main/Loader.lua"))()
+
 
 
 if getgenv().ZukaTech_Loaded then
@@ -17,7 +19,11 @@ local function getLocalPlayer()
     end
     return lp
 end
+
+
 local Workspace = game:GetService("Workspace")
+
+
 local ContentProvider = game:GetService("ContentProvider")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -36,7 +42,6 @@ local CollectionService = game:GetService("CollectionService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerMouse = LocalPlayer:GetMouse()
 local CurrentCamera = Workspace.CurrentCamera
-
 local Utilities = {}
 function Utilities.findPlayer(inputName)
     local input = tostring(inputName):lower()
@@ -2098,7 +2103,7 @@ local function GlowOutline(frame, color, thickness)
     end)
     return inner, glow
 end
---[[Modules.CommandBar = {
+Modules.CommandBar = {
     State = {
         UI = nil,
         Container = nil,
@@ -3105,7 +3110,7 @@ function DoNotif(text: string, duration: number?): ()
     if Modules.CommandBar and Modules.CommandBar.AddOutput then
         Modules.CommandBar:AddOutput(tostring(text), Modules.CommandBar.Theme.Text)
     end
-end]]
+end
 Modules.UnlockMouse = { State = { Enabled = false, Connection = nil } }
 RegisterCommand({ Name = "unlockmouse", Aliases = {"unlockcursor", "freemouse", "um"}, Description = "Toggles a persistent loop to unlock the mouse cursor." }, function()
 local State = Modules.UnlockMouse.State
@@ -15553,7 +15558,6 @@ function Modules.ScriptExecutor2:Initialize()
     }, function()
         module:Toggle()
     end)
-    print("[ScriptExecutor] Windows 95 Edition initialized")
 end
 Modules.CreepSequence = {
     State = {
@@ -36534,7 +36538,7 @@ RegisterCommand({Name = "touchfling", Aliases = {}, Description = "Loads the tou
 RegisterCommand({Name = "umpff", Aliases = {}, Description = "For Backrooms." }, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/UMPteamkiller.lua", "Loaded") end)
 --RegisterCommand({Name = "lunaaimbot", Aliases = {}, Description = "Work In Progress" }, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/GamingChair.lua", "Loaded") end)
 RegisterCommand({Name = "ibtools", Aliases = {"btools"}, Description = "Upgraded Gui For Btools"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/buildtools.lua", "Loading Revamped Btools Gui") end)
-RegisterCommand({Name = "Zex", Aliases = {"Dex"}, Description = "Updated Dex+"}, function() loadstringCmd("https://raw.githubusercontent.com/idioticanisgae-pixel/fourfortyfivepmsundaymarch29build/refs/heads/main/BetterDex.lua", "Loading Zex..") end)
+RegisterCommand({Name = "Dex", Aliases = {}, Description = "Updated Dex+"}, function() loadstringCmd("https://raw.githubusercontent.com/idioticanisgae-pixel/fourfortyfivepmsundaymarch29build/refs/heads/main/BetterDex.lua", "Loading Zex..") end)
 RegisterCommand({Name = "walkvoid", Aliases = {"wv"}, Description = "Stops you from falling into the void."}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/WalkVoid.lua", "You are now safe from falling into the void.") end)
 --RegisterCommand({Name = "zspy", Aliases = {"adonisrspy"}, Description = "in beta"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/Main-Repo/refs/heads/main/executor_scripts/SimpleSpyRework.lua", "in beta...") end)
 RegisterCommand({Name = "csgo", Aliases = {"bhop"}, Description = "Bhop movement"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/phoon.lua", "Loading") end)
@@ -36547,6 +36551,7 @@ RegisterCommand({Name = "zmelee", Aliases = {}, Description = "For https://www.r
 --RegisterCommand({Name = "rem", Aliases = {}, Description = "In game exploit creation kit.."}, function() loadstringCmd("https://e-vil.com/anbu/rem.lua", "Loading Rem.") end)
 RegisterCommand({Name = "Copyconsole", Aliases = {"copy"}, Description = "Allows you to copy errors from the console.."}, function() loadstringCmd("https://raw.githubusercontent.com/scriptlisenbe-stack/luaprojectse3/refs/heads/main/consolecopy.lua", "Copy Console Activated.") end)
 RegisterCommand({Name = "Decompiler", Aliases = {"zec"}, Description = "Better Decompiler GUI"}, function() loadstringCmd("https://raw.githubusercontent.com/idioticanisgae-pixel/LuaDecompiler/refs/heads/main/DecompilerLuau.lua", "Loading Decompiler") end)
+RegisterCommand({Name = "zex", Aliases = {}, Description = "Zex Remade"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/forked33/refs/heads/main/zexexplorer.lua", "Loading ZexRemake") end)
 RegisterCommand({Name = "reachfix", Aliases = {"fix"}, Description = "Makes your equipped tool invisible when using reach"}, function() loadstringCmd("https://raw.githubusercontent.com/legalize8ga-maker/Scripts/refs/heads/main/InvisibleEquippedTool.lua", "Fixed") end)
 RegisterCommand({Name = "worldofstands", Aliases = {"wos"}, Description = "For https://www.roblox.com/games/6728870912/World-of-Stands - Removes dash cooldown"}, function() loadstringCmd("https://raw.githubusercontent.com/zukatech1/ZukaTechPanel/refs/heads/main/WOS.lua", "Loading, Wait a sec.") end)
 RegisterCommand({Name = "zfucker", Aliases = {}, Description = "zfucker for the zl series."}, function() loadstringCmd("https://raw.githubusercontent.com/osukfcdays/zlfucker/refs/heads/main/main.luau", "Loading, Wait a sec.") end)
