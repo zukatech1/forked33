@@ -1,23 +1,28 @@
+
 --[[
-            _           ____   ™ 
-  _____   _| | ____   _|___ \  
- |_  / | | | |/ /\ \ / / __) | 
-  / /| |_| |   <  \ V / / __/  
- /___|\__,_|_|\_\  \_/ |_____| 
-                               
+              __          ________               
+__________ __|  | _____  _\_____  \      .__     
+\___   /  |  \  |/ /\  \/ //  ____/    __|  |___ 
+ /    /|  |  /    <  \   //       \   /__    __/ 
+/_____ \____/|__|_ \  \_/ \_______ \     |__|    
+      \/          \/              \/             
+
 --]]
 
 
-local FLOAT_PRECISION  = 7
+  local FLOAT_PRECISION = 7
 
-
-          local Players          =             game:GetService("Players")
-        local UserInputService  =    game:GetService("UserInputService")
-     local localPlayer         =                  Players.LocalPlayer
-  local playerGui             = localPlayer:WaitForChild("PlayerGui")
-
-
+  
+                 local Players               =      game:GetService("Players")
+                 local UserInputService     =           game:GetService("UserInputService")
+                 local localPlayer          =                Players.LocalPlayer
+                 local playerGui            =                     localPlayer:WaitForChild("PlayerGui")
+	  
+	  
+	  
 local Reader = {}
+
+
 
 function Reader.new(bytecode)
 	local stream = buffer.fromstring(bytecode)
@@ -2295,7 +2300,6 @@ local function buildIconTable()
     end
 end
 buildIconTable()
-
 local QUICK_NAV_SERVICES = {
     "Workspace","Players","Lighting","ReplicatedFirst",
     "ReplicatedStorage","StarterGui","StarterPack",
@@ -2895,7 +2899,6 @@ local editorScroll = mk("ScrollingFrame",{
     ScrollingDirection=Enum.ScrollingDirection.Y
 }, editorPane)
 mk("UIPadding",{PaddingTop=UDim.new(0,5), PaddingBottom=UDim.new(0,5)}, editorScroll)
--- Syntax highlight overlay: sits behind the TextBox, mirrors its content with colour
 local hlOverlay = mk("Frame",{
     Name="HlOverlay",
     Size=UDim2.new(1,-8,0,0), Position=UDim2.new(0,8,0,0),
@@ -2908,13 +2911,11 @@ mk("UIListLayout",{
     FillDirection=Enum.FillDirection.Vertical,
 }, hlOverlay)
 local hlLineLabels = {}
-
 local editorBox = mk("TextBox",{
     Name="EditorBox",
     Size=UDim2.new(1,-8,0,0), Position=UDim2.new(0,8,0,0),
     AutomaticSize=Enum.AutomaticSize.Y,
     BackgroundTransparency=1,
-    -- Text is invisible; highlight overlay provides the visible colour
     TextColor3=Color3.fromRGB(0,0,0), TextTransparency=1,
     TextXAlignment=Enum.TextXAlignment.Left,
     TextYAlignment=Enum.TextYAlignment.Top,
@@ -2925,15 +2926,11 @@ local editorBox = mk("TextBox",{
     PlaceholderColor3=Color3.fromRGB(80,80,80),
     ZIndex=2,
 }, editorScroll)
-
--- ── Inspector Pane ──────────────────────────────────────────────────────────
 local inspectorPane = mk("Frame",{
     Name="InspectorPane", Size=UDim2.new(1,0,1,-48), Position=UDim2.new(0,0,0,48),
     BackgroundColor3=Color3.fromRGB(22,22,22), BorderSizePixel=0,
     Visible=false, ClipsDescendants=true,
 }, rightCol)
-
--- Top toolbar: module name display + Load button
 local inspTopBar = mk("Frame",{
     Size=UDim2.new(1,0,0,30), BackgroundColor3=Color3.fromRGB(28,28,28), BorderSizePixel=0,
 }, inspectorPane)
@@ -2953,10 +2950,28 @@ local inspLoadBtn = mk("TextButton",{
     Font=Enum.Font.SourceSansBold, TextSize=11,
 }, inspTopBar)
 mk("UICorner",{CornerRadius=UDim.new(0,3)}, inspLoadBtn)
-
--- Breadcrumb path bar
-local inspPathBar = mk("Frame",{
+local inspSubTabBar = mk("Frame",{
     Size=UDim2.new(1,0,0,22), Position=UDim2.new(0,0,0,30),
+    BackgroundColor3=Color3.fromRGB(24,24,24), BorderSizePixel=0,
+}, inspectorPane)
+local function makeSubTab(label, xPos, w)
+    local btn = mk("TextButton",{
+        Size=UDim2.new(0,w,1,0), Position=UDim2.new(0,xPos,0,0),
+        BackgroundColor3=Color3.fromRGB(30,30,30), BorderSizePixel=0,
+        Text=label, TextColor3=Color3.fromRGB(130,130,130),
+        Font=Enum.Font.SourceSansBold, TextSize=10,
+    }, inspSubTabBar)
+    return btn
+end
+local inspTabTable    = makeSubTab("Table",    0,   68)
+local inspTabMeta     = makeSubTab("Metatable",68,  80)
+local inspTabUpvalues = makeSubTab("Upvalues", 148, 72)
+local inspSubUnderline = mk("Frame",{
+    Size=UDim2.new(0,68,0,2), Position=UDim2.new(0,0,1,-2),
+    BackgroundColor3=Color3.fromRGB(0,120,215), BorderSizePixel=0,
+}, inspSubTabBar)
+local inspPathBar = mk("Frame",{
+    Size=UDim2.new(1,0,0,22), Position=UDim2.new(0,0,0,52),
     BackgroundColor3=Color3.fromRGB(25,25,25), BorderSizePixel=0,
 }, inspectorPane)
 local inspBackBtn = mk("TextButton",{
@@ -2974,10 +2989,8 @@ local inspPathLabel = mk("TextLabel",{
     Font=Enum.Font.SourceSans, TextSize=9,
     TextTruncate=Enum.TextTruncate.AtEnd,
 }, inspPathBar)
-
--- Search bar
 local inspSearchBar = mk("Frame",{
-    Size=UDim2.new(1,0,0,24), Position=UDim2.new(0,0,0,52),
+    Size=UDim2.new(1,0,0,24), Position=UDim2.new(0,0,0,74),
     BackgroundColor3=Color3.fromRGB(28,28,28), BorderSizePixel=0,
 }, inspectorPane)
 local inspSearchFrame = mk("Frame",{
@@ -2994,10 +3007,8 @@ local inspSearchInput = mk("TextBox",{
     Font=Enum.Font.SourceSans, TextSize=9,
     ClearTextOnFocus=false,
 }, inspSearchFrame)
-
--- Column headers
 local inspHeaders = mk("Frame",{
-    Size=UDim2.new(1,0,0,18), Position=UDim2.new(0,0,0,76),
+    Size=UDim2.new(1,0,0,18), Position=UDim2.new(0,0,0,98),
     BackgroundColor3=Color3.fromRGB(32,32,32), BorderSizePixel=0,
 }, inspectorPane)
 mk("TextLabel",{
@@ -3016,7 +3027,7 @@ mk("TextLabel",{
 }, inspHeaders)
 mk("TextLabel",{
     Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
-    BackgroundTransparency=1, Text="Value",
+    BackgroundTransparency=1, Text="Value / Actions",
     TextColor3=Color3.fromRGB(120,120,120),
     TextXAlignment=Enum.TextXAlignment.Left,
     Font=Enum.Font.SourceSansBold, TextSize=9,
@@ -3025,42 +3036,36 @@ mk("Frame",{
     Size=UDim2.new(1,0,0,1), Position=UDim2.new(0,0,1,-1),
     BackgroundColor3=Color3.fromRGB(50,50,50), BorderSizePixel=0,
 }, inspHeaders)
-
--- Scrollable rows
 local inspScroll = mk("ScrollingFrame",{
     Name="InspScroll",
-    Size=UDim2.new(1,0,1,-94), Position=UDim2.new(0,0,0,94),
+    Size=UDim2.new(1,0,1,-116), Position=UDim2.new(0,0,0,116),
     BackgroundTransparency=1, BorderSizePixel=0,
     ScrollBarThickness=5, ScrollBarImageColor3=Color3.fromRGB(70,70,70),
     CanvasSize=UDim2.new(0,0,0,0), AutomaticCanvasSize=Enum.AutomaticSize.Y,
     ClipsDescendants=true,
 }, inspectorPane)
 mk("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,0)}, inspScroll)
-
--- Status label (shown when empty / loading)
 local inspStatus = mk("TextLabel",{
     Size=UDim2.new(1,0,0,50), Position=UDim2.new(0,0,0,0),
     BackgroundTransparency=1,
-    Text="Select a ModuleScript and press Load.",
+    Text="Select a ModuleScript / Script and press Load.",
     TextColor3=Color3.fromRGB(100,100,100),
     TextXAlignment=Enum.TextXAlignment.Center,
     TextYAlignment=Enum.TextYAlignment.Center,
     Font=Enum.Font.SourceSans, TextSize=10,
-    TextWrapped=true,
-    Visible=true, LayoutOrder=0,
+    TextWrapped=true, Visible=true, LayoutOrder=0,
 }, inspScroll)
-
--- ── Inspector State ──────────────────────────────────────────────────────────
 local inspState = {
-    rootTable   = nil,   -- top-level require() result
-    currentTbl  = nil,   -- table currently displayed
-    pathStack   = {},    -- {label, tableRef} pairs for breadcrumb
-    visitedSet  = {},    -- cycle guard
-    rowFrames   = {},    -- live row frames for search recycling
+    rootTable   = nil,
+    currentTbl  = nil,
+    pathStack   = {},
+    visitedSet  = {},
+    rowFrames   = {},
     filterText  = "",
-    module      = nil,   -- the ModuleScript instance
+    module      = nil,
+    activeTab   = "table",
+    hookedFns   = {},
 }
-
 local TYPE_COLORS = {
     number   = Color3.fromRGB(255,198,0),
     string   = Color3.fromRGB(173,241,149),
@@ -3071,37 +3076,59 @@ local TYPE_COLORS = {
     userdata = Color3.fromRGB(200,160,255),
     thread   = Color3.fromRGB(200,200,200),
 }
-
 local function inspGetTypeColor(t)
     return TYPE_COLORS[t] or Color3.fromRGB(180,180,180)
 end
-
 local function inspShortValue(v, vtype)
     if vtype == "string" then
         local s = tostring(v)
         return #s > 38 and ('"'..s:sub(1,35)..'..."') or ('"'..s..'"')
-    elseif vtype == "number" then
-        return tostring(v)
-    elseif vtype == "boolean" then
-        return tostring(v)
     elseif vtype == "function" then
         return tostring(v):match("function: (.+)") or "function"
     elseif vtype == "table" then
-        -- Count entries (capped)
-        local n = 0
-        local ok2 = pcall(function()
-            for _ in pairs(v) do n += 1; if n > 99 then break end end
-        end)
-        return ok2 and ("{" .. n .. (n > 99 and "+" or "") .. "}") or "{protected}"
-    elseif vtype == "userdata" then
-        return tostring(v)
+        local n=0
+        local ok2=pcall(function() for _ in pairs(v) do n+=1; if n>99 then break end end end)
+        return ok2 and ("{"..n..(n>99 and "+" or "").."}") or "{protected}"
     else
         return tostring(v)
     end
 end
-
-local inspPopulate  -- forward declare
-
+local inspPopulate
+local inspPopulateMeta
+local inspPopulateUpvalues
+local function inspSetSubTab(name)
+    inspState.activeTab = name
+    local positions = {table=0, meta=68, upvalues=148}
+    local widths    = {table=68,meta=80, upvalues=72}
+    inspSubUnderline.Position = UDim2.new(0, positions[name], 1, -2)
+    inspSubUnderline.Size     = UDim2.new(0, widths[name], 0, 2)
+    for _, pair in ipairs({
+        {inspTabTable,    "table"},
+        {inspTabMeta,     "meta"},
+        {inspTabUpvalues, "upvalues"},
+    }) do
+        local btn, id = pair[1], pair[2]
+        if id == name then
+            btn.BackgroundColor3 = Color3.fromRGB(22,22,22)
+            btn.TextColor3       = Color3.fromRGB(220,220,220)
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+            btn.TextColor3       = Color3.fromRGB(130,130,130)
+        end
+    end
+    inspPathBar.Visible    = (name == "table")
+    inspSearchBar.Visible  = (name ~= "upvalues")
+    if name == "table" and inspState.currentTbl then
+        inspPopulate(inspState.currentTbl)
+    elseif name == "meta" then
+        inspPopulateMeta()
+    elseif name == "upvalues" then
+        inspPopulateUpvalues()
+    end
+end
+inspTabTable.MouseButton1Click:Connect(function()    inspSetSubTab("table")    end)
+inspTabMeta.MouseButton1Click:Connect(function()     inspSetSubTab("meta")     end)
+inspTabUpvalues.MouseButton1Click:Connect(function() inspSetSubTab("upvalues") end)
 local function inspClearRows()
     for _, f in ipairs(inspState.rowFrames) do
         if f and f.Parent then f:Destroy() end
@@ -3109,13 +3136,11 @@ local function inspClearRows()
     table.clear(inspState.rowFrames)
     inspStatus.Visible = false
 end
-
 local function inspSetStatus(msg)
     inspClearRows()
     inspStatus.Text    = msg
     inspStatus.Visible = true
 end
-
 local function inspUpdatePath()
     if #inspState.pathStack == 0 then
         inspPathLabel.Text = "Root"
@@ -3124,25 +3149,23 @@ local function inspUpdatePath()
         for _, entry in ipairs(inspState.pathStack) do
             table.insert(parts, tostring(entry.label))
         end
-        inspPathLabel.Text = "Root > " .. table.concat(parts, " > ")
+        inspPathLabel.Text = "Root > "..table.concat(parts," > ")
     end
 end
-
-local function inspCreateRow(key, value, order)
+local function inspCreateRow(key, value, order, writeTarget, writeKey)
+    writeTarget = writeTarget or inspState.currentTbl
+    writeKey    = writeKey    or key
     local vtype   = type(value)
     local isTable = vtype == "table"
     local keyStr  = tostring(key)
     local valStr  = inspShortValue(value, vtype)
     local isEven  = order % 2 == 0
-
     local row = mk("Frame",{
         Size=UDim2.new(1,0,0,20),
         BackgroundColor3=isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30),
         BackgroundTransparency=0, BorderSizePixel=0,
         LayoutOrder=order, ClipsDescendants=true,
     }, inspScroll)
-
-    -- Key column
     mk("TextLabel",{
         Size=UDim2.new(0.42,-4,1,0), Position=UDim2.new(0,4,0,0),
         BackgroundTransparency=1,
@@ -3152,8 +3175,6 @@ local function inspCreateRow(key, value, order)
         Font=Enum.Font.Code, TextSize=9,
         TextTruncate=Enum.TextTruncate.AtEnd,
     }, row)
-
-    -- Type label (kept as reference for live updates)
     local typeLbl = mk("TextLabel",{
         Size=UDim2.new(0.28,0,1,0), Position=UDim2.new(0.42,0,0,0),
         BackgroundTransparency=1,
@@ -3163,56 +3184,113 @@ local function inspCreateRow(key, value, order)
         Font=Enum.Font.Code, TextSize=9,
         TextTruncate=Enum.TextTruncate.AtEnd,
     }, row)
-
-    -- Value column (or drill arrow for tables)
     if isTable then
         local drillBtn = mk("TextButton",{
             Size=UDim2.new(0.30,-4,0,16), Position=UDim2.new(0.70,0,0.5,-8),
             BackgroundColor3=Color3.fromRGB(0,80,160), BorderSizePixel=0,
-            Text="→  " .. valStr,
+            Text="→  "..valStr,
             TextColor3=Color3.fromRGB(180,220,255),
             Font=Enum.Font.Code, TextSize=9,
             TextXAlignment=Enum.TextXAlignment.Left,
             TextTruncate=Enum.TextTruncate.AtEnd,
         }, row)
         mk("UICorner",{CornerRadius=UDim.new(0,3)}, drillBtn)
-        drillBtn.MouseEnter:Connect(function()
-            drillBtn.BackgroundColor3 = Color3.fromRGB(0,110,210)
-        end)
-        drillBtn.MouseLeave:Connect(function()
-            drillBtn.BackgroundColor3 = Color3.fromRGB(0,80,160)
-        end)
+        drillBtn.MouseEnter:Connect(function() drillBtn.BackgroundColor3=Color3.fromRGB(0,110,210) end)
+        drillBtn.MouseLeave:Connect(function() drillBtn.BackgroundColor3=Color3.fromRGB(0,80,160) end)
         drillBtn.MouseButton1Click:Connect(function()
             if inspState.visitedSet[value] then return end
-            table.insert(inspState.pathStack, {label=keyStr, tbl=inspState.currentTbl})
+            table.insert(inspState.pathStack,{label=keyStr, tbl=inspState.currentTbl})
             inspState.currentTbl = value
             inspUpdatePath()
             inspPopulate(value)
         end)
-
     elseif vtype == "function" then
-        -- Functions: read-only, click to copy tostring
-        local valLbl = mk("TextLabel",{
-            Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
-            BackgroundTransparency=1,
-            Text=valStr,
-            TextColor3=inspGetTypeColor(vtype),
-            TextXAlignment=Enum.TextXAlignment.Left,
-            Font=Enum.Font.Code, TextSize=9,
-            TextTruncate=Enum.TextTruncate.AtEnd,
-        }, row)
-        local copyHit = mk("TextButton",{
-            Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
-            BackgroundTransparency=1, Text="", ZIndex=3,
-        }, row)
-        copyHit.MouseButton1Click:Connect(function()
-            pcall(setclipboard, tostring(value))
-            valLbl.TextColor3 = Color3.fromRGB(120,255,120)
-            task.delay(0.8, function() valLbl.TextColor3 = inspGetTypeColor(vtype) end)
+        local CELL_W  = 0.30
+        local BTN_W   = 32
+        local GAP     = 2
+        local startX  = 0
+        local function flashRow(color)
+            row.BackgroundColor3 = color
+            task.delay(0.5, function()
+                row.BackgroundColor3 = isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30)
+            end)
+        end
+        local function pill(label, bgCol, txtCol, xOffset)
+            local b = mk("TextButton",{
+                Size=UDim2.new(0,BTN_W,0,14),
+                Position=UDim2.new(0.70, xOffset, 0.5, -7),
+                BackgroundColor3=bgCol, BorderSizePixel=0,
+                Text=label,
+                TextColor3=txtCol,
+                Font=Enum.Font.SourceSansBold, TextSize=8,
+                ZIndex=3,
+            }, row)
+            mk("UICorner",{CornerRadius=UDim.new(0,3)}, b)
+            return b
+        end
+        local btnCall  = pill("▶ Call",  Color3.fromRGB(30,80,30),  Color3.fromRGB(160,255,160), 0)
+        local btnTrue  = pill("⟲ true",  Color3.fromRGB(30,90,30),  Color3.fromRGB(120,255,120), BTN_W+GAP)
+        local btnFalse = pill("⟲ false", Color3.fromRGB(90,30,30),  Color3.fromRGB(255,100,100), (BTN_W+GAP)*2)
+        local btnNil   = pill("⟲ nil",   Color3.fromRGB(50,50,70),  Color3.fromRGB(180,180,255), (BTN_W+GAP)*3)
+        btnCall.MouseButton1Click:Connect(function()
+            local ok2, res = pcall(value)
+            if ok2 then
+                flashRow(Color3.fromRGB(30,60,30))
+                inspModuleLabel.Text = "Call OK → "..tostring(res)
+                inspModuleLabel.TextColor3 = Color3.fromRGB(120,255,120)
+            else
+                flashRow(Color3.fromRGB(70,20,20))
+                inspModuleLabel.Text = "Call ERR: "..tostring(res)
+                inspModuleLabel.TextColor3 = Color3.fromRGB(255,80,80)
+            end
+            task.delay(2.5, function()
+                inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
+                if inspState.module then
+                    inspModuleLabel.Text = inspState.module.Name
+                end
+            end)
         end)
-
+        local function makeForceReturn(retVal, label)
+            return function()
+                local originalFn = value
+                local function wrapper(...)
+                    return retVal
+                end
+                local hooked = false
+                local ok2 = pcall(function()
+                    hookfunction(originalFn, wrapper)
+                    hooked = true
+                end)
+                if not hooked then
+                    local writeOk = pcall(function()
+                        writeTarget[writeKey] = wrapper
+                    end)
+                    if not writeOk then
+                        inspModuleLabel.Text = "Force-return failed (protected)"
+                        inspModuleLabel.TextColor3 = Color3.fromRGB(255,120,60)
+                        task.delay(2, function()
+                            inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
+                        end)
+                        return
+                    end
+                end
+                flashRow(Color3.fromRGB(30,60,100))
+                typeLbl.Text      = "fn⟲"..label
+                typeLbl.TextColor3 = Color3.fromRGB(255,220,60)
+                inspModuleLabel.Text = keyStr.." → always returns "..label
+                inspModuleLabel.TextColor3 = Color3.fromRGB(255,220,60)
+                task.delay(2, function()
+                    inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
+                    if inspState.module then
+                        inspModuleLabel.Text = inspState.module.Name
+                    end
+                end)
+            end
+        end
+        btnTrue.MouseButton1Click:Connect(makeForceReturn(true,  "true"))
+        btnFalse.MouseButton1Click:Connect(makeForceReturn(false, "false"))
+        btnNil.MouseButton1Click:Connect(makeForceReturn(nil,    "nil"))
     elseif vtype == "boolean" then
-        -- Booleans: single click toggles live
         local currentVal = value
         local valBtn = mk("TextButton",{
             Size=UDim2.new(0.30,-4,0,16), Position=UDim2.new(0.70,0,0.5,-8),
@@ -3227,7 +3305,7 @@ local function inspCreateRow(key, value, order)
         valBtn.MouseButton1Click:Connect(function()
             currentVal = not currentVal
             local writeOk, writeErr = pcall(function()
-                inspState.currentTbl[key] = currentVal
+                writeTarget[writeKey] = currentVal
             end)
             if writeOk then
                 valBtn.Text = tostring(currentVal)
@@ -3235,7 +3313,6 @@ local function inspCreateRow(key, value, order)
                 valBtn.BackgroundColor3 = currentVal and Color3.fromRGB(30,90,30)     or Color3.fromRGB(90,30,30)
                 typeLbl.TextColor3 = inspGetTypeColor("boolean")
             else
-                -- Flash red to signal protected table
                 valBtn.BackgroundColor3 = Color3.fromRGB(120,30,30)
                 task.delay(0.6, function()
                     valBtn.BackgroundColor3 = currentVal and Color3.fromRGB(30,90,30) or Color3.fromRGB(90,30,30)
@@ -3243,12 +3320,9 @@ local function inspCreateRow(key, value, order)
                 warn("[zukv2 Inspector] Write failed:", writeErr)
             end
         end)
-
     else
-        -- string / number / nil / userdata — inline TextBox editor
-        local currentVal = value
+        local currentVal  = value
         local currentType = vtype
-
         local valLbl = mk("TextLabel",{
             Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
             BackgroundTransparency=1,
@@ -3259,8 +3333,6 @@ local function inspCreateRow(key, value, order)
             TextTruncate=Enum.TextTruncate.AtEnd,
             ZIndex=2,
         }, row)
-
-        -- Pencil edit indicator
         local editHint = mk("TextLabel",{
             Size=UDim2.new(0,12,1,0), Position=UDim2.new(1,-13,0,0),
             BackgroundTransparency=1,
@@ -3268,279 +3340,612 @@ local function inspCreateRow(key, value, order)
             Font=Enum.Font.SourceSans, TextSize=10,
             ZIndex=3, Visible=false,
         }, row)
-
-        -- Invisible hitbox over the value cell
         local editHit = mk("TextButton",{
             Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
             BackgroundTransparency=1, Text="", ZIndex=4,
         }, row)
-
-        -- Active inline TextBox (created on demand, destroyed on close)
         local activeBox = nil
-
-        local function closeEditor(cancelled)
+        local function closeEditor()
             if not activeBox then return end
-            activeBox:Destroy(); activeBox = nil
-            row.Size          = UDim2.new(1,0,0,20)
-            row.ClipsDescendants = true
-            valLbl.Visible    = true
-            editHit.ZIndex    = 4
+            activeBox:Destroy(); activeBox=nil
+            row.Size=UDim2.new(1,0,0,20); row.ClipsDescendants=true
+            valLbl.Visible=true; editHit.ZIndex=4
         end
-
         local function commitEdit(rawText)
-            -- Try to coerce back to the original type
-            local newVal
-            local newType
+            local newVal, newType
             if currentType == "number" then
                 local n = tonumber(rawText)
-                if n == nil then
-                    closeEditor(true); return  -- invalid number, discard
-                end
-                newVal  = n
-                newType = "number"
+                if not n then closeEditor(); return end
+                newVal=n; newType="number"
             elseif currentType == "nil" then
-                -- Allow writing any Lua literal: number, bool, string, nil
-                if rawText == "nil" then
-                    newVal = nil; newType = "nil"
-                elseif rawText == "true" then
-                    newVal = true; newType = "boolean"
-                elseif rawText == "false" then
-                    newVal = false; newType = "boolean"
-                elseif tonumber(rawText) then
-                    newVal = tonumber(rawText); newType = "number"
-                else
-                    newVal = rawText; newType = "string"
-                end
+                if rawText=="nil" then newVal=nil; newType="nil"
+                elseif rawText=="true"  then newVal=true;  newType="boolean"
+                elseif rawText=="false" then newVal=false; newType="boolean"
+                elseif tonumber(rawText) then newVal=tonumber(rawText); newType="number"
+                else newVal=rawText; newType="string" end
             else
-                -- string (and userdata fallback)
-                newVal  = rawText
-                newType = "string"
+                newVal=rawText; newType="string"
             end
-
             local writeOk, writeErr = pcall(function()
-                inspState.currentTbl[key] = newVal
+                writeTarget[writeKey] = newVal
             end)
             if writeOk then
-                currentVal  = newVal
-                currentType = newType
-                valLbl.Text       = inspShortValue(newVal, newType)
-                valLbl.TextColor3 = inspGetTypeColor(newType)
-                typeLbl.Text      = newType
-                typeLbl.TextColor3= inspGetTypeColor(newType)
-                -- Brief green flash to confirm
-                valLbl.TextColor3 = Color3.fromRGB(120,255,120)
-                task.delay(0.6, function()
-                    valLbl.TextColor3 = inspGetTypeColor(newType)
-                end)
+                currentVal=newVal; currentType=newType
+                valLbl.Text=inspShortValue(newVal,newType)
+                valLbl.TextColor3=inspGetTypeColor(newType)
+                typeLbl.Text=newType; typeLbl.TextColor3=inspGetTypeColor(newType)
+                valLbl.TextColor3=Color3.fromRGB(120,255,120)
+                task.delay(0.6, function() valLbl.TextColor3=inspGetTypeColor(newType) end)
             else
-                warn("[zukv2 Inspector] Write failed:", writeErr)
-                -- Red flash on label to signal failure
-                valLbl.TextColor3 = Color3.fromRGB(255,80,80)
-                task.delay(0.6, function()
-                    valLbl.TextColor3 = inspGetTypeColor(currentType)
-                end)
+                warn("[zukv2 Inspector] Write failed:",writeErr)
+                valLbl.TextColor3=Color3.fromRGB(255,80,80)
+                task.delay(0.6, function() valLbl.TextColor3=inspGetTypeColor(currentType) end)
             end
-            closeEditor(false)
+            closeEditor()
         end
-
         local function openEditor()
             if activeBox then return end
-            row.Size          = UDim2.new(1,0,0,26)
-            row.ClipsDescendants = false
-            valLbl.Visible    = false
-            editHit.ZIndex    = 1  -- push behind box
-
-            -- Seed text: raw value for numbers, unwrapped string for strings
-            local seedText
-            if currentType == "number" then
-                seedText = tostring(currentVal)
-            elseif currentType == "string" then
-                seedText = tostring(currentVal)
-            else
-                seedText = tostring(currentVal)
-            end
-
+            row.Size=UDim2.new(1,0,0,26); row.ClipsDescendants=false
+            valLbl.Visible=false; editHit.ZIndex=1
             local box = mk("TextBox",{
                 Size=UDim2.new(0.30,-4,0,22), Position=UDim2.new(0.70,0,0.5,-11),
-                BackgroundColor3=Color3.fromRGB(18,18,28),
-                BorderSizePixel=1,
-                Text=seedText,
+                BackgroundColor3=Color3.fromRGB(18,18,28), BorderSizePixel=1,
+                Text=tostring(currentVal),
                 TextColor3=Color3.fromRGB(230,230,230),
                 TextXAlignment=Enum.TextXAlignment.Left,
                 Font=Enum.Font.Code, TextSize=9,
-                ClearTextOnFocus=false,
-                ZIndex=10,
+                ClearTextOnFocus=false, ZIndex=10,
             }, row)
             mk("UIStroke",{Color=Color3.fromRGB(0,120,215), Thickness=1}, box)
-            box:CaptureFocus()
-            activeBox = box
-
-            box.FocusLost:Connect(function(enterPressed)
-                if enterPressed then
-                    commitEdit(box.Text)
-                else
-                    closeEditor(true)
-                end
+            box:CaptureFocus(); activeBox=box
+            box.FocusLost:Connect(function(enter)
+                if enter then commitEdit(box.Text) else closeEditor() end
             end)
-
-            -- Escape key cancels
-            box:GetPropertyChangedSignal("Text"):Connect(function()
-                -- handled via FocusLost
-            end)
-            UserInputService.InputBegan:Connect(function(input, gpe)
+            UserInputService.InputBegan:Connect(function(input,gpe)
                 if gpe then return end
-                if input.KeyCode == Enum.KeyCode.Escape and activeBox == box then
-                    closeEditor(true)
-                end
+                if input.KeyCode==Enum.KeyCode.Escape and activeBox==box then closeEditor() end
             end)
         end
-
-        editHit.MouseEnter:Connect(function() editHint.Visible = true  end)
-        editHit.MouseLeave:Connect(function() editHint.Visible = false end)
+        editHit.MouseEnter:Connect(function()  editHint.Visible=true  end)
+        editHit.MouseLeave:Connect(function()  editHint.Visible=false end)
         editHit.MouseButton1Click:Connect(openEditor)
-
-        -- Right-click copies value
         editHit.MouseButton2Click:Connect(function()
             pcall(setclipboard, tostring(currentVal))
-            valLbl.TextColor3 = Color3.fromRGB(120,255,120)
-            task.delay(0.8, function() valLbl.TextColor3 = inspGetTypeColor(currentType) end)
+            valLbl.TextColor3=Color3.fromRGB(120,255,120)
+            task.delay(0.8, function() valLbl.TextColor3=inspGetTypeColor(currentType) end)
         end)
     end
-
-    -- Row hover highlight
     row.MouseEnter:Connect(function()
-        row.BackgroundColor3 = Color3.fromRGB(40,50,65)
+        row.BackgroundColor3=Color3.fromRGB(40,50,65)
     end)
     row.MouseLeave:Connect(function()
-        row.BackgroundColor3 = isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30)
+        row.BackgroundColor3=isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30)
     end)
-
     table.insert(inspState.rowFrames, row)
 end
-
 inspPopulate = function(tbl)
     inspClearRows()
     if type(tbl) ~= "table" then
         inspSetStatus("Cannot display: not a table."); return
     end
-
-    -- Gather entries
     local entries = {}
     local ok2 = pcall(function()
-        for k, v in pairs(tbl) do
-            table.insert(entries, {k=k, v=v})
+        for k,v in pairs(tbl) do
+            table.insert(entries,{k=k, v=v})
         end
     end)
     if not ok2 then inspSetStatus("Table is protected (cannot iterate)."); return end
     if #entries == 0 then inspSetStatus("Table is empty."); return end
-
-    -- Sort: numbers first, then strings alphabetically, special keys last
-    table.sort(entries, function(a, b)
-        local as, bs = tostring(a.k), tostring(b.k)
-        local aSpec = as:sub(1,1) == "["
-        local bSpec = bs:sub(1,1) == "["
+    table.sort(entries, function(a,b)
+        local as,bs = tostring(a.k), tostring(b.k)
+        local aSpec = as:sub(1,1)=="["; local bSpec = bs:sub(1,1)=="["
         if aSpec ~= bSpec then return bSpec end
-        local an, bn = tonumber(a.k), tonumber(b.k)
-        if an and bn then return an < bn end
-        if an then return true end
-        if bn then return false end
+        local an,bn = tonumber(a.k), tonumber(b.k)
+        if an and bn then return an<bn end
+        if an then return true end; if bn then return false end
         return as:lower() < bs:lower()
     end)
-
-    -- Apply search filter
     local filter = inspState.filterText:lower()
     local order  = 0
     for _, entry in ipairs(entries) do
-        local keyStr = tostring(entry.k)
-        if filter == "" or keyStr:lower():find(filter, 1, true)
-            or tostring(entry.v):lower():find(filter, 1, true) then
+        local ks = tostring(entry.k)
+        if filter=="" or ks:lower():find(filter,1,true)
+            or tostring(entry.v):lower():find(filter,1,true) then
             order += 1
-            inspCreateRow(entry.k, entry.v, order)
+            inspCreateRow(entry.k, entry.v, order, tbl, entry.k)
         end
     end
-
-    if order == 0 then
-        inspSetStatus('No results for "' .. inspState.filterText .. '".')
-    else
-        -- Update module label with entry count when at root
-        if #inspState.pathStack == 0 and inspState.module then
-            inspModuleLabel.Text = inspState.module.Name
-                .. "  (" .. order .. " entries)"
-        end
+    if order==0 then
+        inspSetStatus('No results for "'..inspState.filterText..'".')
+    elseif #inspState.pathStack==0 and inspState.module then
+        inspModuleLabel.Text = inspState.module.Name.."  ("..order.." entries)"
     end
-
     inspState.visitedSet[tbl] = true
 end
-
--- Load button handler
-inspLoadBtn.MouseButton1Click:Connect(function()
-    if not selected or selected.ClassName ~= "ModuleScript" then
-        inspModuleLabel.Text = "Select a ModuleScript in the explorer first."
-        inspModuleLabel.TextColor3 = Color3.fromRGB(255,120,80)
-        inspSetStatus("No ModuleScript selected.")
+inspPopulateMeta = function()
+    inspClearRows()
+    local target = inspState.module or selected
+    if not target then
+        inspSetStatus("No instance / module loaded."); return
+    end
+    local mt
+    local ok2, err = pcall(function()
+        mt = getrawmetatable(target)
+    end)
+    if not ok2 or mt == nil then
+        inspSetStatus("No metatable (or getrawmetatable not available).\n"..tostring(err))
         return
     end
+    local wasLocked = false
+    pcall(function()
+        wasLocked = (getrawmetatable(mt).__index ~= nil)
+    end)
+    local entries = {}
+    local iterOk = pcall(function()
+        for k,v in pairs(mt) do
+            table.insert(entries, {k=k, v=v})
+        end
+    end)
+    if not iterOk or #entries == 0 then
+        local META_KEYS = {
+            "__index","__newindex","__call","__tostring","__len",
+            "__eq","__lt","__le","__add","__sub","__mul","__div",
+            "__mod","__pow","__unm","__concat","__namecall","__namecallmethod",
+        }
+        for _, k in ipairs(META_KEYS) do
+            local v
+            local ok3 = pcall(function() v = rawget(mt, k) end)
+            if ok3 and v ~= nil then
+                table.insert(entries, {k=k, v=v})
+            end
+        end
+        if #entries == 0 then
+            inspSetStatus("Metatable is empty or fully protected."); return
+        end
+    end
+    table.sort(entries, function(a,b)
+        return tostring(a.k):lower() < tostring(b.k):lower()
+    end)
+    local filter = inspState.filterText:lower()
+    local order  = 0
+    for _, entry in ipairs(entries) do
+        local ks = tostring(entry.k)
+        if filter=="" or ks:lower():find(filter,1,true) then
+            order += 1
+            local vtype = type(entry.v)
+            local isEven = order%2==0
+            local row = mk("Frame",{
+                Size=UDim2.new(1,0,0,20),
+                BackgroundColor3=isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30),
+                BackgroundTransparency=0, BorderSizePixel=0,
+                LayoutOrder=order, ClipsDescendants=true,
+            }, inspScroll)
+            mk("TextLabel",{
+                Size=UDim2.new(0.42,-4,1,0), Position=UDim2.new(0,4,0,0),
+                BackgroundTransparency=1,
+                Text=ks,
+                TextColor3=Color3.fromRGB(200,140,255),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.Code, TextSize=9,
+                TextTruncate=Enum.TextTruncate.AtEnd,
+            }, row)
+            local typeLbl = mk("TextLabel",{
+                Size=UDim2.new(0.18,0,1,0), Position=UDim2.new(0.42,0,0,0),
+                BackgroundTransparency=1,
+                Text=vtype,
+                TextColor3=inspGetTypeColor(vtype),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.Code, TextSize=9,
+                TextTruncate=Enum.TextTruncate.AtEnd,
+            }, row)
+            local nilBtn = mk("TextButton",{
+                Size=UDim2.new(0,30,0,14),
+                Position=UDim2.new(1,-34,0.5,-7),
+                BackgroundColor3=Color3.fromRGB(80,20,20), BorderSizePixel=0,
+                Text="× nil", TextColor3=Color3.fromRGB(255,110,110),
+                Font=Enum.Font.SourceSansBold, TextSize=8, ZIndex=5,
+            }, row)
+            mk("UICorner",{CornerRadius=UDim.new(0,3)}, nilBtn)
+            nilBtn.MouseButton1Click:Connect(function()
+                local writeOk, writeErr = pcall(function()
+                    rawset(mt, entry.k, nil)
+                end)
+                if writeOk then
+                    row.BackgroundColor3 = Color3.fromRGB(60,20,20)
+                    typeLbl.Text = "nil"
+                    typeLbl.TextColor3 = inspGetTypeColor("nil")
+                    nilBtn.Text = "✓ nil'd"
+                    nilBtn.BackgroundColor3 = Color3.fromRGB(20,50,20)
+                else
+                    warn("[zukv2 Meta] rawset failed:", writeErr)
+                    nilBtn.BackgroundColor3 = Color3.fromRGB(120,30,30)
+                    task.delay(0.8, function()
+                        nilBtn.BackgroundColor3 = Color3.fromRGB(80,20,20)
+                    end)
+                end
+            end)
+            if vtype == "function" then
+                local function pill(label, bgCol, txtCol, xOffset)
+                    local b = mk("TextButton",{
+                        Size=UDim2.new(0,30,0,14),
+                        Position=UDim2.new(0.60, xOffset, 0.5, -7),
+                        BackgroundColor3=bgCol, BorderSizePixel=0,
+                        Text=label,
+                        TextColor3=txtCol,
+                        Font=Enum.Font.SourceSansBold, TextSize=7,
+                        ZIndex=4,
+                    }, row)
+                    mk("UICorner",{CornerRadius=UDim.new(0,3)}, b)
+                    return b
+                end
+                local fn = entry.v
+                local key = entry.k
+                pill("⟲ true",  Color3.fromRGB(30,90,30),  Color3.fromRGB(120,255,120), 0).MouseButton1Click:Connect(function()
+                    pcall(function() hookfunction(fn, function(...) return true end) end)
+                    typeLbl.Text="fn⟲true"; typeLbl.TextColor3=Color3.fromRGB(255,220,60)
+                end)
+                pill("⟲ false", Color3.fromRGB(90,30,30),  Color3.fromRGB(255,100,100), 32).MouseButton1Click:Connect(function()
+                    pcall(function() hookfunction(fn, function(...) return false end) end)
+                    typeLbl.Text="fn⟲false"; typeLbl.TextColor3=Color3.fromRGB(255,220,60)
+                end)
+                pill("⟲ nil",   Color3.fromRGB(50,50,70),  Color3.fromRGB(180,180,255), 64).MouseButton1Click:Connect(function()
+                    pcall(function() hookfunction(fn, function(...) return nil end) end)
+                    typeLbl.Text="fn⟲nil"; typeLbl.TextColor3=Color3.fromRGB(255,220,60)
+                end)
+            else
+                mk("TextLabel",{
+                    Size=UDim2.new(0.22,-4,1,0), Position=UDim2.new(0.60,0,0,0),
+                    BackgroundTransparency=1,
+                    Text=inspShortValue(entry.v, vtype),
+                    TextColor3=inspGetTypeColor(vtype),
+                    TextXAlignment=Enum.TextXAlignment.Left,
+                    Font=Enum.Font.Code, TextSize=9,
+                    TextTruncate=Enum.TextTruncate.AtEnd,
+                }, row)
+            end
+            row.MouseEnter:Connect(function() row.BackgroundColor3=Color3.fromRGB(40,50,65) end)
+            row.MouseLeave:Connect(function()
+                row.BackgroundColor3=isEven and Color3.fromRGB(26,26,26) or Color3.fromRGB(30,30,30)
+            end)
+            table.insert(inspState.rowFrames, row)
+        end
+    end
+    if order==0 then inspSetStatus("No metafields found.") end
+end
+inspPopulateUpvalues = function()
+    inspClearRows()
+    local fns = {}
+    if inspState.currentTbl then
+        pcall(function()
+            for k, v in pairs(inspState.currentTbl) do
+                if type(v) == "function" then
+                    table.insert(fns, {label=tostring(k), fn=v})
+                end
+            end
+        end)
+    end
+    do
+        local gsc = rawget(_G, "getscriptclosure")
+            or rawget(_G, "getclosure")
+            or rawget(_G, "getscriptfunction")
+        if gsc and selected and SCRIPT_CLASSES and SCRIPT_CLASSES[selected.ClassName] then
+            local ok2, closure = pcall(gsc, selected)
+            if ok2 and type(closure) == "function" then
+                table.insert(fns, 1, {label="[main chunk]", fn=closure})
+            end
+        end
+    end
+    if #fns == 0 then
+        inspSetStatus("No functions found.\nLoad a ModuleScript with functions, or select a Script first.")
+        return
+    end
+    local function safeGetUpvalues(fn)
+        local raw
+        local ok2 = pcall(function() raw = getupvalues(fn) end)
+        if not ok2 or type(raw) ~= "table" then return {} end
+        local out = {}
+        local isDict = false
+        for k in pairs(raw) do
+            if type(k) == "string" and not tonumber(k) then
+                isDict = true
+                break
+            end
+        end
+        if isDict then
+            local i = 0
+            for name, val in pairs(raw) do
+                i += 1
+                local realIdx = nil
+                for tryIdx = 1, 50 do
+                    local dgu = rawget(_G, "debug") and rawget(debug, "getupvalue")
+                    if not dgu then break end
+                    local ok3, cur = pcall(dgu, fn, tryIdx)
+                    if not ok3 then break end
+                    if cur == name then realIdx = tryIdx; break end
+                end
+                table.insert(out, {idx=realIdx or i, name=tostring(name), value=val})
+            end
+        else
+            for idx, val in ipairs(raw) do
+                local uvName
+                local dgu = rawget(_G, "debug") and rawget(debug, "getupvalue")
+                if dgu then
+                    pcall(function() uvName = dgu(fn, idx) end)
+                end
+                table.insert(out, {idx=idx, name=uvName or ("upv["..idx.."]"), value=val})
+            end
+        end
+        return out
+    end
+    local order = 0
+    for _, entry in ipairs(fns) do
+        local fn      = entry.fn
+        local fnLabel = entry.label
+        order += 1
+        local hdr = mk("Frame",{
+            Size=UDim2.new(1,0,0,18),
+            BackgroundColor3=Color3.fromRGB(32,28,45), BorderSizePixel=0,
+            LayoutOrder=order,
+        }, inspScroll)
+        mk("TextLabel",{
+            Size=UDim2.new(1,-8,1,0), Position=UDim2.new(0,6,0,0),
+            BackgroundTransparency=1,
+            Text="⬡ "..fnLabel,
+            TextColor3=Color3.fromRGB(200,160,255),
+            TextXAlignment=Enum.TextXAlignment.Left,
+            Font=Enum.Font.SourceSansBold, TextSize=9,
+        }, hdr)
+        table.insert(inspState.rowFrames, hdr)
+        local upvals = safeGetUpvalues(fn)
+        if #upvals == 0 then
+            order += 1
+            local emptyRow = mk("Frame",{
+                Size=UDim2.new(1,0,0,16),
+                BackgroundColor3=Color3.fromRGB(24,24,24), BorderSizePixel=0,
+                LayoutOrder=order,
+            }, inspScroll)
+            mk("TextLabel",{
+                Size=UDim2.new(1,-8,1,0), Position=UDim2.new(0,16,0,0),
+                BackgroundTransparency=1,
+                Text="  (no upvalues / getupvalues unavailable)",
+                TextColor3=Color3.fromRGB(80,80,80),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.SourceSans, TextSize=9,
+            }, emptyRow)
+            table.insert(inspState.rowFrames, emptyRow)
+        else
+        for _, uvEntry in ipairs(upvals) do
+            local idx = uvEntry.idx
+            local uv  = uvEntry.value
+            local uvType = "userdata"
+            pcall(function() uvType = type(uv) end)
+            order += 1
+            local isEven  = order % 2 == 0
+            local uvLabel = uvEntry.name or ("upv["..tostring(idx).."]")
+            local row = mk("Frame",{
+                Size=UDim2.new(1,0,0,20),
+                BackgroundColor3=isEven and Color3.fromRGB(26,24,30) or Color3.fromRGB(28,26,34),
+                BackgroundTransparency=0, BorderSizePixel=0,
+                LayoutOrder=order, ClipsDescendants=true,
+            }, inspScroll)
+            mk("TextLabel",{
+                Size=UDim2.new(0.42,-4,1,0), Position=UDim2.new(0,14,0,0),
+                BackgroundTransparency=1,
+                Text=uvLabel,
+                TextColor3=Color3.fromRGB(180,140,220),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.Code, TextSize=9,
+                TextTruncate=Enum.TextTruncate.AtEnd,
+            }, row)
+            local typeLbl2 = mk("TextLabel",{
+                Size=UDim2.new(0.28,0,1,0), Position=UDim2.new(0.42,0,0,0),
+                BackgroundTransparency=1,
+                Text=uvType,
+                TextColor3=inspGetTypeColor(uvType),
+                TextXAlignment=Enum.TextXAlignment.Left,
+                Font=Enum.Font.Code, TextSize=9,
+            }, row)
+            if uvType == "function" then
+                local function upvPill(label, bgCol, txtCol, xOffset, retVal)
+                    local b = mk("TextButton",{
+                        Size=UDim2.new(0,32,0,14),
+                        Position=UDim2.new(0.70, xOffset, 0.5, -7),
+                        BackgroundColor3=bgCol, BorderSizePixel=0,
+                        Text=label, TextColor3=txtCol,
+                        Font=Enum.Font.SourceSansBold, TextSize=8, ZIndex=3,
+                    }, row)
+                    mk("UICorner",{CornerRadius=UDim.new(0,3)}, b)
+                    b.MouseButton1Click:Connect(function()
+                        local origFn = uv
+                        pcall(function()
+                            hookfunction(origFn, function(...) return retVal end)
+                        end)
+                        typeLbl2.Text      = "fn⟲"..tostring(retVal)
+                        typeLbl2.TextColor3 = Color3.fromRGB(255,220,60)
+                    end)
+                end
+                upvPill("⟲ true",  Color3.fromRGB(30,90,30),  Color3.fromRGB(120,255,120), 0,   true)
+                upvPill("⟲ false", Color3.fromRGB(90,30,30),  Color3.fromRGB(255,100,100), 34,  false)
+                upvPill("⟲ nil",   Color3.fromRGB(50,50,70),  Color3.fromRGB(180,180,255), 68,  nil)
+            elseif uvType == "boolean" then
+                local curUv = uv
+                local valBtn = mk("TextButton",{
+                    Size=UDim2.new(0.30,-4,0,14), Position=UDim2.new(0.70,0,0.5,-7),
+                    BackgroundColor3=curUv and Color3.fromRGB(30,90,30) or Color3.fromRGB(90,30,30),
+                    BorderSizePixel=0,
+                    Text=tostring(curUv),
+                    TextColor3=curUv and Color3.fromRGB(120,255,120) or Color3.fromRGB(255,100,100),
+                    Font=Enum.Font.Code, TextSize=9, ZIndex=3,
+                }, row)
+                mk("UICorner",{CornerRadius=UDim.new(0,3)}, valBtn)
+                valBtn.MouseButton1Click:Connect(function()
+                    curUv = not curUv
+                    local ok3 = pcall(setupvalue, fn, idx, curUv)
+                    if ok3 then
+                        valBtn.Text = tostring(curUv)
+                        valBtn.TextColor3       = curUv and Color3.fromRGB(120,255,120) or Color3.fromRGB(255,100,100)
+                        valBtn.BackgroundColor3 = curUv and Color3.fromRGB(30,90,30)    or Color3.fromRGB(90,30,30)
+                    else
+                        valBtn.BackgroundColor3 = Color3.fromRGB(120,30,30)
+                        task.delay(0.6, function()
+                            valBtn.BackgroundColor3 = curUv and Color3.fromRGB(30,90,30) or Color3.fromRGB(90,30,30)
+                        end)
+                    end
+                end)
+            elseif uvType == "number" or uvType == "string" then
+                local curUv   = uv
+                local curType = uvType
+                local valLbl = mk("TextLabel",{
+                    Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
+                    BackgroundTransparency=1,
+                    Text=inspShortValue(curUv, curType),
+                    TextColor3=inspGetTypeColor(curType),
+                    TextXAlignment=Enum.TextXAlignment.Left,
+                    Font=Enum.Font.Code, TextSize=9,
+                    TextTruncate=Enum.TextTruncate.AtEnd, ZIndex=2,
+                }, row)
+                local editHit = mk("TextButton",{
+                    Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
+                    BackgroundTransparency=1, Text="", ZIndex=4,
+                }, row)
+                local activeBox = nil
+                local function closeUvEdit()
+                    if not activeBox then return end
+                    activeBox:Destroy(); activeBox=nil
+                    row.Size=UDim2.new(1,0,0,20); row.ClipsDescendants=true
+                    valLbl.Visible=true; editHit.ZIndex=4
+                end
+                editHit.MouseButton1Click:Connect(function()
+                    if activeBox then return end
+                    row.Size=UDim2.new(1,0,0,26); row.ClipsDescendants=false
+                    valLbl.Visible=false; editHit.ZIndex=1
+                    local box = mk("TextBox",{
+                        Size=UDim2.new(0.30,-4,0,22), Position=UDim2.new(0.70,0,0.5,-11),
+                        BackgroundColor3=Color3.fromRGB(18,18,28), BorderSizePixel=1,
+                        Text=tostring(curUv),
+                        TextColor3=Color3.fromRGB(230,230,230),
+                        TextXAlignment=Enum.TextXAlignment.Left,
+                        Font=Enum.Font.Code, TextSize=9,
+                        ClearTextOnFocus=false, ZIndex=10,
+                    }, row)
+                    mk("UIStroke",{Color=Color3.fromRGB(180,100,255), Thickness=1}, box)
+                    box:CaptureFocus(); activeBox=box
+                    box.FocusLost:Connect(function(enter)
+                        if not enter then closeUvEdit(); return end
+                        local newVal
+                        if curType=="number" then
+                            newVal = tonumber(box.Text)
+                            if not newVal then closeUvEdit(); return end
+                        else
+                            newVal = box.Text
+                        end
+                        local ok3 = pcall(setupvalue, fn, idx, newVal)
+                        if ok3 then
+                            curUv = newVal
+                            valLbl.Text=inspShortValue(newVal,curType)
+                            valLbl.TextColor3=Color3.fromRGB(120,255,120)
+                            task.delay(0.6, function() valLbl.TextColor3=inspGetTypeColor(curType) end)
+                        else
+                            valLbl.TextColor3=Color3.fromRGB(255,80,80)
+                            task.delay(0.6, function() valLbl.TextColor3=inspGetTypeColor(curType) end)
+                        end
+                        closeUvEdit()
+                    end)
+                end)
+            else
+                mk("TextLabel",{
+                    Size=UDim2.new(0.30,-4,1,0), Position=UDim2.new(0.70,0,0,0),
+                    BackgroundTransparency=1,
+                    Text=inspShortValue(uv, uvType),
+                    TextColor3=inspGetTypeColor(uvType),
+                    TextXAlignment=Enum.TextXAlignment.Left,
+                    Font=Enum.Font.Code, TextSize=9,
+                    TextTruncate=Enum.TextTruncate.AtEnd,
+                }, row)
+            end
+            row.MouseEnter:Connect(function() row.BackgroundColor3=Color3.fromRGB(40,35,55) end)
+            row.MouseLeave:Connect(function()
+                row.BackgroundColor3=isEven and Color3.fromRGB(26,24,30) or Color3.fromRGB(28,26,34)
+            end)
+            table.insert(inspState.rowFrames, row)
+        end
+        end
+    end
+    if order == 0 then inspSetStatus("No upvalue rows built.") end
+end
+inspLoadBtn.MouseButton1Click:Connect(function()
     local inst = selected
-    inspModuleLabel.Text = "Loading " .. inst.Name .. "…"
+    if not inst then
+        inspModuleLabel.Text = "Select an instance in the explorer first."
+        inspModuleLabel.TextColor3 = Color3.fromRGB(255,120,80)
+        inspSetStatus("Nothing selected."); return
+    end
+    local isScript = SCRIPT_CLASSES[inst.ClassName]
+    local isMod    = inst.ClassName == "ModuleScript"
+    inspModuleLabel.Text = "Loading "..inst.Name.."…"
     inspModuleLabel.TextColor3 = Color3.fromRGB(180,180,100)
     inspSetStatus("Loading…")
-
     task.defer(function()
-        -- Timeout-safe require
-        local success2, result2
-        local done = false
-        task.spawn(function()
-            success2, result2 = pcall(require, inst)
-            done = true
-        end)
-        local waited = 0
-        while not done and waited < 3 do
-            task.wait(0.1); waited += 0.1
-        end
-        if not done then
-            inspModuleLabel.Text = inst.Name .. "  [timeout]"
-            inspModuleLabel.TextColor3 = Color3.fromRGB(255,160,60)
-            inspSetStatus("Module timed out (possible WaitForChild).")
-            return
-        end
-        if not success2 then
-            inspModuleLabel.Text = inst.Name .. "  [error]"
-            inspModuleLabel.TextColor3 = Color3.fromRGB(255,80,80)
-            inspSetStatus("require() error:\n" .. tostring(result2))
-            return
-        end
-
-        -- Wrap non-table returns so we can still display them
-        local tbl
-        if type(result2) == "table" then
-            tbl = result2
-        elseif result2 == nil then
-            tbl = {["[ReturnValue]"]="nil", ["[Info]"]="Module returned nil"}
+        if isMod then
+            local success2, result2
+            local done = false
+            task.spawn(function()
+                success2, result2 = pcall(require, inst)
+                done = true
+            end)
+            local waited = 0
+            while not done and waited < 3 do task.wait(0.1); waited += 0.1 end
+            if not done then
+                inspModuleLabel.Text = inst.Name.."  [timeout]"
+                inspModuleLabel.TextColor3 = Color3.fromRGB(255,160,60)
+                inspSetStatus("Module timed out."); return
+            end
+            if not success2 then
+                inspModuleLabel.Text = inst.Name.."  [error]"
+                inspModuleLabel.TextColor3 = Color3.fromRGB(255,80,80)
+                inspSetStatus("require() error:\n"..tostring(result2)); return
+            end
+            local tbl
+            if type(result2) == "table" then
+                tbl = result2
+            elseif result2 == nil then
+                tbl = {["[ReturnValue]"]="nil"}
+            else
+                tbl = {["[ReturnValue]"]=result2, ["[Type]"]=type(result2)}
+            end
+            inspState.rootTable  = tbl
+            inspState.currentTbl = tbl
+            inspState.pathStack  = {}
+            inspState.visitedSet = {}
+            inspState.module     = inst
+            inspState.filterText = ""
+            inspSearchInput.Text = ""
+            inspUpdatePath()
+            inspModuleLabel.Text       = inst.Name
+            inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
         else
-            tbl = {["[ReturnValue]"]=result2, ["[Type]"]=type(result2)}
+            inspState.rootTable  = nil
+            inspState.currentTbl = nil
+            inspState.pathStack  = {}
+            inspState.visitedSet = {}
+            inspState.module     = inst
+            inspState.filterText = ""
+            inspSearchInput.Text = ""
+            inspModuleLabel.Text       = inst.Name.." ("..inst.ClassName..")"
+            inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
         end
-
-        inspState.rootTable  = tbl
-        inspState.currentTbl = tbl
-        inspState.pathStack  = {}
-        inspState.visitedSet = {}
-        inspState.module     = inst
-        inspState.filterText = ""
-        inspSearchInput.Text = ""
-        inspUpdatePath()
-        inspModuleLabel.Text       = inst.Name
-        inspModuleLabel.TextColor3 = Color3.fromRGB(160,220,160)
-        inspPopulate(tbl)
+        if inspState.currentTbl then
+            inspSetSubTab("table")
+        else
+            inspSetSubTab("meta")
+        end
     end)
 end)
-
--- Back button: single click = one level up, double click = back to root
 local inspBackLastClick = 0
 inspBackBtn.MouseButton1Click:Connect(function()
     if #inspState.pathStack == 0 then return end
     local now = tick()
     if now - inspBackLastClick < 0.35 then
-        -- double-click: pop all the way to root
         inspState.pathStack  = {}
         inspState.currentTbl = inspState.rootTable
     else
@@ -3551,15 +3956,14 @@ inspBackBtn.MouseButton1Click:Connect(function()
     inspUpdatePath()
     inspPopulate(inspState.currentTbl)
 end)
-
--- Search
 inspSearchInput:GetPropertyChangedSignal("Text"):Connect(function()
     inspState.filterText = inspSearchInput.Text
-    if inspState.currentTbl then
+    if inspState.activeTab == "table" and inspState.currentTbl then
         inspPopulate(inspState.currentTbl)
+    elseif inspState.activeTab == "meta" then
+        inspPopulateMeta()
     end
 end)
-
 local resizeHandle = mk("Frame",{
     Name="ResizeHandle",
     Size=UDim2.new(1,0,0,5), Position=UDim2.new(0,0,1,-5),
@@ -3650,7 +4054,6 @@ local function openCtxMenu(inst, screenPos)
             addItem("☠", "Poison!",     Color3.fromRGB(255,160,60), function()
                 local path = buildPath(inst)
                 local success, result = pcall(require, inst)
-
                 local function getPoisonValue(name, currentVal)
                     local n = tostring(name)
                     local lowerN = n:lower()
@@ -3661,7 +4064,6 @@ local function openCtxMenu(inst, screenPos)
                     elseif n == "AmmoPerMag" then return 999999
                     elseif n =="Debuff" then return true
                     elseif n =="DebuffChance" then return 100
-
                     elseif n == "Recoil" then return 0
                     elseif n == "BulletPerShot" then return 5
                     elseif n == "FriendlyFire" then return true
@@ -3693,7 +4095,6 @@ local function openCtxMenu(inst, screenPos)
                     end
                     return currentVal
                 end
-
                 local function serialize(v)
                     local t = typeof(v)
                     if t == "string" then return '"' .. v:gsub('"', '\\"') .. '"'
@@ -3706,11 +4107,9 @@ local function openCtxMenu(inst, screenPos)
                     end
                     return "nil"
                 end
-
-                local output = "--[[\n\tGENERATED EDIT: " .. inst.Name .. "\n\tENGINE: Module '1' zuk\n\tv2: Generated with - (zukv2)\n\tTARGET: " .. path .. "\n--]]\n\n"
+                local output = "\n\n"
                 output = output .. "local targetModule = require(" .. path .. ")\n"
                 output = output .. "if setreadonly then setreadonly(targetModule, false) end\n\n"
-
                 if not success then
                     output = output .. "-- [ERROR]: Require failed. Protected or Server-Side.\n"
                 elseif type(result) == "table" then
@@ -3727,7 +4126,6 @@ local function openCtxMenu(inst, screenPos)
                 else
                     output = output .. "-- [INFO]: Module returns a " .. type(result) .. " instead of a table."
                 end
-
                 lastDecompResult = output
                 editorBox.Text = output
                 decompTitle.Text = "ModuleScript › " .. inst.Name .. "  [Poison Patch]"
@@ -3740,7 +4138,6 @@ local function openCtxMenu(inst, screenPos)
             selected = inst
             setPanelExpanded(true)
             setTab("inspector")
-            -- Brief defer so the pane becomes visible before we populate
             task.defer(function()
                 inspModuleLabel.Text       = "Loading " .. inst.Name .. "…"
                 inspModuleLabel.TextColor3 = Color3.fromRGB(180,180,100)
@@ -4042,7 +4439,6 @@ local function getOrderedChildren(inst)
     local ok, children = pcall(inst.GetChildren, inst)
     if not ok then return {} end
     if inst ~= game then return children end
-    -- For game root: pinned services first, then everything else
     local pinned = {}
     local seen = {}
     for _, svcName in ipairs(PINNED_SERVICES) do
@@ -4162,6 +4558,136 @@ local function jumpToInstance(inst)
     scrollOffset = math.clamp((targetI-1)*ROW_H, 0, maxOff)
     renderRows()
 end
+local syncHighlights = {}
+local HIGHLIGHT_DURATION = 2.5
+local HIGHLIGHT_COLOR    = Color3.fromRGB(60, 200, 90)
+local HIGHLIGHT_BAR_W    = 3
+local syncPending  = false
+local syncLastFire = 0
+local SYNC_DEBOUNCE = 0.15
+local liveBadge = mk("TextLabel", {
+    Size     = UDim2.new(0, 30, 0, 14),
+    Position = UDim2.new(1, -34, 0.5, -7),
+    BackgroundColor3    = Color3.fromRGB(30, 120, 50),
+    BackgroundTransparency = 0,
+    BorderSizePixel     = 0,
+    Text                = "LIVE",
+    TextColor3          = Color3.fromRGB(140, 255, 160),
+    Font                = Enum.Font.SourceSansBold,
+    TextSize            = 8,
+    ZIndex              = 5,
+}, treeHeader)
+mk("UICorner", {CornerRadius = UDim.new(0, 3)}, liveBadge)
+local livePulseRunning = false
+local function startLivePulse()
+    if livePulseRunning then return end
+    livePulseRunning = true
+    task.spawn(function()
+        while liveBadge and liveBadge.Parent do
+            for t = 0, 1, 0.05 do
+                if not (liveBadge and liveBadge.Parent) then return end
+                liveBadge.BackgroundTransparency = t * 0.55
+                task.wait(0.04)
+            end
+            for t = 1, 0, -0.05 do
+                if not (liveBadge and liveBadge.Parent) then return end
+                liveBadge.BackgroundTransparency = t * 0.55
+                task.wait(0.04)
+            end
+        end
+        livePulseRunning = false
+    end)
+end
+startLivePulse()
+local function syncRebuild()
+    rows = buildRows(treeRoot, 0, {})
+    renderRows()
+end
+local function scheduleSyncRebuild()
+    syncLastFire = tick()
+    if syncPending then return end
+    syncPending = true
+    task.spawn(function()
+        while (tick() - syncLastFire) < SYNC_DEBOUNCE do
+            task.wait(SYNC_DEBOUNCE)
+        end
+        syncPending = false
+        if sg and sg.Parent then
+            syncRebuild()
+        end
+    end)
+end
+game.DescendantAdded:Connect(function(inst)
+    local ok, _ = pcall(function() return inst.ClassName end)
+    if not ok then return end
+    syncHighlights[inst] = tick() + HIGHLIGHT_DURATION
+    scheduleSyncRebuild()
+end)
+game.DescendantRemoving:Connect(function(inst)
+    syncHighlights[inst] = nil
+    expanded[inst]       = nil
+    if selected == inst then
+        selected = nil
+        pcall(function() refreshProps() end)
+    end
+    scheduleSyncRebuild()
+end)
+local _origRenderRows = renderRows
+renderRows = function()
+    _origRenderRows()
+    local now = tick()
+    local expired = {}
+    for _, frame in ipairs(rowFrames) do
+        local frameY   = frame.Position.Y.Offset + scrollOffset
+        local rowIndex = math.floor(frameY / ROW_H) + 1
+        local row      = rows[rowIndex]
+        if not row then continue end
+        local inst   = row.inst
+        local expiry = syncHighlights[inst]
+        if expiry then
+            if now >= expiry then
+                table.insert(expired, inst)
+            else
+                local bar = frame:FindFirstChild("_SyncBar")
+                if not bar then
+                    bar = mk("Frame", {
+                        Name            = "_SyncBar",
+                        Size            = UDim2.new(0, HIGHLIGHT_BAR_W, 1, 0),
+                        Position        = UDim2.new(0, 0, 0, 0),
+                        BackgroundColor3= HIGHLIGHT_COLOR,
+                        BorderSizePixel = 0,
+                        ZIndex          = 5,
+                    }, frame)
+                    local origBg = frame.BackgroundColor3
+                    local origTr = frame.BackgroundTransparency
+                    frame.BackgroundColor3    = Color3.fromRGB(30, 80, 40)
+                    frame.BackgroundTransparency = 0.3
+                    task.delay(0.6, function()
+                        if frame and frame.Parent then
+                            frame.BackgroundColor3    = origBg
+                            frame.BackgroundTransparency = origTr
+                        end
+                    end)
+                    local remaining = expiry - now
+                    task.delay(math.max(0, remaining - 0.5), function()
+                        if bar and bar.Parent then
+                            local steps = 20
+                            for s = 1, steps do
+                                if not (bar and bar.Parent) then break end
+                                bar.BackgroundTransparency = s / steps
+                                task.wait(0.025)
+                            end
+                            if bar and bar.Parent then bar:Destroy() end
+                        end
+                    end)
+                end
+            end
+        end
+    end
+    for _, inst in ipairs(expired) do
+        syncHighlights[inst] = nil
+    end
+end
 decompBtn.MouseButton1Click:Connect(function()
     if not selected then
         codeLabel.Text = '<font color="#ff6060">-- No instance selected.</font>'
@@ -4215,17 +4741,13 @@ execBtn.MouseButton1Click:Connect(function()
         task.delay(2, function() execBtn.Text = "Execute" end)
     end
 end)
--- "viewer" | "editor" | "inspector"
 local function setTab(which)
     local isViewer    = which == "viewer"
     local isEditor    = which == "editor"
     local isInspector = which == "inspector"
-
     viewerPane.Visible    = isViewer
     editorPane.Visible    = isEditor
     inspectorPane.Visible = isInspector
-
-    -- Tab button colours
     local function styleTab(btn, active)
         btn.BackgroundColor3 = active and Color3.fromRGB(22,22,22) or Color3.fromRGB(35,35,35)
         btn.TextColor3       = active and Color3.fromRGB(220,220,220) or Color3.fromRGB(140,140,140)
@@ -4233,13 +4755,10 @@ local function setTab(which)
     styleTab(tabViewer,    isViewer)
     styleTab(tabEditor,    isEditor)
     styleTab(tabInspector, isInspector)
-
-    -- Underline position (Viewer=0, Editor=70, Inspector=140)
     local underlineX = isViewer and 0 or (isEditor and 70 or 140)
     local underlineW = isInspector and 80 or 70
     tabUnderline.Position = UDim2.new(0, underlineX, 1, -2)
     tabUnderline.Size     = UDim2.new(0, underlineW, 0, 2)
-
     if isEditor then
         if editorBox.Text == "-- Write your script here\n" and lastDecompResult ~= "" then
             editorBox.Text = lastDecompResult
@@ -4275,25 +4794,19 @@ local function updateGutter()
         gutterLabels[i] = lbl
     end
 end
-
--- Syntax highlight overlay for the editor tab
--- Mirrors each line of editorBox with the same hlLine() colouring used by the viewer.
 local hlDebounce = false
 local lastHlText = ""
 local function updateHlOverlay()
     local text = editorBox.Text
     if text == lastHlText then return end
     lastHlText = text
-    -- Collect lines
     local lines = {}
     for line in (text .. "\n"):gmatch("([^\n]*)\n") do
         table.insert(lines, line)
     end
-    -- Remove trailing empty ghost line that TextBox appends
     if #lines > 1 and lines[#lines] == "" then
         table.remove(lines)
     end
-    -- Recycle existing labels, create new ones, destroy extras
     for i, line in ipairs(lines) do
         local highlighted = hlLine(line)
         if hlLineLabels[i] then
@@ -4314,7 +4827,6 @@ local function updateHlOverlay()
             }, hlOverlay)
         end
     end
-    -- Destroy labels for lines that no longer exist
     for i = #lines + 1, #hlLineLabels do
         if hlLineLabels[i] then
             hlLineLabels[i]:Destroy()
@@ -4322,13 +4834,11 @@ local function updateHlOverlay()
         end
     end
 end
-
 editorScroll:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
     gutterScroll.CanvasPosition = Vector2.new(0, editorScroll.CanvasPosition.Y)
 end)
 editorBox:GetPropertyChangedSignal("Text"):Connect(function()
     updateGutter()
-    -- Debounce highlight updates so fast typing doesn't stall
     if hlDebounce then return end
     hlDebounce = true
     task.defer(function()
