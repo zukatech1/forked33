@@ -12,11 +12,17 @@ __________ __|  | _____  _\_____  \      .__
 
 
 local FLOAT_PRECISION = 7
+
+
                  local Players               =      game:GetService("Players")
-                 local UserInputService     =           game:GetService("UserInputService")
-                 local localPlayer          =                Players.LocalPlayer
-                 local playerGui            =                     localPlayer:WaitForChild("PlayerGui")
+                 local UserInputService      =           game:GetService("UserInputService")
+                 local localPlayer           =                Players.LocalPlayer
+                 local playerGui             =                     localPlayer:WaitForChild("PlayerGui")
+
+
 local Reader = {}
+
+
 function Reader.new(bytecode)
 	local stream = buffer.fromstring(bytecode)
 	local cursor = 0
